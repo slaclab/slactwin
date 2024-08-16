@@ -1,0 +1,15 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: sirepo-alpha-pvc
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: sdf-group-ad
+  volumeName: sirepo-alpha-pv

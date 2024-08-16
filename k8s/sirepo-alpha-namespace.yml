@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sirepo-alpha
+  labels:
+    app: sirepo-alpha

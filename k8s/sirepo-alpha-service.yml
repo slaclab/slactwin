@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: sirepo-alpha-service
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  ports:
+    - port: 8000
+      protocol: TCP
+  selector:
+    app: sirepo-alpha

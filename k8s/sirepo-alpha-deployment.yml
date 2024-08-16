@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sirepo-alpha-deployment
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sirepo-alpha
+  template:
+    metadata:
+      labels:
+        app: sirepo-alpha
+    spec:
+      containers:
+        - name: sirepo-alpha-api-server
+          image: radiasoft/sirepo:alpha
+          command: ["/bin/bash", "/srv/sirepo/cmd"]
+          # command: ["/bin/bash", "-c"]
+          # args: ["echo ffffffffffffff; sleep infinity"]
+          env:
+            - name: SIREPO_COOKIE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sirepo-cookie-private-key
+                  key: sirepo-cookie-private-key
+            - name: SIREPO_JOB_SERVER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sirepo-job-server-secret
+                  key: sirepo-job-server-secret
+          envFrom:
+            - configMapRef:
+                name: sirepo-alpha-configmap
+          ports:
+            # POSIT: Matches $SIREPO_PKCLI_SERVICE_PORT
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "1"
+            limits:
+              memory: "8Gi"
+              cpu: "1"
+          volumeMounts:
+            - mountPath: /srv/sirepo/
+              name: sirepo-alpha-storage
+      securityContext:
+        runAsUser: 46588 # TODO(e-carlin): get a service user?
+        runAsGroup: 1126 # TODO(e-carlin): this is just the only group I'm in. Get a group?
+        fsGroup: 1126 # TODO(e-carlin): Understand this better
+      volumes:
+        - name: sirepo-alpha-storage
+          persistentVolumeClaim:
+            claimName: sirepo-alpha-pvc

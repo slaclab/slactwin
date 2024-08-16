@@ -1,0 +1,18 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: sirepo-alpha-pv
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  claimRef:
+    namespace: sirepo-alpha
+    name: sirepo-alpha-pvc
+  storageClassName: sdf-group-ad
+  hostPath:
+    path: /sdf/group/ad/sw/lume/radiasoft/sirepo-alpha
