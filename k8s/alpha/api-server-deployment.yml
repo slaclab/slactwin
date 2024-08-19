@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+    deployment: sirepo-alpha-api-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      deployment: sirepo-alpha-api-server
+  template:
+    metadata:
+      labels:
+        app: sirepo-alpha
+        deployment: sirepo-alpha-api-server
+    spec:
+      containers:
+        - name: api-server
+          image: radiasoft/sirepo:alpha
+          command: ["/bin/bash", "/srv/sirepo/cmd"]
+          env:
+            - name: SIREPO_COOKIE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sirepo-cookie-private-key
+                  key: sirepo-cookie-private-key
+            - name: SIREPO_JOB_SERVER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sirepo-job-server-secret
+                  key: sirepo-job-server-secret
+          envFrom:
+            - configMapRef:
+                name: api-server
+          ports:
+            # TODO(e-carlin): Unused in name so commenting out. Would be nice to use name in svc/api-server
+            # and in ingress/sirepo.
+            # - name: sirepo-port
+            #   containerPort: 8000
+          # TODO(e-carlin): Tune these resource limits.
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+          volumeMounts:
+            - mountPath: /srv
+              name: storage
+      securityContext:
+        runAsUser: 46588 # TODO(e-carlin): This is my id. Need service user.
+        runAsGroup: 1126 # TODO(e-carlin): This is just the only group I'm in. Get a group?
+        fsGroup: 1126
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: pvc

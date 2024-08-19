@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sirepo-alpha-deployment
+  name: job-supervisor
   namespace: sirepo-alpha
   labels:
     app: sirepo-alpha
+    deployment: sirepo-alpha-job-supervisor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sirepo-alpha
+      deployment: sirepo-alpha-job-supervisor
   template:
     metadata:
       labels:
         app: sirepo-alpha
+        deployment: sirepo-alpha-job-supervisor
     spec:
       containers:
-        - name: sirepo-alpha-api-server
+        - name: job-supervisor
           image: radiasoft/sirepo:alpha
-          command: ["/bin/bash", "/srv/sirepo/cmd"]
-          # command: ["/bin/bash", "-c"]
-          # args: ["echo ffffffffffffff; sleep infinity"]
+          command: ["/bin/bash", "/srv/sirepo_job_supervisor/cmd"]
           env:
             - name: SIREPO_COOKIE_PRIVATE_KEY
               valueFrom:
@@ -34,25 +34,29 @@ spec:
                   key: sirepo-job-server-secret
           envFrom:
             - configMapRef:
-                name: sirepo-alpha-configmap
-          ports:
-            # POSIT: Matches $SIREPO_PKCLI_SERVICE_PORT
-            - containerPort: 8000
+                name: job-supervisor
+          # TODO(e-carlin): for things like nersc we will need to know this so agents can call back in.
+          # For now, ignore.
+          # ports:
+          #   # Limited to 15 chars
+          #   - name: supervisor-port
+          #     containerPort: 8000
+          # TODO(e-carlin): Tune these resource limits. Do so in conjuction with $SIREPO_JOB_DRIVER_LOCAL_*
           resources:
             requests:
-              memory: "8Gi"
-              cpu: "1"
+              memory: "16Gi"
+              cpu: "16"
             limits:
-              memory: "8Gi"
-              cpu: "1"
+              memory: "16Gi"
+              cpu: "16"
           volumeMounts:
-            - mountPath: /srv/sirepo/
-              name: sirepo-alpha-storage
+            - mountPath: /srv
+              name: storage
       securityContext:
-        runAsUser: 46588 # TODO(e-carlin): get a service user?
+        runAsUser: 46588 # TODO(e-carlin): this is my id. Get a service user?
         runAsGroup: 1126 # TODO(e-carlin): this is just the only group I'm in. Get a group?
         fsGroup: 1126 # TODO(e-carlin): Understand this better
       volumes:
-        - name: sirepo-alpha-storage
+        - name: storage
           persistentVolumeClaim:
-            claimName: sirepo-alpha-pvc
+            claimName: pvc

@@ -1,6 +1,8 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
+  # Has sirepo-alpha in the name because PV's are not bound to a namespace.
+  # They are a cluster wide resource.
   name: sirepo-alpha-pv
   namespace: sirepo-alpha
   labels:
@@ -12,7 +14,7 @@ spec:
     storage: 10Gi
   claimRef:
     namespace: sirepo-alpha
-    name: sirepo-alpha-pvc
+    name: pvc
   storageClassName: sdf-group-ad
   hostPath:
-    path: /sdf/group/ad/sw/lume/radiasoft/sirepo-alpha
+    path: /sdf/group/ad/sw/lume/radiasoft/sirepo-alpha/srv

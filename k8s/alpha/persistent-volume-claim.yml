@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: sirepo-alpha-pvc
+  name: pvc
   namespace: sirepo-alpha
   labels:
     app: sirepo-alpha

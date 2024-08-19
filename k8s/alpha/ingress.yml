@@ -1,0 +1,29 @@
+# TODO(e-carlin): Do we deploy this or does their IT team? Who controls things like the whitelist IPs?
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    # TODO(e-carlin): whitelist ip's
+  # annotations:
+  name: sirepo
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: sirepo-alpha.slac.stanford.edu
+    http:
+      paths:
+      - backend:
+          service:
+            name: api-server
+            port:
+              # TODO(e-carlin): Can I use named port sirepo-port?
+              number: 8000
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer:
+    ingress:
+      # TODO(e-carlin): Copied from mlflow. Right for us?
+    - ip: 10.96.222.195
