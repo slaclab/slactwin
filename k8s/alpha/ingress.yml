@@ -22,8 +22,3 @@ spec:
               number: 8000
         path: /
         pathType: Prefix
-status:
-  loadBalancer:
-    ingress:
-      # TODO(e-carlin): Copied from mlflow. Right for us?
-    - ip: 10.96.222.195
