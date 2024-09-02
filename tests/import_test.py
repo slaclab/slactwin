@@ -5,5 +5,6 @@ Only necessary if you have no other tests so that
 pykern.pkcli.test passes.
 """
 
+
 def test_import():
     import slactwin
