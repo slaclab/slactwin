@@ -1,0 +1,11 @@
+{
+    "models": {
+        "beamline": {},
+        "beamlines": null,
+        "simFolder": {},
+        "simulation": {
+            "folder": "/"
+        }
+    },
+    "simulationType": "slactwin"
+}

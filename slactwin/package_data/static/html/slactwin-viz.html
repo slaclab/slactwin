@@ -1,0 +1,21 @@
+<div data-loading-indicator="loadingMessage"></div>
+<div class="container-fluid" data-ng-if="viz.simState.hasFrames()">
+  <div class="row">
+    <div data-column-for-aspect-ratio="statAnimation">
+      <div data-report-panel="parameterWithExternalLattice" data-model-name="statAnimation"></div>
+    </div>
+    <div data-archive-navigation=""></div>
+    <div class="col-md-6 col-xl-4 col-xxl-2">
+      <div data-simple-panel="summaryAnimation">
+         <div data-archive-summary=""></div>
+      </div>
+    </div>
+    <div data-ng-repeat="item in viz.outputFiles track by $index">
+      <div data-column-for-aspect-ratio="{{ item.modelAccess.modelKey }}">
+        <div data-report-panel="{{ item.modelAccess.getData().plotType }}" data-model-data="item.modelAccess" data-panel-title="{{ item.panelTitle }}"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-modal-editor="" view-name="elementAnimation" data-ng-repeat="item in viz.outputFiles" data-model-data="item.modelAccess">

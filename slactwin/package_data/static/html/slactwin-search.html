@@ -1,0 +1,10 @@
+<div data-loading-indicator="loadingMessage"></div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-12">
+        <div data-ng-repeat="row in searchResults" style="padding: 1em">
+          <a href data-ng-click="openArchive(row)">Archive {{ row.description }}</a>
+        </div>
+    </div>
+  </div>
+</div>

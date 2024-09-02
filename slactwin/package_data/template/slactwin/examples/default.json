@@ -1,0 +1,12 @@
+{
+    "models": {
+        "beamline": {},
+        "beamlines": null,
+        "simFolder": {},
+        "simulation": {
+            "name": "SLACT Digital Twin Database",
+            "folder": "/"
+        }
+    },
+    "simulationType": "slactwin"
+}
