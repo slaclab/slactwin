@@ -1,9 +1,10 @@
-# TODO(e-carlin): Do we deploy this or does their IT team? Who controls things like the whitelist IPs?
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-    # TODO(e-carlin): whitelist ip's
-  # annotations:
+  annotations:
+    # Copied from mlflow-ui
+    # TODO(e-carlin): How should this be kept in sync across all services?
+    nginx.ingress.kubernetes.io/whitelist-source-range: 71.198.255.25,134.79.0.0/16,172.16.0.0/12,208.45.173.162,216.46.165.69,71.198.254.69
   name: sirepo
   namespace: sirepo-alpha
   labels:
