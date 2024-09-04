@@ -4,7 +4,7 @@
         "beamlines": null,
         "simFolder": {},
         "simulation": {
-            "name": "SLACT Digital Twin Database",
+            "name": "SLAC Digital Twin Database",
             "folder": "/"
         }
     },
