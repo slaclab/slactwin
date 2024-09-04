@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """simulation data operations
 
-:copyright: Copyright (c) 2024 RadiaSoft LLC.  All Rights Reserved.
-:license: http://www.apache.org/licenses/LICENSE-2.0.html
+:copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
+:license: See LICENSE file for details.
 """
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import sirepo.sim_data
