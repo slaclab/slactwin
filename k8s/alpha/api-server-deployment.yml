@@ -32,9 +32,6 @@ spec:
                 secretKeyRef:
                   name: sirepo-job-server-secret
                   key: sirepo-job-server-secret
-          envFrom:
-            - configMapRef:
-                name: api-server
           ports:
             # TODO(e-carlin): Unused in name so commenting out. Would be nice to use name in svc/api-server
             # and in ingress/sirepo.

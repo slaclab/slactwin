@@ -32,9 +32,6 @@ spec:
                 secretKeyRef:
                   name: sirepo-job-server-secret
                   key: sirepo-job-server-secret
-          envFrom:
-            - configMapRef:
-                name: job-supervisor
           # TODO(e-carlin): for things like nersc we will need to know this so agents can call back in.
           # For now, ignore.
           # ports:
