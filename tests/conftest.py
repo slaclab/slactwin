@@ -49,7 +49,7 @@ def fc_module(request):
     a = _sirepo_args(request, "fc_module", PKDict())
     if "setup_func" in a:
         a.setup_func()
-    with srunit_servers.api_and_supervisor(request, fc_args=a) as c:
+    with _api_and_supervisor(request, fc_args=a) as c:
         yield c
 
 
@@ -157,27 +157,37 @@ def pytest_configure(config):
 
 
 @contextlib.contextmanager
-def _auth_client_module(request):
+def _api_and_supervisor(request, fc_args):
+    from pykern import pkconfig
     from pykern.pkcollections import PKDict
     from sirepo import srunit_servers
+
+    fc_args.pksetdefault(cfg=PKDict)
+    fc_args.cfg.pkupdate(SIREPO_FEATURE_CONFIG_ENABLE_GLOBAL_RESOURCES="1")
+    pkconfig.reset_state_for_testing(fc_args.cfg)
+    with srunit_servers.api_and_supervisor(
+        request, fc_args=PKDict(cfg=fc_args.cfg)
+    ) as c:
+        yield c
+
+
+@contextlib.contextmanager
+def _auth_client_module(request):
+    from pykern.pkcollections import PKDict
 
     cfg = PKDict(
         SIREPO_AUTH_BASIC_PASSWORD="pass",
         SIREPO_AUTH_BASIC_UID="dev-no-validate",
+        SIREPO_AUTH_GUEST_EXPIRY_DAYS="1",
+        SIREPO_AUTH_METHODS="basic:email:guest",
+        SIREPO_FEATURE_CONFIG_API_MODULES="status",
         SIREPO_SMTP_FROM_EMAIL="x@x.x",
         SIREPO_SMTP_FROM_NAME="x",
         SIREPO_SMTP_PASSWORD="x",
         SIREPO_SMTP_SERVER="dev",
         SIREPO_SMTP_USER="x",
-        SIREPO_AUTH_GUEST_EXPIRY_DAYS="1",
-        SIREPO_AUTH_METHODS="basic:email:guest",
-        SIREPO_FEATURE_CONFIG_API_MODULES="status",
     )
-    from pykern import pkconfig
-
-    pkconfig.reset_state_for_testing(cfg)
-
-    with srunit_servers.api_and_supervisor(request, fc_args=PKDict(cfg=cfg)) as c:
+    with _api_and_supervisor(request, fc_args=PKDict(cfg=cfg)) as c:
         yield c
 
 

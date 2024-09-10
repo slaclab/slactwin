@@ -20,16 +20,15 @@ spec:
       containers:
         - name: pg
           image: postgres:16
-          # TODO(e-carlin): password secret
-          # env:
-          #   - name: SIREPO_COOKIE_PRIVATE_KEY
-          #     valueFrom:
-          #       secretKeyRef:
-          #         name: sirepo-cookie-private-key
-          #         key: sirepo-cookie-private-key
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-password
+                  key: pg-password
           envFrom:
             - configMapRef:
-              name: pg
+                name: pg
           resources:
             requests:
               memory: "8Gi"
@@ -40,12 +39,10 @@ spec:
           volumeMounts:
             - mountPath: /srv
               name: storage
-            - mountPath: /docker-entrypoint-initdb.d
-              name: storage
-              subPath: slactwin_db/init_scripts
+              subPath: sw/lume/radiasoft/sirepo-alpha/srv
       securityContext:
-        runAsUser: 46588 # TODO(e-carlin): this is my id. Get a service user?
-        runAsGroup: 1126 # TODO(e-carlin): this is just the only group I'm in. Get a group?
+        runAsUser: 46588 # TODO(e-carlin): Need service user.
+        runAsGroup: 1126 # TODO(e-carlin): Need service group.
         fsGroup: 1126 # TODO(e-carlin): Understand this better
       volumes:
         - name: storage

@@ -14,6 +14,7 @@ import impact
 import pykern.pkio
 import pykern.pkjson
 import re
+import sirepo.global_resources
 import sirepo.sim_data
 import sirepo.template.impactt
 import sirepo.template.lattice
@@ -84,9 +85,20 @@ def write_parameters(data, run_dir, is_parallel):
 
 def _db_api(api_name, **kwargs):
     return asyncio.run(
-        slactwin.db_api_client.DbAPIClient().post(
+        _db_api_client().post(
             api_name,
             kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs),
+        ),
+    )
+
+
+def _db_api_client():
+    return slactwin.db_api_client.DbAPIClient(
+        # TODO(e-carlin): sid is not used but is required arg. Make optional.
+        # TODO(e-carlin): nested resources in global_resources should be converted to PKDict
+        # by the api infrastructure.
+        http_config=PKDict(
+            sirepo.global_resources.for_simulation(SIM_TYPE, "notused").db_api
         ),
     )
 

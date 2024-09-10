@@ -1,49 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: job-supervisor
+  name: slactwin-db
   namespace: sirepo-alpha
   labels:
     app: sirepo-alpha
-    deployment: sirepo-alpha-job-supervisor
+    deployment: sirepo-alpha-slactwin-db
 spec:
   replicas: 1
   selector:
     matchLabels:
-      deployment: sirepo-alpha-job-supervisor
+      deployment: sirepo-alpha-slactwin-db
   template:
     metadata:
       labels:
         app: sirepo-alpha
-        deployment: sirepo-alpha-job-supervisor
+        deployment: sirepo-alpha-slactwin-db
     spec:
       containers:
-        - name: job-supervisor
+        - name: slactwin-db
           image: radiasoft/sirepo:20240903.204953
-          command: ["/bin/bash", "/srv/sirepo_job_supervisor/cmd"]
+          command: ["/bin/bash", "/srv/slactwin_db/cmd"]
           env:
-            - name: SLACTWIN_GLOBAL_RESOURCES_SLACTWIN_DB_API_AUTH_SECRET
+            - name: SLACTWIN_CONFIG_DB_API_AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: slactwin-config-db-api-auth-secret
                   key: slactwin-config-db-api-auth-secret
-            - name: SIREPO_COOKIE_PRIVATE_KEY
+            - name: SLACTWIN_DB_URI
               valueFrom:
                 secretKeyRef:
-                  name: sirepo-cookie-private-key
-                  key: sirepo-cookie-private-key
-            - name: SIREPO_JOB_SERVER_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: sirepo-job-server-secret
-                  key: sirepo-job-server-secret
+                  name: slactwin-db-uri
+                  key: slactwin-db-uri
           resources:
             requests:
-              memory: "16Gi"
-              cpu: "16"
+              memory: "4Gi"
+              cpu: "1"
             limits:
-              memory: "16Gi"
-              cpu: "16"
+              memory: "4Gi"
+              cpu: "1"
           volumeMounts:
             - mountPath: /srv
               name: storage

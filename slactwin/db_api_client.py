@@ -12,5 +12,8 @@ import slactwin.config
 
 class DbAPIClient(pykern.http.HTTPClient):
 
-    def __init__(self):
-        super().__init__(slactwin.config.cfg().db_api)
+    def __init__(self, http_config=None):
+        # TODO(e-carlin): In job_agent it is too late to properly setup env
+        # for pkconfig.init to work. pkconfig.init has already been called (_raw_values is set)
+        # so we can't set env and then get it here.
+        super().__init__(http_config or slactwin.config.cfg().db_api)

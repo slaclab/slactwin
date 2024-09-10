@@ -7,7 +7,7 @@ metadata:
     app: sirepo-alpha
     deployment: sirepo-alpha-api-server
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       deployment: sirepo-alpha-api-server
@@ -22,6 +22,11 @@ spec:
           image: radiasoft/sirepo:20240903.204953
           command: ["/bin/bash", "/srv/sirepo/cmd"]
           env:
+            - name: SLACTWIN_CONFIG_DB_API_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slactwin-config-db-api-auth-secret
+                  key: slactwin-config-db-api-auth-secret
             - name: SIREPO_COOKIE_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
@@ -48,6 +53,7 @@ spec:
           volumeMounts:
             - mountPath: /srv
               name: storage
+              subPath: sw/lume/radiasoft/sirepo-alpha/srv
       securityContext:
         runAsUser: 46588 # TODO(e-carlin): This is my id. Need service user.
         runAsGroup: 1126 # TODO(e-carlin): This is just the only group I'm in. Get a group?
