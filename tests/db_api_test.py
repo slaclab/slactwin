@@ -22,7 +22,7 @@ async def test_run_all():
         pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
         modules.import_and_init()
         c = db_api_client.DbAPIClient()
-        r = await c.post("run_kinds_and_value_names", PKDict())
+        r = await c.post("run_kinds_and_values", PKDict())
         pkunit.pkeq(
             "impact^end_cov_x__px",
             r.machines.sc_inj.twins.impact.run_values[0],

@@ -153,7 +153,7 @@ class _DbQuery:
         s = _state()
         return _rows(s, _select(_additional(_min_max_values(s))))
 
-    def _query_run_kinds_and_value_names(self, db, RunKind, RunValueName):
+    def _query_run_kinds_and_values(self, db, RunKind, RunValueName):
 
         def _add(rv, machine_name, twin_name, run_value_name):
             x = _add_level(rv, "machines", machine_name)

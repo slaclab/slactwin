@@ -11,8 +11,8 @@ import slactwin.quest
 
 
 class DbAPI(slactwin.quest.API):
-    async def api_run_kinds_and_value_names(self, api_arg):
-        return self.db.query("run_kinds_and_value_names", **api_arg)
+    async def api_run_kinds_and_values(self, api_arg):
+        return self.db.query("run_kinds_and_values", **api_arg)
 
     async def api_runs_by_date_and_values(self, api_arg):
         if x := api_arg.min_max_values.get("snapshot_end"):

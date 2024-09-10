@@ -12,7 +12,7 @@ def test_run_kinds():
 
     pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
     with quest.import_and_start() as qcall:
-        a = qcall.db.query("run_kinds_and_value_names")
+        a = qcall.db.query("run_kinds_and_values")
         pkunit.pkeq(["sc_inj"], list(a.machines.keys()))
         pkunit.pkeq(["impact"], list(a.machines.sc_inj.twins.keys()))
         pkunit.pkeq(
