@@ -107,7 +107,7 @@ def sim_frame_summaryAnimation(frame_args):
     )
 
 
-def stateful_compute_next_and_previous_archives(data, **kwards):
+def stateful_compute_next_and_previous_archives(data, **kwargs):
     return PKDict(
         archiveIds=DummyDB().get_next_and_previous_archives(int(data.args.archiveId)),
     )
@@ -116,6 +116,39 @@ def stateful_compute_next_and_previous_archives(data, **kwards):
 def stateful_compute_search_archives(data, **kwargs):
     return PKDict(
         searchResults=DummyDB().search_archives(),
+    )
+
+
+def stateful_compute_get_columns(data, **kwargs):
+    return PKDict(
+        {
+            "machines": {
+                "sc_inj": {
+                    "twins": {
+                        "impact": {
+                            "run_value_groups": {
+                                "impact": {
+                                    "names": [
+                                        "end_cov_x__px",
+                                        "end_cov_y__py",
+                                        "end_cov_z__pz",
+                                        "end_higher_order_energy_spread",
+                                    ]
+                                },
+                                "pv": {
+                                    "names": [
+                                        "ACCL:GUNB:455:AACT_AVG",
+                                        "ACCL:GUNB:455:PACT_AVG",
+                                        "ACCL:L0B:0110:AACTMEAN",
+                                        "ACCL:L0B:0110:PACTMEAN",
+                                    ]
+                                },
+                            }
+                        }
+                    }
+                }
+            }
+        }
     )
 
 

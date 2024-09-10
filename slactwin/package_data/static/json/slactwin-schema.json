@@ -27,6 +27,12 @@
         }
     },
     "enum": {
+        "Accelerator": [
+            ["sc_inj", "sc_inj"]
+        ],
+        "TwinModel": [
+            ["impact", "Impact-T"]
+        ],
         "PhaseSpaceCoordinate": [
             ["x", "x"],
             ["px", "Px"],
@@ -108,6 +114,13 @@
         "search": {
             "route": "/search",
             "config": {
+                "controller": "InitController",
+                "template": ""
+            }
+        },
+        "search-results": {
+            "route": "/search-results/:simulationId",
+            "config": {
                 "controller": "SearchController as search",
                 "templateUrl": "/static/html/slactwin-search.html"
             }
@@ -153,6 +166,21 @@
             "notes": ["Notes", "Text", ""],
             "reportIndex": ["", "Integer"]
         },
+        "searchSettings": {
+            "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
+            "twinModel": ["Model", "TwinModel", "impact"],
+            "searchStartTime":["Start", "DateTimePicker", null],
+            "searchStopTime":["Stop", "DateTimePicker", null],
+            "presetTimePicker": ["", "PresetTimePicker", ""],
+            "pageSize": ["Page Size", "Integer", 15],
+            "searchTerms": ["", "SearchTerms", []],
+            "columns": ["", "Array", []]
+        },
+        "searchTerm": {
+            "column": ["Column", "ColumnList", ""],
+            "minValue": ["Minimum Value", "OptionalFloat", ""],
+            "maxValue": ["Maximum Value", "OptionalFloat", ""]
+        },
         "statAnimation": {
             "archiveId": ["", "String", "0"],
             "x": ["Horizontal Value to Plot", "Stat", "mean_z"],
@@ -179,6 +207,11 @@
             "elementPosition": ["Element Positioning", "ElementPosition", "absolute"]
         }
     },
+    "strings": {
+        "searchSettings": {
+            "save": "Search"
+        }
+    },
     "view": {
         "beamline": {
             "title": "Beamline",
@@ -202,6 +235,18 @@
                 "colorMap",
                 "notes"
             ]
+        },
+        "searchSettings": {
+            "title": "Archive Search",
+            "basic": [
+                "accelerator",
+                "twinModel",
+                "searchStartTime",
+                "searchStopTime",
+                "presetTimePicker",
+                "searchTerms"
+            ],
+            "advanced": []
         },
         "summaryAnimation": {
             "title": "Summary",
