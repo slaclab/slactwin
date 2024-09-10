@@ -17,8 +17,8 @@ classifiers = [
 ]
 dependencies = [
     "SQLAlchemy>=1.4,<2",
-    "dateutil",
     "pykern",
+    "sirepo",
     "watchdog",
 ]
 description = "SLAC Digital Twin"
