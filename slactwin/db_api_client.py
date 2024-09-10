@@ -1,13 +1,16 @@
-""":mod:`slactwin` package
+"""Db_API client
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
 
-import pkg_resources
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
+import pykern.http
+import slactwin.config
 
-try:
-    # We only have a version once the package is installed.
-    __version__ = pkg_resources.get_distribution("slactwin").version
-except pkg_resources.DistributionNotFound:
-    pass
+
+class DbAPIClient(pykern.http.HTTPClient):
+
+    def __init__(self):
+        super().__init__(slactwin.config.cfg().db_api)
