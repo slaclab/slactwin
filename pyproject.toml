@@ -16,7 +16,10 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
+    "SQLAlchemy>=1.4,<2",
+    "dateutil",
     "pykern",
+    "watchdog",
 ]
 description = "SLAC Digital Twin"
 dynamic = ["version"]
