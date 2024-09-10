@@ -165,6 +165,6 @@ def init_module():
     )
     # TODO(robnagler): need to set connection args, e.g. pooling
     _engine = sqlalchemy.create_engine(_cfg.uri, echo=_cfg.debug)
-    _models = slactwin.db_model.init_by_db(_engine)
-    _queries = slactwin.db_query.init_by_db(_models)
+    _models = db_model.init_by_db(_engine)
+    _queries = db_query.init_by_db(_models)
     slactwin.quest.register_attr(_Db)
