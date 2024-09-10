@@ -9,7 +9,11 @@
   exit
   pip install psycopg2
   createdb slactwin
-  SLACTWIN_DB_URL=postgresql://vagrant@/slactwin pykern test run_importer_test.py
+  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/run_importer_test.py
+  dropdb slactwin
+  createdb slactwin
+  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin slactwin db insert-runs summary
+  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/db_{api,query}_test.py
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -34,7 +38,7 @@ class _Db(slactwin.quest.Attr):
         super().__init__(*args, **kwargs)
         self._conn = None
         self._txn = None
-        self.is_sqlite = _cfg.url.startswith("sqlite")
+        self.is_sqlite = _cfg.uri.startswith("sqlite")
 
     def column_map(self, model, key_col, value_col, **where):
         return PKDict({r[key_col]: r[value_col] for r in self.select(model, **where)})
@@ -143,7 +147,7 @@ def init_module():
         return slactwin.config.dev_path("summary").ensure(dir=True, ensure=True)
 
     @pykern.pkconfig.parse_none
-    def _url(value):
+    def _uri(value):
         if value is None:
             return "sqlite:///" + str(
                 slactwin.config.dev_path(slactwin.const.DEV_DB_BASENAME)
@@ -153,14 +157,14 @@ def init_module():
 
     _cfg = pykern.pkconfig.init(
         debug=(False, bool, "turn on sqlalchemy tracing"),
-        url=pykern.pkconfig.RequiredUnlessDev(
+        uri=pykern.pkconfig.RequiredUnlessDev(
             None,  # "postgresql://vagrant@/slactwin",
-            _url,
-            "sqlalchemy create_engine URL, e.g. postgresql://vagrant@/slactwin",
+            _uri,
+            "sqlalchemy create_engine uri, e.g. postgresql://vagrant@/slactwin",
         ),
     )
     # TODO(robnagler): need to set connection args, e.g. pooling
-    _engine = sqlalchemy.create_engine(_cfg.url, echo=_cfg.debug)
+    _engine = sqlalchemy.create_engine(_cfg.uri, echo=_cfg.debug)
     _models = slactwin.db_model.init_by_db(_engine)
     _queries = slactwin.db_query.init_by_db(_models)
     slactwin.quest.register_attr(_Db)
