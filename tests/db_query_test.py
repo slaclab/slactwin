@@ -17,7 +17,7 @@ def test_run_kinds():
         pkunit.pkeq(["impact"], list(a.machines.sc_inj.twins.keys()))
         pkunit.pkeq(
             "impact^end_cov_x__px",
-            a.machines.sc_inj.twins.impact.run_value_names[0],
+            a.machines.sc_inj.twins.impact.run_values[0],
         )
 
 

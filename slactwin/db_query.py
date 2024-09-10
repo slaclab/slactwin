@@ -158,9 +158,7 @@ class _DbQuery:
         def _add(rv, machine_name, twin_name, run_value_name):
             x = _add_level(rv, "machines", machine_name)
             x = _add_level(x, "twins", twin_name)
-            x.pksetdefault("run_value_names", list).run_value_names.append(
-                run_value_name
-            )
+            x.pksetdefault("run_values", list).run_values.append(run_value_name)
 
         def _add_level(pkdict, kind, name):
             if kind not in pkdict:

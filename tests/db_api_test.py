@@ -25,7 +25,7 @@ async def test_run_all():
         r = await c.post("run_kinds_and_value_names", PKDict())
         pkunit.pkeq(
             "impact^end_cov_x__px",
-            r.machines.sc_inj.twins.impact.run_value_names[0],
+            r.machines.sc_inj.twins.impact.run_values[0],
         )
         t = int(datetime.datetime.fromisoformat("2024-06-19T13:42:21").timestamp())
         r = await c.post(
