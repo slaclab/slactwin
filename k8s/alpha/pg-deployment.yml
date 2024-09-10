@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+    deployment: sirepo-alpha-pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: sirepo-alpha-pg
+  template:
+    metadata:
+      labels:
+        app: sirepo-alpha
+        deployment: sirepo-alpha-pg
+    spec:
+      containers:
+        - name: pg
+          image: postgres:16
+          # TODO(e-carlin): password secret
+          # env:
+          #   - name: SIREPO_COOKIE_PRIVATE_KEY
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: sirepo-cookie-private-key
+          #         key: sirepo-cookie-private-key
+          envFrom:
+            - configMapRef:
+              name: pg
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "8"
+            limits:
+              memory: "8Gi"
+              cpu: "8"
+          volumeMounts:
+            - mountPath: /srv
+              name: storage
+            - mountPath: /docker-entrypoint-initdb.d
+              name: storage
+              subPath: slactwin_db/init_scripts
+      securityContext:
+        runAsUser: 46588 # TODO(e-carlin): this is my id. Get a service user?
+        runAsGroup: 1126 # TODO(e-carlin): this is just the only group I'm in. Get a group?
+        fsGroup: 1126 # TODO(e-carlin): Understand this better
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: pvc

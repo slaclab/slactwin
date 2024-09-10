@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pg
+data:
+  # https://github.com/docker-library/docs/blob/master/postgres/README.md
+  POSTGRES_DB: mydatabase
+  POSTGRES_USER: myuser
+  # TODO(e-carlin): make this an actual secret
+  POSTGRES_PASSWORD: mypassword
+  PGDATA: /srv/slactwin_db/db
