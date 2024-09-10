@@ -571,10 +571,10 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
         template: `
             <div class="col-md-8 col-md-offset-1">
               <div data-advanced-editor-pane="" data-view-name="'searchSettings'" data-field-def="basic" data-want-buttons="true"></div>
-              <div data-loading-indicator="loadingMessage"></div>
             </div>
             <div class="col-sm-12">
               <div data-search-results="searchResults" data-model="model"></div>
+              <div data-loading-indicator="loadingMessage"></div>
             </div>
         `,
         controller: function(slactwinService, $scope) {
