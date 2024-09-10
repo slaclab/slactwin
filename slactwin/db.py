@@ -12,7 +12,7 @@
   SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/run_importer_test.py
   dropdb slactwin
   createdb slactwin
-  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin slactwin db insert-runs summary
+  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin slactwin db insert-runs ~/tmp/iana/summary
   SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/db_{api,query}_test.py
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
