@@ -171,8 +171,9 @@ SIREPO.app.controller('InitController', function(appState, requestSender, slactw
     init();
 });
 
-SIREPO.app.controller('SearchController', function(appState, slactwinService) {
+SIREPO.app.controller('SearchController', function(appState) {
     const self = this;
+    self.appState = appState;
 });
 
 SIREPO.app.controller('BeamController', function() {
@@ -565,6 +566,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
     return {
         restrict: 'A',
         scope: {
+            model: '=searchForm',
         },
         template: `
             <div class="col-md-8 col-md-offset-1">
@@ -572,7 +574,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
               <div data-loading-indicator="loadingMessage"></div>
             </div>
             <div class="col-sm-12">
-              <div data-search-results="searchResults"></div>
+              <div data-search-results="searchResults" data-model="model"></div>
             </div>
         `,
         controller: function(slactwinService, $scope) {
@@ -597,7 +599,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                 requestSender.sendStatefulCompute(
                     appState,
                     (resp) => {
-                        appState.models.searchSettings.columns = extractNames(resp, [slactwinService.selectSearchFieldText]);
+                        $scope.model.columns = extractNames(resp, []);
                         getSearchResults();
                     },
                     {
@@ -636,9 +638,11 @@ SIREPO.app.directive('searchResults', function(appState, requestSender, slactwin
     return {
         restrict: 'A',
         scope: {
+            model: '=',
             searchResults: '=',
         },
         template: `
+             <div data-search-results-table="" data-model="model"></div>
              <div class="col-sm-12" style="max-height: calc(100vh - 100px); overflow-y: visible">
                <div data-ng-repeat="row in searchResults" style="padding: 1ex">
                  <a href data-ng-click="openArchive(row)">Archive {{ row.description }}</a>
@@ -684,7 +688,7 @@ SIREPO.app.directive('searchTerms', function() {
                    data-model="searchTerm"></div>
                  <div class="col-sm-1" style="margin-top: 5px; margin-left: -15px"
                    data-ng-show="! isEmpty($index)">
-                   <button class="btn btn-danger btn-xs" type="button"
+                   <button class="btn btn-info btn-xs" type="button"
                      data-ng-click="deleteRow($index)">
                      <span class="glyphicon glyphicon-remove"></span>
                    </button>
@@ -723,7 +727,7 @@ SIREPO.app.directive('searchTerms', function() {
             $scope.showRow = idx => (idx == 0) || ! $scope.isEmpty(idx - 1);
 
             $scope.showTerms = () => {
-                if (! appState.models.searchSettings.columns) {
+                if (! $scope.model.columns) {
                     return false;
                 }
                 if (! isInitialized) {
@@ -742,16 +746,133 @@ SIREPO.app.directive('columnList', function() {
         scope: {
             model: '=',
             field: '=',
-            },
+        },
         template: `
             <select data-ng-if="appState.models.searchSettings.columns"
               class="form-control pull-right" style="width: auto"
               data-ng-model="model[field]"
-              data-ng-options="item as item for item in appState.models.searchSettings.columns">
+              data-ng-options="item as item for item in columns">
             </select>
         `,
-        controller: function(appState, $scope) {
+        controller: function(appState, slactwinService, $scope) {
+            const updateColumns = () => {
+                $scope.columns = appState.clone(appState.models.searchSettings.columns);
+                $scope.columns.unshift(slactwinService.selectSearchFieldText);
+            };
+            updateColumns();
             $scope.appState = appState;
+            $scope.$watchCollection('appState.models.searchSettings.columns', updateColumns);
+        },
+    };
+});
+
+SIREPO.app.directive('columnPicker', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=',
+        },
+        template: `
+            <div class="form-group form-group-sm pull-right" style="margin: 0; font-weight: 700">
+              <select class="form-control" data-ng-model="selected" ng-change="selectColumn()">
+                <option ng-repeat="column in availableColumns">{{column}}</option>
+              </select>
+            </div>
+        `,
+        controller: function(appState, $scope) {
+            $scope.selected = null;
+            const addColumnText = 'Add Column';
+
+            function setAvailableColumns() {
+                $scope.availableColumns = $scope.model.columns.filter(value => {
+                    return ! $scope.model.selectedColumns.includes(value);
+                });
+                $scope.availableColumns.unshift(addColumnText);
+                $scope.selected = addColumnText;
+            }
+
+            $scope.selectColumn = () => {
+                if ($scope.selected === null) {
+                    return;
+                }
+                $scope.model.selectedColumns.push($scope.selected);
+            };
+
+            $scope.$watchCollection('model.columns', setAvailableColumns);
+            $scope.$watchCollection('model.selectedColumns', setAvailableColumns);
+        },
+    };
+});
+
+SIREPO.app.directive('searchResultsTable', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=',
+        },
+        template: `
+            <div>
+              <div>
+                <div data-column-picker="" data-model="model"></div>
+                <table class="table table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th data-ng-repeat="column in columnHeaders track by $index" class="st-removable-column" style="width: 100px; height: 40px; white-space: nowrap">
+                        <span data-ng-class="arrowClass(column)"></span>
+                        <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ column }}</span>
+                        <button type="submit" class="btn btn-info btn-xs st-remove-column-button" data-ng-if="showDeleteButton($index)" data-ng-click="deleteCol(column)"><span class="glyphicon glyphicon-remove"></span></button>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div>
+        `,
+        controller: function(appState, $scope) {
+
+            const updateColumns = () => {
+                if (! $scope.model.selectedColumns) {
+                    $scope.model.selectedColumns = ['snapshot_end'];
+                }
+                $scope.columnHeaders = [];
+                for (const c of $scope.model.selectedColumns) {
+                    $scope.columnHeaders.push(c);
+                }
+            };
+
+            $scope.arrowClass = (column) => {
+                if ($scope.model.sortColumn && (column == $scope.model.sortColumn[0])) {
+                    const dir = $scope.model.sortColumn[1 ] ? 'up' : 'down';
+                    return {
+                        glyphicon: true,
+                        [`glyphicon-arrow-${dir}`]: true,
+                    };
+                }
+                return {};
+            };
+
+            $scope.deleteCol = (column) => {
+                $scope.model.selectedColumns.splice(
+                    $scope.model.selectedColumns.indexOf(column),
+                    1
+                );
+            };
+
+            $scope.showDeleteButton = (index) => {
+                return index > 0;
+            };
+
+            $scope.sortCol = (column) => {
+                if ($scope.model.sortColumn && $scope.model.sortColumn[0] == column) {
+                    $scope.model.sortColumn[1] = ! $scope.model.sortColumn[1];
+                }
+                else {
+                    $scope.model.sortColumn = [column, true];
+                }
+            };
+
+            $scope.$watchCollection('model.selectedColumns', updateColumns);
         },
     };
 });

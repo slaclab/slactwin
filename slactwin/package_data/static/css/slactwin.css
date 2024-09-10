@@ -13,3 +13,11 @@
 .model-searchSettings-searchTerms .control-label {
   display: none;
 }
+
+.st-removable-column .st-remove-column-button {
+  visibility: hidden;
+}
+
+.st-removable-column:hover .st-remove-column-button {
+  visibility: visible;
+}
