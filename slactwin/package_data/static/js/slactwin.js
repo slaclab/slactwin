@@ -52,7 +52,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
     };
 
     self.getRunSummaryId = () => {
-        return $location.search().runSummaryId;
+        return parseInt($location.search().runSummaryId);
     };
 
     self.loadRun = () => {
