@@ -19,6 +19,14 @@ SIREPO.app.config(function() {
             ],
         },
     };
+    SIREPO.appFieldEditors += `
+        <div data-ng-switch-when="SearchTerms">
+          <div data-search-terms="" data-model="model" data-field="field"></div>
+        </div>
+        <div data-ng-switch-when="ColumnList" data-ng-class="fieldClass">
+          <div data-column-list="" data-model="model" data-field="field"></div>
+        </div>
+    `;
     SIREPO.appReportTypes = `
         <div data-ng-switch-when="parameterWithExternalLattice" data-parameter-with-lattice="" class="sr-plot sr-screenshot" data-model-name="{{ modelKey }}" data-path-to-models="externalLattice"></div>
     `;
@@ -27,6 +35,7 @@ SIREPO.app.config(function() {
 SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentSimulation, $location, $rootScope) {
     const self = {};
     self.computeModel = analysisModel => 'animation';
+    self.selectSearchFieldText = 'Select Search Field';
 
     self.elementForName = (name) => {
         for (const el of self.latticeModels().elements) {
@@ -37,6 +46,10 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return null;
     };
 
+    self.formatColumn = (col) => {
+        return col.replace(/^.*?\^/, '');
+    };
+
     self.getArchiveId = () => {
         return $location.search().archiveId;
     };
@@ -45,7 +58,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         const names = [];
         const archiveId = self.getArchiveId();
         for (const m in appState.models) {
-            if (appState.models[m] && appState.models[m].archiveId) {
+            if (appState.models[m] && 'archiveId' in appState.models[m]) {
                 appState.models[m].archiveId = archiveId;
                 names.push(m);
             }
@@ -147,45 +160,24 @@ SIREPO.app.controller('VizController', function(appState, frameCache, panelState
     });
 });
 
-SIREPO.app.controller('SearchController', function(appState, requestSender, slactwinService, $scope) {
+SIREPO.app.controller('InitController', function(appState, requestSender, slactwinService) {
     const self = this;
-
-    const getSearchResults = () => {
-        requestSender.sendStatefulCompute(
-            appState,
-            (resp) => {
-                $scope.loadingMessage = "";
-                if (resp.error) {
-                    //TODO(pjm): display error message
-                }
-                $scope.searchResults = resp.searchResults;
-            },
-            {
-                method: 'search_archives',
-                simulationId: SIREPO.nonSimulationId,
-            },
-        );
-    };
-
     const init = () => {
-        $scope.loadingMessage = "Loading archives";
         slactwinService.setArchiveId(null);
         appState.clearModels();
         appState.listSimulations((resp) => {
-            $scope.simId = resp[0].simulationId;
-            getSearchResults();
-            self.isInitialized = true;
+            requestSender.localRedirect('search-results', {
+                ':simulationId': resp[0].simulationId,
+            });
         });
     }
 
-    $scope.openArchive = (row) => {
-        requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
-            ':simulationId': $scope.simId,
-        });
-        slactwinService.setArchiveId(row.archiveId);
-    };
-
     init();
+});
+
+SIREPO.app.controller('SearchController', function(appState) {
+    const self = this;
+    self.appState = appState;
 });
 
 SIREPO.app.controller('BeamController', function() {
@@ -214,7 +206,7 @@ SIREPO.app.directive('appFooter', function(slactwinService) {
     };
 });
 
-SIREPO.app.directive('appHeader', function(authState, panelState) {
+SIREPO.app.directive('appHeader', function(authState, panelState, slactwinService) {
     return {
         restrict: 'A',
         scope: {
@@ -223,10 +215,10 @@ SIREPO.app.directive('appHeader', function(authState, panelState) {
         template: `
             <div data-app-header-brand="nav"></div>
             <ul class="nav navbar-nav" data-ng-if=":: authState.isLoggedIn">
-              <li class="sim-section" data-ng-class="{active: nav.isActive('search')}"><a href data-ng-click="nav.openSection('search')"><span class="glyphicon glyphicon-search"></span> Search</a></li>
+              <li class="sim-section" data-ng-class="{active: nav.isActive('search') || nav.isActive('search-results') }"><a href data-ng-click="nav.openSection('search')"><span class="glyphicon glyphicon-search"></span> Search</a></li>
             </ul>
             <div data-app-header-right="nav">
-              <app-header-right-sim-loaded>
+              <app-header-right-sim-loaded data-ng-if="hasQuery()">
                 <div data-sim-sections="">
                   <li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
@@ -242,6 +234,8 @@ SIREPO.app.directive('appHeader', function(authState, panelState) {
         `,
         controller: function($element, $scope) {
             $scope.authState = authState;
+
+            $scope.hasQuery = slactwinService.getArchiveId;
 
             panelState.waitForUI(() => {
                 $($element).find("li[data-settings-menu='nav']").hide();
@@ -484,21 +478,18 @@ SIREPO.app.directive('archiveNavigation', function(appState, requestSender, slac
         controller: function($scope) {
 
             const init = () => {
-                requestSender.sendStatefulCompute(
-                    appState,
-                    (resp) => {
-                        if (resp.error) {
-                            //TODO(pjm): display error message
-                        }
-                        $scope.archiveIds = resp.archiveIds;
-                    },
-                    {
-                        method: 'next_and_previous_archives',
-                        args: {
-                            archiveId: slactwinService.getArchiveId(),
-                        },
-                    },
-                );
+                $scope.archiveIds = null;
+                let prev;
+                for (const r of appState.models.searchSettings.rowIds) {
+                    if ($scope.archiveIds) {
+                        $scope.archiveIds[1] = r;
+                        break;
+                    }
+                    if (r === slactwinService.getArchiveId()) {
+                        $scope.archiveIds = [prev, null];
+                    }
+                    prev = r;
+                }
             };
 
             $scope.next = (direction) => {
@@ -568,6 +559,368 @@ SIREPO.app.directive('archiveSummary', function(appState, slactwinService) {
 
             init();
             $scope.$on('sr-archive-loaded', init);
+        },
+    };
+});
+
+SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinService) {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=searchForm',
+        },
+        template: `
+            <div class="col-md-8 col-md-offset-1">
+              <div data-advanced-editor-pane="" data-view-name="'searchSettings'" data-field-def="basic" data-want-buttons="true"></div>
+            </div>
+            <div class="col-sm-12">
+              <div data-search-results-table="searchResults" data-model="model"></div>
+              <div data-ng-if="loadingMessage" data-loading-indicator="loadingMessage"></div>
+            </div>
+        `,
+        controller: function(slactwinService, $scope) {
+
+            const extractNames = (resp, columns) => {
+                if (angular.isObject(resp)) {
+                    for (const k in resp) {
+                        if (k === 'run_values') {
+                            for (const v of resp[k]) {
+                                columns.push(v);
+                            }
+                        }
+                        else {
+                            extractNames(resp[k], columns);
+                        }
+                    }
+                }
+                return columns;
+            };
+
+            const getColumns = () => {
+                requestSender.sendStatelessCompute(
+                    appState,
+                    (resp) => {
+                        $scope.model.columns = extractNames(resp, []);
+                        getSearchResults();
+                    },
+                    {
+                        method: 'db_api',
+                        args: {
+                            api_name: 'run_kinds_and_values',
+                            api_args: {},
+                        },
+                    },
+                );
+            };
+
+            const getSearchFilter = () => {
+                $scope.loadingMessage = "Loading archives";
+                const res = {
+                    snapshot_end: {
+                        min: $scope.model.searchStartTime,
+                        max: $scope.model.searchStopTime,
+                    },
+                };
+                for (const m of $scope.model.searchTerms) {
+                    if (m.column === slactwinService.selectSearchFieldText
+                        || (m.minValue === '' && m.maxValue === '')) {
+                        continue;
+                    }
+                    res[m.column] = {};
+                    for (const c of ['min', 'max']) {
+                        const v = m[`${c}Value`];
+                        if (v !== '') {
+                            res[m.column][c] = v;
+                        }
+                    }
+                }
+                return res;
+            };
+
+            const getSearchResults = () => {
+                $scope.searchResults = null;
+                const cols = appState.clone($scope.model.selectedColumns);
+                // remove snapshot_end col
+                cols.shift();
+                requestSender.sendStatelessCompute(
+                    appState,
+                    (resp) => {
+                        $scope.loadingMessage = "";
+                        $scope.searchResults = resp.rows;
+                    },
+                    {
+                        method: 'db_api',
+                        args: {
+                            api_name: 'runs_by_date_and_values',
+                            api_args: {
+                                machine_name: $scope.model.accelerator,
+                                twin_name: $scope.model.twinModel,
+                                min_max_values: getSearchFilter(),
+                                additional_run_values: cols,
+                            },
+                        },
+                    },
+                );
+            };
+
+            const init = () => {
+                $scope.loadingMessage = "Loading archives";
+                getColumns();
+            };
+
+            init();
+
+            $scope.$on('searchSettings.changed', getSearchResults);
+        },
+    };
+});
+
+SIREPO.app.directive('searchTerms', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=',
+            field: '=',
+        },
+        template: `
+            <div data-ng-if="showTerms()" class="st-search-terms col-sm-12">
+              <div class="row">
+                <div class="text-center col-sm-3 col-sm-offset-5"><label>Minimum</label></div>
+                <div class="text-center col-sm-3"><label>Maximum</label></div>
+              </div>
+              <div class="form-group"
+                data-ng-repeat="searchTerm in model.searchTerms track by $index"
+                data-ng-show="showRow($index)">
+                <div class="col-sm-2"></div>
+                <div data-field-editor="'column'" data-label-size="0"
+                   data-field-size="3" data-model-name="'searchTerm'"
+                   data-model="searchTerm"></div>
+                 <div data-field-editor="'minValue'" data-label-size="0"
+                   data-field-size="3" data-model-name="'searchTerm'"
+                   data-model="searchTerm"></div>
+                 <div data-field-editor="'maxValue'" data-label-size="0"
+                   data-field-size="3" data-model-name="'searchTerm'"
+                   data-model="searchTerm"></div>
+                 <div class="col-sm-1" style="margin-top: 5px; margin-left: -15px"
+                   data-ng-show="! isEmpty($index)">
+                   <button class="btn btn-info btn-xs" type="button"
+                     data-ng-click="deleteRow($index)">
+                     <span class="glyphicon glyphicon-remove"></span>
+                   </button>
+                 </div>
+               </div>
+            </div>`,
+        controller: function(appState, slactwinService, $scope) {
+            const maxSearchTerms = 10;
+            let isInitialized = false;
+
+            function updateTerms() {
+                for (let i = 0; i < maxSearchTerms; i++) {
+                    if (! $scope.model.searchTerms[i]) {
+                        $scope.model.searchTerms[i] = {
+                            column: slactwinService.selectSearchFieldText,
+                            minValue: '',
+                            maxValue: '',
+                        };
+                    }
+                }
+            }
+
+            $scope.deleteRow = idx => {
+                $scope.model.searchTerms.splice(idx, 1);
+                updateTerms();
+            };
+
+            $scope.isEmpty = idx => {
+                const search = $scope.model.searchTerms[idx];
+                return (
+                    search.column != slactwinService.selectSearchFieldText
+                    || search.term
+                ) ? false : true;
+            };
+
+            $scope.showRow = idx => (idx == 0) || ! $scope.isEmpty(idx - 1);
+
+            $scope.showTerms = () => {
+                if (! $scope.model.columns) {
+                    return false;
+                }
+                if (! isInitialized) {
+                    isInitialized = true;
+                    updateTerms();
+                }
+                return true;
+            };
+        },
+    };
+});
+
+SIREPO.app.directive('columnList', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=',
+            field: '=',
+        },
+        template: `
+            <select data-ng-if="appState.models.searchSettings.columns"
+              class="form-control pull-right" style="width: auto"
+              data-ng-model="model[field]"
+              data-ng-options="col as slactwinService.formatColumn(col) for col in columns">
+            </select>
+        `,
+        controller: function(appState, slactwinService, $scope) {
+            $scope.slactwinService = slactwinService;
+            const updateColumns = () => {
+                $scope.columns = appState.clone(appState.models.searchSettings.columns);
+                $scope.columns.unshift(slactwinService.selectSearchFieldText);
+            };
+            updateColumns();
+            $scope.appState = appState;
+            $scope.$watchCollection('appState.models.searchSettings.columns', updateColumns);
+        },
+    };
+});
+
+SIREPO.app.directive('columnPicker', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            model: '=',
+        },
+        template: `
+            <div class="form-group form-group-sm pull-right" style="margin: 0; font-weight: 700">
+              <select class="form-control" data-ng-model="selected" ng-change="selectColumn()"
+                data-ng-options="col as slactwinService.formatColumn(col) for col in availableColumns">
+              </select>
+            </div>
+        `,
+        controller: function(appState, slactwinService, $scope) {
+            $scope.slactwinService = slactwinService;
+            $scope.selected = null;
+            const addColumnText = 'Add Column';
+
+            function setAvailableColumns() {
+                $scope.availableColumns = $scope.model.columns.filter(value => {
+                    return ! $scope.model.selectedColumns.includes(value);
+                });
+                $scope.availableColumns.unshift(addColumnText);
+                $scope.selected = addColumnText;
+            }
+
+            $scope.selectColumn = () => {
+                if ($scope.selected === null) {
+                    return;
+                }
+                $scope.model.selectedColumns.push($scope.selected);
+                appState.saveChanges('searchSettings');
+            };
+
+            $scope.$watchCollection('model.columns', setAvailableColumns);
+            $scope.$watchCollection('model.selectedColumns', setAvailableColumns);
+        },
+    };
+});
+
+SIREPO.app.directive('searchResultsTable', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            searchResults: '<searchResultsTable',
+            model: '=',
+        },
+        template: `
+            <div>
+              <div>
+                <div data-column-picker="" data-model="model"></div>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th data-ng-repeat="column in columnHeaders track by $index" class="st-removable-column" style="width: 100px; height: 40px; white-space: nowrap; line-height: 24px">
+                        <span style="display: inline-block; min-width: 14px" data-ng-class="arrowClass(column)"></span>
+                        <!-- <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ slactwinService.formatColumn(column) }}</span> -->
+                        <span>{{ slactwinService.formatColumn(column) }}</span>
+                        <button type="submit" class="btn btn-info btn-xs st-remove-column-button" data-ng-if="showDeleteButton($index)" data-ng-click="deleteCol(column)"><span class="glyphicon glyphicon-remove"></span></button>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="row in searchResults track by $index">
+                      <td>{{ dateValue(row.snapshot_end) }}</td>
+                      <td data-ng-repeat="c in columnHeaders.slice(1)"><div class="text-right">{{ columnValue(row, c) | number:7 }}</div></td>
+
+                  <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openArchive(row)">Open Archive</button></div><div></td>
+
+                    </tr>
+                </table>
+              </div>
+            </div>
+        `,
+        controller: function(appState, requestSender, slactwinService, timeService, $scope) {
+            $scope.slactwinService = slactwinService;
+
+            const updateColumns = () => {
+                if (! $scope.model.selectedColumns) {
+                    $scope.model.selectedColumns = ['snapshot_end'];
+                }
+                $scope.columnHeaders = [];
+                for (const c of $scope.model.selectedColumns) {
+                    $scope.columnHeaders.push(c);
+                }
+            };
+
+            $scope.arrowClass = (column) => {
+                if ($scope.model.sortColumn && (column == $scope.model.sortColumn[0])) {
+                    const dir = $scope.model.sortColumn[1] ? 'up' : 'down';
+                    return {
+                        glyphicon: true,
+                        [`glyphicon-arrow-${dir}`]: true,
+                    };
+                }
+                return {};
+            };
+
+            $scope.columnValue = (row, column) => {
+                return row.run_values[column];
+            };
+
+            $scope.dateValue = (value) => {
+                return timeService.unixTimeToDateString(value);
+            };
+
+            $scope.deleteCol = (column) => {
+                $scope.model.selectedColumns.splice(
+                    $scope.model.selectedColumns.indexOf(column),
+                    1
+                );
+                appState.saveChanges('searchSettings');
+            };
+
+            $scope.openArchive = (row) => {
+                $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
+                appState.saveChanges('searchSettings', () => {
+                    requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
+                        ':simulationId': appState.models.simulation.simulationId,
+                    });
+                    slactwinService.setArchiveId(row.run_summary_id);
+                });
+            };
+
+            $scope.showDeleteButton = (index) => {
+                return index > 0;
+            };
+
+            // $scope.sortCol = (column) => {
+            //     if ($scope.model.sortColumn && $scope.model.sortColumn[0] == column) {
+            //         $scope.model.sortColumn[1] = ! $scope.model.sortColumn[1];
+            //     }
+            //     else {
+            //         $scope.model.sortColumn = [column, false];
+            //     }
+            // };
+
+            $scope.$watchCollection('model.selectedColumns', updateColumns);
         },
     };
 });
