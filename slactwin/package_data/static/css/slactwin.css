@@ -21,3 +21,7 @@
 .st-removable-column:hover .st-remove-column-button {
   visibility: visible;
 }
+
+.sr-screenshot {
+  min-height: 470px;
+}

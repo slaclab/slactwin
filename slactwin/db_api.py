@@ -23,7 +23,7 @@ class DbAPI(slactwin.quest.API):
 
     async def __query(self, api_name, api_args):
         def _dt(value):
-            return datetime.datetime.fromtimestamp(value)
+            return value if value is None else datetime.datetime.fromtimestamp(value)
 
         def _fix_row(row):
             for i, c in enumerate(row):
