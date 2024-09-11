@@ -22,12 +22,38 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.pkconfig
+import pykern.quest
 import pykern.util
 import slactwin.config
 import slactwin.quest
 import sqlalchemy
 import sqlalchemy.sql.operators
 import sys
+
+
+class BaseExc(Exception):
+    def __init__(self, **context):
+        a = [self.__class__.__name__]
+        f = "exception={}"
+        for k, v in context.items():
+            f += " {}={}"
+            a.extend([k, v])
+        pkdlog(f, *a)
+
+    def as_api_error(self):
+        return pykern.quest.APIError("db_error={}", self.__class__.__name__)
+
+
+class NoRows(BaseExc):
+    """Expected at least one row"""
+
+    pass
+
+
+class MoreThanOneRow(BaseExc):
+    """Expected exactly one row"""
+
+    pass
 
 
 class _Db(slactwin.quest.Attr):
@@ -115,17 +141,13 @@ class _Db(slactwin.quest.Attr):
     def select_one(self, model_or_stmt, **where):
         if rv := self.select_one_or_none(model_or_stmt, **where):
             return rv
-        raise ValueError(
-            f"no value returned model_or_stmt={model_or_stmt} where={where}"
-        )
+        raise NoRows(model_or_stmt=model_or_stmt, where=where)
 
     def select_one_or_none(self, model_or_stmt, **where):
         rv = None
         for x in self.select(model_or_stmt, **where):
             if rv is not None:
-                raise ValueError(
-                    f"more than one returned model_or_stmt={model_or_stmt} where={where}"
-                )
+                raise MoreThanOneRow(model_or_stmt=model_or_stmt, where=where)
             rv = x
         return rv
 

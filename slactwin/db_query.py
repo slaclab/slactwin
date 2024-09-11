@@ -48,6 +48,58 @@ class _DbQuery:
     def __call__(self, db, **kwargs):
         return self._method(self, db, **self._tables, **kwargs)
 
+    def _query_run_kinds_and_values(self, db, RunKind, RunValueName):
+
+        def _add(rv, machine_name, twin_name, run_value_name):
+            x = _add_level(rv, "machines", machine_name)
+            x = _add_level(x, "twins", twin_name)
+            x.pksetdefault("run_values", list).run_values.append(run_value_name)
+
+        def _add_level(pkdict, kind, name):
+            if kind not in pkdict:
+                pkdict[kind] = PKDict({name: PKDict()})
+            elif name not in pkdict[kind]:
+                pkdict[kind][name] = PKDict()
+            return pkdict[kind][name]
+
+        rv = PKDict()
+        for r in db.select(
+            sqlalchemy.select(
+                [RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name]
+            )
+            .join(
+                RunValueName,
+                RunKind.c.run_kind_id == RunValueName.c.run_kind_id,
+            )
+            .order_by(RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name)
+        ):
+            _add(rv, r[0], r[1], r[2])
+        return rv
+
+    def _query_run_summary_by_id(self, db, RunSummary, run_summary_id):
+        return PKDict(
+            db.select_one(
+                sqlalchemy.select(RunSummary).where(
+                    RunSummary.c.run_summary_id == run_summary_id,
+                )
+            )
+        )
+
+    def _query_run_value(
+        self, db, RunValueName, RunValueFloat, run_summary_id, tag, base
+    ):
+        return db.select_one(
+            sqlalchemy.select(RunValueFloat)
+            .join(
+                RunValueName,
+                RunValueFloat.c.run_value_name_id == RunValueName.c.run_value_name_id,
+            )
+            .where(
+                RunValueName.c.name == tag + slactwin.const.RUN_VALUE_SEP + base,
+                RunValueFloat.c.run_summary_id == run_summary_id,
+            )
+        ).value
+
     def _query_runs_by_date_and_values(
         self,
         db,
@@ -153,49 +205,6 @@ class _DbQuery:
 
         s = _state()
         return _rows(s, _select(_additional(_min_max_values(s))))
-
-    def _query_run_kinds_and_values(self, db, RunKind, RunValueName):
-
-        def _add(rv, machine_name, twin_name, run_value_name):
-            x = _add_level(rv, "machines", machine_name)
-            x = _add_level(x, "twins", twin_name)
-            x.pksetdefault("run_values", list).run_values.append(run_value_name)
-
-        def _add_level(pkdict, kind, name):
-            if kind not in pkdict:
-                pkdict[kind] = PKDict({name: PKDict()})
-            elif name not in pkdict[kind]:
-                pkdict[kind][name] = PKDict()
-            return pkdict[kind][name]
-
-        rv = PKDict()
-        for r in db.select(
-            sqlalchemy.select(
-                [RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name]
-            )
-            .join(
-                RunValueName,
-                RunKind.c.run_kind_id == RunValueName.c.run_kind_id,
-            )
-            .order_by(RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name)
-        ):
-            _add(rv, r[0], r[1], r[2])
-        return rv
-
-    def _query_run_value(
-        self, db, RunValueName, RunValueFloat, run_summary_id, tag, base
-    ):
-        return db.select_one(
-            sqlalchemy.select(RunValueFloat)
-            .join(
-                RunValueName,
-                RunValueFloat.c.run_value_name_id == RunValueName.c.run_value_name_id,
-            )
-            .where(
-                RunValueName.c.name == tag + slactwin.const.RUN_VALUE_SEP + base,
-                RunValueFloat.c.run_summary_id == run_summary_id,
-            )
-        ).value
 
 
 class _DbQueryBuilder:
