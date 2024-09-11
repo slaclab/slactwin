@@ -1,13 +1,14 @@
 """Execution template.
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
-:license: See LICENSE file for details.
+:license: http://github.com/slaclab/slactwin/LICENSE
 """
 
 from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp
 from sirepo.template.impactt_parser import ImpactTParser
+import asyncio
 import h5py
 import impact
 import pykern.pkio
@@ -16,47 +17,82 @@ import sirepo.sim_data
 import sirepo.template.impactt
 import sirepo.template.lattice
 import sirepo.util
+import slactwin.db_api_client
 
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
+# TODO(pjm): remove this when template.slactwin can query the database
+_ALL_RECORDS = PKDict(
+    {
+        1002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T00:01:29-07:00.json",
+        2002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:08:47-07:00.json",
+        3002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:11:28-07:00.json",
+        4002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:13:40-07:00.json",
+        5002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:16:29-07:00.json",
+        6002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:19:13-07:00.json",
+        7002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:22:32-07:00.json",
+        8002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:25:10-07:00.json",
+        9002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:27:53-07:00.json",
+        10002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:30:39-07:00.json",
+        11002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:33:13-07:00.json",
+        12002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:35:54-07:00.json",
+        13002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:38:34-07:00.json",
+        14002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:45:07-07:00.json",
+        15002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T03:48:12-07:00.json",
+        16002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T04:56:49-07:00.json",
+        17002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T04:59:39-07:00.json",
+        18002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:16:38-07:00.json",
+        19002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:19:20-07:00.json",
+        20002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:23:18-07:00.json",
+        21002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:36:25-07:00.json",
+        22002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:40:58-07:00.json",
+        23002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:45:08-07:00.json",
+        24002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:49:17-07:00.json",
+        25002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:53:47-07:00.json",
+        26002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T05:58:58-07:00.json",
+        27002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:03:38-07:00.json",
+        28002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:08:38-07:00.json",
+        29002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:13:39-07:00.json",
+        30002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:18:04-07:00.json",
+        31002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:23:47-07:00.json",
+        32002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:28:20-07:00.json",
+        33002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:32:33-07:00.json",
+        34002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:37:36-07:00.json",
+        35002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:42:21-07:00.json",
+        36002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:47:38-07:00.json",
+        37002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:53:18-07:00.json",
+        38002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:58:07-07:00.json",
+        39002: "/home/vagrant/save/slactwin/iana-data/iana/summary/2024/06/19/lume-impact-live-demo-s3df-sc_inj-2024-06-19T07:03:29-07:00.json",
+    }
+)
+
 
 class DummyDB:
-    _DB = [
-        PKDict(
-            archiveId=589,
-            archiveType="sc_inj",
-            description="sc_inj 2024-06-19T06:03:38",
-            summaryFile="lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:03:38-07:00.json",
-        ),
-        PKDict(
-            archiveId=612,
-            archiveType="sc_inj",
-            description="sc_inj 2024-06-19T06:23:47",
-            summaryFile="lume-impact-live-demo-s3df-sc_inj-2024-06-19T06:23:47-07:00.json",
-        ),
-    ]
-
     def get_archive(self, archive_id):
-        return [v for v in self._DB if v.archiveId == archive_id][0]
+        p = _ALL_RECORDS[int(archive_id)]
+        assert p
+        return PKDict(
+            archiveId=archive_id,
+            archiveType="sc_inj",
+            description="",
+            summaryFile=p,
+        )
 
     def get_next_and_previous_archives(self, archive_id):
         # Returns a [prev id, next id] pair for the current archive_id
         # Should only return ids for the same type of archive (sc_inj, lcls, facet, etc)
         res = None
         prev = None
-        for v in self._DB:
+        for v in _ALL_RECORDS.keys():
             if res:
-                res[1] = v.archiveId
+                res[1] = v
                 break
-            if v.archiveId == archive_id:
+            if v == archive_id:
                 res = [prev, None]
                 continue
-            prev = v.archiveId
+            prev = v
         return res
-
-    def search_archives(self, *kwargs):
-        return self._DB
 
 
 def background_percent_complete(report, run_dir, is_running):
@@ -86,8 +122,6 @@ def sim_frame_statAnimation(frame_args):
 def sim_frame_summaryAnimation(frame_args):
     s = _summary_file(frame_args.archiveId)
     I = _load_archive(frame_args)
-    # l = ImpactTParser().parse_file(I['input']['original_input'])
-    # l.models.simulation.visualizationBeamlineId = l.models.beamlines[0].id
     with h5py.File(s.outputs.archive) as f:
         l = ImpactTParser().parse_file(f["/impact/input"].attrs["ImpactT.in"])
         l.models.simulation.visualizationBeamlineId = l.models.beamlines[0].id
@@ -107,48 +141,15 @@ def sim_frame_summaryAnimation(frame_args):
     )
 
 
+def stateless_compute_db_api(data, **kwargs):
+    return asyncio.run(
+        slactwin.db_api_client.DbAPIClient().post(data.args.api_name, data.args.api_arg)
+    )
+
+
 def stateful_compute_next_and_previous_archives(data, **kwargs):
     return PKDict(
         archiveIds=DummyDB().get_next_and_previous_archives(int(data.args.archiveId)),
-    )
-
-
-def stateful_compute_search_archives(data, **kwargs):
-    return PKDict(
-        searchResults=DummyDB().search_archives(),
-    )
-
-
-def stateful_compute_get_columns(data, **kwargs):
-    return PKDict(
-        {
-            "machines": {
-                "sc_inj": {
-                    "twins": {
-                        "impact": {
-                            "run_value_groups": {
-                                "impact": {
-                                    "names": [
-                                        "end_cov_x__px",
-                                        "end_cov_y__py",
-                                        "end_cov_z__pz",
-                                        "end_higher_order_energy_spread",
-                                    ]
-                                },
-                                "pv": {
-                                    "names": [
-                                        "ACCL:GUNB:455:AACT_AVG",
-                                        "ACCL:GUNB:455:PACT_AVG",
-                                        "ACCL:L0B:0110:AACTMEAN",
-                                        "ACCL:L0B:0110:PACTMEAN",
-                                    ]
-                                },
-                            }
-                        }
-                    }
-                }
-            }
-        }
     )
 
 
@@ -163,11 +164,8 @@ def _load_archive(frame_args):
 
 
 def _summary_file(archive_id):
-    return pykern.pkjson.load_any(
-        pykern.pkio.py_path(_cfg.summary_dir).join(
-            DummyDB().get_archive(archive_id).summaryFile
-        ),
-    )
+    s = DummyDB().get_archive(archive_id).summaryFile
+    return pykern.pkjson.load_any(pykern.pkio.py_path(s))
 
 
 def _trim_beamline(data):
@@ -186,12 +184,3 @@ def _trim_beamline(data):
             break
     data.models.beamlines[0]["items"] = bl
     return data
-
-
-_cfg = pkconfig.init(
-    summary_dir=(
-        "/home/vagrant/save/slactwin/sirepo-test/summary/",
-        str,
-        "Location of lume-live json summary files",
-    ),
-)

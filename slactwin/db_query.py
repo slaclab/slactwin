@@ -140,6 +140,7 @@ class _DbQuery:
             return PKDict(
                 index=1,
                 base_cols=PKDict(
+                    run_summary_id=RunSummary.c.run_summary_id,
                     snapshot_path=RunSummary.c.snapshot_path,
                     archive_path=RunSummary.c.archive_path,
                     summary_path=RunSummary.c.summary_path,

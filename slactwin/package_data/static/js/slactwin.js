@@ -46,6 +46,10 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return null;
     };
 
+    self.formatColumn = (col) => {
+        return col.replace(/^.*?\^/, '');
+    };
+
     self.getArchiveId = () => {
         return $location.search().archiveId;
     };
@@ -573,8 +577,8 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
               <div data-advanced-editor-pane="" data-view-name="'searchSettings'" data-field-def="basic" data-want-buttons="true"></div>
             </div>
             <div class="col-sm-12">
-              <div data-search-results="searchResults" data-model="model"></div>
-              <div data-loading-indicator="loadingMessage"></div>
+              <div data-search-results-table="searchResults" data-model="model"></div>
+              <div data-ng-if="loadingMessage" data-loading-indicator="loadingMessage"></div>
             </div>
         `,
         controller: function(slactwinService, $scope) {
@@ -582,7 +586,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             const extractNames = (resp, columns) => {
                 if (angular.isObject(resp)) {
                     for (const k in resp) {
-                        if (k === 'names') {
+                        if (k === 'run_values') {
                             for (const v of resp[k]) {
                                 columns.push(v);
                             }
@@ -596,30 +600,68 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             const getColumns = () => {
-                requestSender.sendStatefulCompute(
+                requestSender.sendStatelessCompute(
                     appState,
                     (resp) => {
                         $scope.model.columns = extractNames(resp, []);
                         getSearchResults();
                     },
                     {
-                        method: 'get_columns',
+                        method: 'db_api',
+                        args: {
+                            api_name: 'run_kinds_and_values',
+                            api_arg: {},
+                        },
                     },
                 );
             };
 
+            const getSearchFilter = () => {
+                $scope.loadingMessage = "Loading archives";
+                const res = {
+                    snapshot_end: {
+                        min: $scope.model.searchStartTime,
+                        max: $scope.model.searchStopTime,
+                    },
+                };
+                for (const m of $scope.model.searchTerms) {
+                    if (m.column === slactwinService.selectSearchFieldText
+                        || (m.minValue === '' && m.maxValue === '')) {
+                        continue;
+                    }
+                    res[m.column] = {};
+                    for (const c of ['min', 'max']) {
+                        const v = m[`${c}Value`];
+                        if (v !== '') {
+                            res[m.column][c] = v;
+                        }
+                    }
+                }
+                return res;
+            };
+
             const getSearchResults = () => {
-                requestSender.sendStatefulCompute(
+                $scope.searchResults = null;
+                const cols = appState.clone($scope.model.selectedColumns);
+                // remove snapshot_end col
+                cols.shift();
+                requestSender.sendStatelessCompute(
                     appState,
                     (resp) => {
                         $scope.loadingMessage = "";
-                        if (resp.error) {
-                            //TODO(pjm): display error message
-                        }
-                        $scope.searchResults = resp.searchResults;
+                        $scope.searchResults = resp.rows;
                     },
                     {
-                        method: 'search_archives',
+                        method: 'db_api',
+                        args: {
+                            api_name: 'runs_by_date_and_values',
+                            api_arg: {
+                                machine_name: $scope.model.accelerator,
+                                twin_name: $scope.model.twinModel,
+                                min_max_values: getSearchFilter(),
+                                additional_run_values: cols,
+                            },
+                        },
                     },
                 );
             };
@@ -630,32 +672,8 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             init();
-        },
-    };
-});
 
-SIREPO.app.directive('searchResults', function(appState, requestSender, slactwinService) {
-    return {
-        restrict: 'A',
-        scope: {
-            model: '=',
-            searchResults: '=',
-        },
-        template: `
-             <div data-search-results-table="" data-model="model"></div>
-             <div class="col-sm-12" style="max-height: calc(100vh - 100px); overflow-y: visible">
-               <div data-ng-repeat="row in searchResults" style="padding: 1ex">
-                 <a href data-ng-click="openArchive(row)">Archive {{ row.description }}</a>
-               </div>
-             </div>
-        `,
-        controller: function(requestSender, slactwinService, $scope) {
-            $scope.openArchive = (row) => {
-                requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
-                    ':simulationId': appState.models.simulation.simulationId,
-                });
-                slactwinService.setArchiveId(row.archiveId);
-            };
+            $scope.$on('searchSettings.changed', getSearchResults);
         },
     };
 });
@@ -751,10 +769,11 @@ SIREPO.app.directive('columnList', function() {
             <select data-ng-if="appState.models.searchSettings.columns"
               class="form-control pull-right" style="width: auto"
               data-ng-model="model[field]"
-              data-ng-options="item as item for item in columns">
+              data-ng-options="col as slactwinService.formatColumn(col) for col in columns">
             </select>
         `,
         controller: function(appState, slactwinService, $scope) {
+            $scope.slactwinService = slactwinService;
             const updateColumns = () => {
                 $scope.columns = appState.clone(appState.models.searchSettings.columns);
                 $scope.columns.unshift(slactwinService.selectSearchFieldText);
@@ -774,12 +793,13 @@ SIREPO.app.directive('columnPicker', function() {
         },
         template: `
             <div class="form-group form-group-sm pull-right" style="margin: 0; font-weight: 700">
-              <select class="form-control" data-ng-model="selected" ng-change="selectColumn()">
-                <option ng-repeat="column in availableColumns">{{column}}</option>
+              <select class="form-control" data-ng-model="selected" ng-change="selectColumn()"
+                data-ng-options="col as slactwinService.formatColumn(col) for col in availableColumns">
               </select>
             </div>
         `,
-        controller: function(appState, $scope) {
+        controller: function(appState, slactwinService, $scope) {
+            $scope.slactwinService = slactwinService;
             $scope.selected = null;
             const addColumnText = 'Add Column';
 
@@ -796,6 +816,7 @@ SIREPO.app.directive('columnPicker', function() {
                     return;
                 }
                 $scope.model.selectedColumns.push($scope.selected);
+                appState.saveChanges('searchSettings');
             };
 
             $scope.$watchCollection('model.columns', setAvailableColumns);
@@ -808,28 +829,38 @@ SIREPO.app.directive('searchResultsTable', function() {
     return {
         restrict: 'A',
         scope: {
+            searchResults: '<searchResultsTable',
             model: '=',
         },
         template: `
             <div>
               <div>
                 <div data-column-picker="" data-model="model"></div>
-                <table class="table table-striped table-hover">
+                <table class="table">
                   <thead>
                     <tr>
-                      <th data-ng-repeat="column in columnHeaders track by $index" class="st-removable-column" style="width: 100px; height: 40px; white-space: nowrap">
-                        <span data-ng-class="arrowClass(column)"></span>
-                        <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ column }}</span>
+                      <th data-ng-repeat="column in columnHeaders track by $index" class="st-removable-column" style="width: 100px; height: 40px; white-space: nowrap; line-height: 24px">
+                        <span style="display: inline-block; min-width: 14px" data-ng-class="arrowClass(column)"></span>
+                        <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ slactwinService.formatColumn(column) }}</span>
                         <button type="submit" class="btn btn-info btn-xs st-remove-column-button" data-ng-if="showDeleteButton($index)" data-ng-click="deleteCol(column)"><span class="glyphicon glyphicon-remove"></span></button>
                       </th>
                       <th></th>
                     </tr>
                   </thead>
+                  <tbody>
+                    <tr ng-repeat="row in searchResults track by $index">
+                      <td>{{ dateValue(row.snapshot_end) }}</td>
+                      <td data-ng-repeat="c in columnHeaders.slice(1)"><div class="text-right">{{ columnValue(row, c) | number:7 }}</div></td>
+
+                  <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openArchive(row)">Open Archive</button></div><div></td>
+
+                    </tr>
                 </table>
               </div>
             </div>
         `,
-        controller: function(appState, $scope) {
+        controller: function(appState, requestSender, slactwinService, timeService, $scope) {
+            $scope.slactwinService = slactwinService;
 
             const updateColumns = () => {
                 if (! $scope.model.selectedColumns) {
@@ -843,7 +874,7 @@ SIREPO.app.directive('searchResultsTable', function() {
 
             $scope.arrowClass = (column) => {
                 if ($scope.model.sortColumn && (column == $scope.model.sortColumn[0])) {
-                    const dir = $scope.model.sortColumn[1 ] ? 'up' : 'down';
+                    const dir = $scope.model.sortColumn[1] ? 'up' : 'down';
                     return {
                         glyphicon: true,
                         [`glyphicon-arrow-${dir}`]: true,
@@ -852,11 +883,28 @@ SIREPO.app.directive('searchResultsTable', function() {
                 return {};
             };
 
+            $scope.columnValue = (row, column) => {
+                return row.run_values[column];
+            };
+
+            $scope.dateValue = (value) => {
+                return timeService.unixTimeToDateString(value);
+            };
+
             $scope.deleteCol = (column) => {
                 $scope.model.selectedColumns.splice(
                     $scope.model.selectedColumns.indexOf(column),
                     1
                 );
+                appState.saveChanges('searchSettings');
+            };
+
+            $scope.openArchive = (row) => {
+                console.log('opening row:', row.run_summary_id);
+                requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
+                    ':simulationId': appState.models.simulation.simulationId,
+                });
+                slactwinService.setArchiveId(row.run_summary_id);
             };
 
             $scope.showDeleteButton = (index) => {
@@ -868,7 +916,7 @@ SIREPO.app.directive('searchResultsTable', function() {
                     $scope.model.sortColumn[1] = ! $scope.model.sortColumn[1];
                 }
                 else {
-                    $scope.model.sortColumn = [column, true];
+                    $scope.model.sortColumn = [column, false];
                 }
             };
 

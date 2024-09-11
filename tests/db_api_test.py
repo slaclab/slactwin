@@ -52,6 +52,8 @@ async def test_run_all():
                 additional_run_values=["pv^SOLN:GUNB:212:BACT"],
             ),
         )
+        # Since the db is committed, this is a fixed value
+        pkunit.pkeq(35002, r.rows[0].run_summary_id)
         pkunit.pkeq(3, len(r.rows))
         pkunit.pkeq(t, r.rows[0].snapshot_end)
 
