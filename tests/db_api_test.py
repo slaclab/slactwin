@@ -11,15 +11,15 @@ import contextlib
 @pytest.mark.asyncio
 async def test_run_all():
     from slactwin import const, modules
+    from pykern import pkunit
     from pykern.pkcollections import PKDict
     import datetime
 
+    pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
     with _server():
         from slactwin import config, db_api_client
-        from pykern import pkunit
         from pykern import pkdebug
 
-        pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
         modules.import_and_init()
         c = db_api_client.DbAPIClient()
         r = await c.post("run_kinds_and_values", PKDict())

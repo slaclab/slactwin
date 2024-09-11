@@ -478,21 +478,18 @@ SIREPO.app.directive('archiveNavigation', function(appState, requestSender, slac
         controller: function($scope) {
 
             const init = () => {
-                requestSender.sendStatefulCompute(
-                    appState,
-                    (resp) => {
-                        if (resp.error) {
-                            //TODO(pjm): display error message
-                        }
-                        $scope.archiveIds = resp.archiveIds;
-                    },
-                    {
-                        method: 'next_and_previous_archives',
-                        args: {
-                            archiveId: slactwinService.getArchiveId(),
-                        },
-                    },
-                );
+                $scope.archiveIds = null;
+                let prev;
+                for (const r of appState.models.searchSettings.rowIds) {
+                    if ($scope.archiveIds) {
+                        $scope.archiveIds[1] = r;
+                        break;
+                    }
+                    if (r === slactwinService.getArchiveId()) {
+                        $scope.archiveIds = [prev, null];
+                    }
+                    prev = r;
+                }
             };
 
             $scope.next = (direction) => {
@@ -610,7 +607,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                         method: 'db_api',
                         args: {
                             api_name: 'run_kinds_and_values',
-                            api_arg: {},
+                            api_args: {},
                         },
                     },
                 );
@@ -655,7 +652,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                         method: 'db_api',
                         args: {
                             api_name: 'runs_by_date_and_values',
-                            api_arg: {
+                            api_args: {
                                 machine_name: $scope.model.accelerator,
                                 twin_name: $scope.model.twinModel,
                                 min_max_values: getSearchFilter(),
@@ -841,7 +838,8 @@ SIREPO.app.directive('searchResultsTable', function() {
                     <tr>
                       <th data-ng-repeat="column in columnHeaders track by $index" class="st-removable-column" style="width: 100px; height: 40px; white-space: nowrap; line-height: 24px">
                         <span style="display: inline-block; min-width: 14px" data-ng-class="arrowClass(column)"></span>
-                        <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ slactwinService.formatColumn(column) }}</span>
+                        <!-- <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ slactwinService.formatColumn(column) }}</span> -->
+                        <span>{{ slactwinService.formatColumn(column) }}</span>
                         <button type="submit" class="btn btn-info btn-xs st-remove-column-button" data-ng-if="showDeleteButton($index)" data-ng-click="deleteCol(column)"><span class="glyphicon glyphicon-remove"></span></button>
                       </th>
                       <th></th>
@@ -900,25 +898,27 @@ SIREPO.app.directive('searchResultsTable', function() {
             };
 
             $scope.openArchive = (row) => {
-                console.log('opening row:', row.run_summary_id);
-                requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
-                    ':simulationId': appState.models.simulation.simulationId,
+                $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
+                appState.saveChanges('searchSettings', () => {
+                    requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
+                        ':simulationId': appState.models.simulation.simulationId,
+                    });
+                    slactwinService.setArchiveId(row.run_summary_id);
                 });
-                slactwinService.setArchiveId(row.run_summary_id);
             };
 
             $scope.showDeleteButton = (index) => {
                 return index > 0;
             };
 
-            $scope.sortCol = (column) => {
-                if ($scope.model.sortColumn && $scope.model.sortColumn[0] == column) {
-                    $scope.model.sortColumn[1] = ! $scope.model.sortColumn[1];
-                }
-                else {
-                    $scope.model.sortColumn = [column, false];
-                }
-            };
+            // $scope.sortCol = (column) => {
+            //     if ($scope.model.sortColumn && $scope.model.sortColumn[0] == column) {
+            //         $scope.model.sortColumn[1] = ! $scope.model.sortColumn[1];
+            //     }
+            //     else {
+            //         $scope.model.sortColumn = [column, false];
+            //     }
+            // };
 
             $scope.$watchCollection('model.selectedColumns', updateColumns);
         },

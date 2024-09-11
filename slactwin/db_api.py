@@ -11,15 +11,15 @@ import slactwin.quest
 
 
 class DbAPI(slactwin.quest.API):
-    async def api_run_kinds_and_values(self, api_arg):
-        return self.db.query("run_kinds_and_values", **api_arg)
+    async def api_run_kinds_and_values(self, api_args):
+        return self.db.query("run_kinds_and_values", **api_args)
 
-    async def api_runs_by_date_and_values(self, api_arg):
-        if x := api_arg.min_max_values.get("snapshot_end"):
-            api_arg.min_max_values.snapshot_end = PKDict(
+    async def api_runs_by_date_and_values(self, api_args):
+        if x := api_args.min_max_values.get("snapshot_end"):
+            api_args.min_max_values.snapshot_end = PKDict(
                 {k: datetime.datetime.fromtimestamp(v) for k, v in x.items()}
             )
-        rv = self.db.query("runs_by_date_and_values", **api_arg)
+        rv = self.db.query("runs_by_date_and_values", **api_args)
         for r in rv.rows:
             r.snapshot_end = int(r.snapshot_end.timestamp())
         return rv

@@ -79,21 +79,6 @@ class DummyDB:
             summaryFile=p,
         )
 
-    def get_next_and_previous_archives(self, archive_id):
-        # Returns a [prev id, next id] pair for the current archive_id
-        # Should only return ids for the same type of archive (sc_inj, lcls, facet, etc)
-        res = None
-        prev = None
-        for v in _ALL_RECORDS.keys():
-            if res:
-                res[1] = v
-                break
-            if v == archive_id:
-                res = [prev, None]
-                continue
-            prev = v
-        return res
-
 
 def background_percent_complete(report, run_dir, is_running):
     if is_running:
@@ -134,7 +119,8 @@ def sim_frame_summaryAnimation(frame_args):
             Nbunch=I.header["Nbunch"],
             Nprow=I.header["Nprow"],
             Npcol=I.header["Npcol"],
-            description=DummyDB().get_archive(frame_args.archiveId).description,
+            # TODO(pjm): need summary of archive: date/time, machine, model
+            description="",
         ),
         lattice=_trim_beamline(l),
         particles=sirepo.template.impactt.output_info(l),
@@ -143,13 +129,9 @@ def sim_frame_summaryAnimation(frame_args):
 
 def stateless_compute_db_api(data, **kwargs):
     return asyncio.run(
-        slactwin.db_api_client.DbAPIClient().post(data.args.api_name, data.args.api_arg)
-    )
-
-
-def stateful_compute_next_and_previous_archives(data, **kwargs):
-    return PKDict(
-        archiveIds=DummyDB().get_next_and_previous_archives(int(data.args.archiveId)),
+        slactwin.db_api_client.DbAPIClient().post(
+            data.args.api_name, data.args.api_args
+        )
     )
 
 
