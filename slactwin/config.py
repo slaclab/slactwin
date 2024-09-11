@@ -15,14 +15,22 @@ import slactwin.const
 _cfg = None
 
 
-def init_module():
+def cfg():
+    return _cfg
+
+
+def dev_path(path, **ensure_kwargs):
+    return _dev_root_d.join(path)
+
+
+def _init():
+    global _cfg
+    if _cfg:
+        return
     if pykern.pkconfig.channel_in("dev"):
         global _dev_root_d
 
         _dev_root_d = pykern.util.dev_run_dir(dev_path)
-
-    global _cfg
-
     _cfg = pykern.pkconfig.init(
         db_api=PKDict(
             api_uri=("/slactwin-api-v1", str, "URI for API requests"),
@@ -37,9 +45,4 @@ def init_module():
     )
 
 
-def cfg():
-    return _cfg
-
-
-def dev_path(path, **ensure_kwargs):
-    return _dev_root_d.join(path)
+_init()
