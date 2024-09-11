@@ -1,13 +1,14 @@
 """Execution template.
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
-:license: See LICENSE file for details.
+:license: http://github.com/slaclab/slactwin/LICENSE
 """
 
 from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp
 from sirepo.template.impactt_parser import ImpactTParser
+import asyncio
 import h5py
 import impact
 import pykern.pkio
@@ -16,6 +17,7 @@ import sirepo.sim_data
 import sirepo.template.impactt
 import sirepo.template.lattice
 import sirepo.util
+import slactwin.db_api_client
 
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
@@ -104,6 +106,14 @@ def sim_frame_summaryAnimation(frame_args):
         ),
         lattice=_trim_beamline(l),
         particles=sirepo.template.impactt.output_info(l),
+    )
+
+
+def stateless_compute_db_api(data, **kwargs):
+    return asyncio.run(
+        slactwin.db_api_client.DbAPIClient().post(
+            data.args.api_name, data.args.api_args
+        )
     )
 
 

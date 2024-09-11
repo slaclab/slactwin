@@ -10,10 +10,7 @@ import importlib
 
 _done = False
 
-_ORDER = (
-    "slactwin.config",
-    "slactwin.db",
-)
+_ORDER = ("slactwin.db",)
 
 
 def import_and_init():
