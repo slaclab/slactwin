@@ -1,4 +1,5 @@
 'use strict';
+SIREPO.srdbg = console.log.bind(console);
 
 SIREPO.app.config(function() {
     SIREPO.PLOTTING_SUMMED_LINEOUTS = true;
@@ -50,16 +51,16 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return col.replace(/^.*?\^/, '');
     };
 
-    self.getArchiveId = () => {
-        return $location.search().archiveId;
+    self.getRunSummaryId = () => {
+        return $location.search().runSummaryId;
     };
 
-    self.loadArchive = () => {
+    self.loadRun = () => {
         const names = [];
-        const archiveId = self.getArchiveId();
+        const runSummaryId = self.getRunSummaryId();
         for (const m in appState.models) {
-            if (appState.models[m] && 'archiveId' in appState.models[m]) {
-                appState.models[m].archiveId = archiveId;
+            if (appState.models[m] && 'runSummaryId' in appState.models[m]) {
+                appState.models[m].runSummaryId = runSummaryId;
                 names.push(m);
             }
         }
@@ -72,18 +73,18 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
                 self.summary = data.summary;
                 self.particles = data.particles;
                 appState.models.externalLattice = data.lattice;
-                $rootScope.$broadcast('sr-archive-loaded');
+                $rootScope.$broadcast('sr-run-loaded');
             });
         });
     };
 
-    self.setArchiveId = (archiveId) => {
-        $location.search('archiveId', archiveId);
+    self.setRunSummaryId = (runSummaryId) => {
+        $location.search('runSummaryId', runSummaryId);
     };
 
     self.initController = (controller, $scope) => {
         let firstCheck = true;
-        $scope.loadingMessage = "Reading archive";
+        $scope.loadingMessage = "Reading Run Info";
 
         const init = () => {
             controller.simScope = $scope;
@@ -93,7 +94,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
 
         controller.simHandleStatus = (data) => {
             if (data.state === 'completed') {
-                self.loadArchive();
+                self.loadRun();
                 return;
             }
             if (firstCheck) {
@@ -129,7 +130,7 @@ SIREPO.app.controller('VizController', function(appState, frameCache, panelState
 
     slactwinService.initController(self, $scope);
 
-    $scope.$on('sr-archive-loaded', () => {
+    $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = "";
         self.outputFiles = [];
         slactwinService.particles.forEach((info) => {
@@ -151,7 +152,7 @@ SIREPO.app.controller('VizController', function(appState, frameCache, panelState
                 appState.models[info.modelKey] = {};
             }
             var m = appState.models[info.modelKey];
-            m.archiveId = slactwinService.getArchiveId();
+            m.runSummaryId = slactwinService.getRunSummaryId();
             m.plotName = info.name;
             appState.setModelDefaults(m, 'elementAnimation');
             appState.saveQuietly(info.modelKey);
@@ -163,7 +164,7 @@ SIREPO.app.controller('VizController', function(appState, frameCache, panelState
 SIREPO.app.controller('InitController', function(appState, requestSender, slactwinService) {
     const self = this;
     const init = () => {
-        slactwinService.setArchiveId(null);
+        slactwinService.setRunSummaryId(null);
         appState.clearModels();
         appState.listSimulations((resp) => {
             requestSender.localRedirect('search-results', {
@@ -188,7 +189,7 @@ SIREPO.app.controller('LatticeController', function(slactwinService, $scope) {
     const self = this;
     slactwinService.initController(self, $scope);
 
-    $scope.$on('sr-archive-loaded', () => {
+    $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = "";
         self.hasLattice = true;
     });
@@ -235,7 +236,7 @@ SIREPO.app.directive('appHeader', function(authState, panelState, slactwinServic
         controller: function($element, $scope) {
             $scope.authState = authState;
 
-            $scope.hasQuery = slactwinService.getArchiveId;
+            $scope.hasQuery = slactwinService.getRunSummaryId;
 
             panelState.waitForUI(() => {
                 $($element).find("li[data-settings-menu='nav']").hide();
@@ -456,21 +457,21 @@ SIREPO.app.directive('pvTable', function(appState, slactwinService) {
             init();
 
             $scope.slactwinService = slactwinService;
-            $scope.$on('sr-archive-loaded', init);
+            $scope.$on('sr-run-loaded', init);
         },
     };
 });
 
-SIREPO.app.directive('archiveNavigation', function(appState, requestSender, slactwinService) {
+SIREPO.app.directive('runNavigation', function(appState, requestSender, slactwinService) {
     return {
         restrict: 'A',
         scope: {},
         template: `
-            <div class="text-right" data-ng-if="archiveIds">
+            <div class="text-right" data-ng-if="runSummaryIds">
               <div style="margin: 0 1em 1em 0">
-                <button type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! archiveIds[0]">
+                <button type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! runSummaryIds[0]">
                   <span class="glyphicon glyphicon-triangle-left"> </span></button>
-                <button type="button" class="btn btn-default" data-ng-click="next(1)" data-ng-disabled="! archiveIds[1]">
+                <button type="button" class="btn btn-default" data-ng-click="next(1)" data-ng-disabled="! runSummaryIds[1]">
                   <span class="glyphicon glyphicon-triangle-right"> </span></button>
               </div>
             </div>
@@ -478,24 +479,24 @@ SIREPO.app.directive('archiveNavigation', function(appState, requestSender, slac
         controller: function($scope) {
 
             const init = () => {
-                $scope.archiveIds = null;
+                $scope.runSummaryIds = null;
                 let prev;
                 for (const r of appState.models.searchSettings.rowIds) {
-                    if ($scope.archiveIds) {
-                        $scope.archiveIds[1] = r;
+                    if ($scope.runSummaryIds) {
+                        $scope.runSummaryIds[1] = r;
                         break;
                     }
-                    if (r === slactwinService.getArchiveId()) {
-                        $scope.archiveIds = [prev, null];
+                    if (r === slactwinService.getRunSummaryId()) {
+                        $scope.runSummaryIds = [prev, null];
                     }
                     prev = r;
                 }
             };
 
             $scope.next = (direction) => {
-                if ($scope.archiveIds[direction]) {
-                    slactwinService.setArchiveId($scope.archiveIds[direction]);
-                    slactwinService.loadArchive();
+                if ($scope.runSummaryIds[direction]) {
+                    slactwinService.setRunSummaryId($scope.runSummaryIds[direction]);
+                    slactwinService.loadRun();
                     init();
                 }
             };
@@ -520,7 +521,7 @@ SIREPO.app.directive('loadingIndicator', function($timeout) {
     };
 });
 
-SIREPO.app.directive('archiveSummary', function(appState, slactwinService) {
+SIREPO.app.directive('runSummary', function(appState, slactwinService) {
     return {
         restrict: 'A',
         scope: {},
@@ -558,7 +559,7 @@ SIREPO.app.directive('archiveSummary', function(appState, slactwinService) {
             };
 
             init();
-            $scope.$on('sr-archive-loaded', init);
+            $scope.$on('sr-run-loaded', init);
         },
     };
 });
@@ -614,7 +615,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             const getSearchFilter = () => {
-                $scope.loadingMessage = "Loading archives";
+                $scope.loadingMessage = "Loading runs";
                 const res = {
                     snapshot_end: {
                         min: $scope.model.searchStartTime,
@@ -664,7 +665,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             const init = () => {
-                $scope.loadingMessage = "Loading archives";
+                $scope.loadingMessage = "Loading runs";
                 getColumns();
             };
 
@@ -850,7 +851,7 @@ SIREPO.app.directive('searchResultsTable', function() {
                       <td>{{ dateValue(row.snapshot_end) }}</td>
                       <td data-ng-repeat="c in columnHeaders.slice(1)"><div class="text-right">{{ columnValue(row, c) | number:7 }}</div></td>
 
-                  <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openArchive(row)">Open Archive</button></div><div></td>
+                  <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openRun(row)">Open Run</button></div><div></td>
 
                     </tr>
                 </table>
@@ -897,13 +898,13 @@ SIREPO.app.directive('searchResultsTable', function() {
                 appState.saveChanges('searchSettings');
             };
 
-            $scope.openArchive = (row) => {
+            $scope.openRun = (row) => {
                 $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
                 appState.saveChanges('searchSettings', () => {
                     requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
                         ':simulationId': appState.models.simulation.simulationId,
                     });
-                    slactwinService.setArchiveId(row.run_summary_id);
+                    slactwinService.setRunSummaryId(row.run_summary_id);
                 });
             };
 

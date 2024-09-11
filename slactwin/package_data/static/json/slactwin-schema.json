@@ -100,15 +100,15 @@
     },
     "frameIdFields": {
         "animation": [
-            "archiveId",
+            "runSummaryId",
             "plotName",
             "x",
             "y",
             "histogramBins",
             "reportIndex"
         ],
-        "summaryAnimation": ["archiveId"],
-        "statAnimation": ["archiveId", "x", "y1", "y2", "y3", "y4", "y5"]
+        "summaryAnimation": ["runSummaryId"],
+        "statAnimation": ["runSummaryId", "x", "y1", "y2", "y3", "y4", "y5"]
     },
     "localRoutes": {
         "search": {
@@ -155,7 +155,7 @@
             "name": ["Name", "ValidatedString"]
         },
         "elementAnimation": {
-            "archiveId": ["", "String", "0"],
+            "runSummaryId": ["", "String", "0"],
             "plotName": ["", "String"],
             "x": ["X Value", "PhaseSpaceCoordinate", "x"],
             "y": ["Y Value", "PhaseSpaceCoordinate", "y"],
@@ -182,7 +182,7 @@
             "maxValue": ["Maximum Value", "OptionalFloat", ""]
         },
         "statAnimation": {
-            "archiveId": ["", "String", "0"],
+            "runSummaryId": ["", "String", "0"],
             "x": ["Horizontal Value to Plot", "Stat", "mean_z"],
             "y1": ["Vertical Value to Plot", "Stat", "norm_emit_x"],
             "y2": ["Vertical Value to Plot", "Stat", "norm_emit_y"],
@@ -201,7 +201,7 @@
             "notes": ["Notes", "Text", ""]
         },
         "summaryAnimation": {
-            "archiveId": ["", "String", "0"]
+            "runSummaryId": ["", "String", "0"]
         },
         "simulation": {
             "elementPosition": ["Element Positioning", "ElementPosition", "absolute"]
@@ -237,7 +237,7 @@
             ]
         },
         "searchSettings": {
-            "title": "Archive Search",
+            "title": "Search Runs",
             "basic": [
                 "accelerator",
                 "twinModel",
