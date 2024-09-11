@@ -3,3 +3,21 @@
   min-width: 5em;
   display: inline-block;
 }
+
+.form-group-sm .st-search-terms select {
+  text-align-last: right;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.model-searchSettings-searchTerms .control-label {
+  display: none;
+}
+
+.st-removable-column .st-remove-column-button {
+  visibility: hidden;
+}
+
+.st-removable-column:hover .st-remove-column-button {
+  visibility: visible;
+}
