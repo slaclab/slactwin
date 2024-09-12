@@ -13,6 +13,7 @@ import h5py
 import impact
 import pykern.pkio
 import pykern.pkjson
+import re
 import sirepo.sim_data
 import sirepo.template.impactt
 import sirepo.template.lattice
@@ -62,16 +63,19 @@ def sim_frame_summaryAnimation(frame_args):
             Nbunch=I.header["Nbunch"],
             Nprow=I.header["Nprow"],
             Npcol=I.header["Npcol"],
-            # TODO(pjm): need summary of archive: date/time, machine, model
-            description="",
-        ),
+        ).pkupdate(_summary_info(frame_args.runSummaryId)),
         lattice=_trim_beamline(l),
         particles=sirepo.template.impactt.output_info(l),
     )
 
 
 def stateless_compute_db_api(data, **kwargs):
-    return _db_api(**data.args)
+    try:
+        return _db_api(**data.args)
+    except ConnectionRefusedError:
+        return PKDict(
+            error="Could not connect to the database",
+        )
 
 
 def write_parameters(data, run_dir, is_parallel):
@@ -98,6 +102,15 @@ def _summary_file(run_summary_id):
         pykern.pkio.py_path(
             _db_api("run_summary_by_id", run_summary_id=run_summary_id).summary_path,
         ),
+    )
+
+
+def _summary_info(run_summary_id):
+    s = _db_api("run_summary_by_id", run_summary_id=run_summary_id)
+    m = re.search(r".*?/\d{4}/\d\d/\d\d/(.*?)-\d{4}", s.summary_path)
+    return PKDict(
+        description=m.group(1) if m else "",
+        snapshot_end=s.snapshot_end,
     )
 
 
