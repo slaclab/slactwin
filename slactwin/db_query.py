@@ -122,7 +122,7 @@ class _DbQuery:
             if values:
                 _add_min_max(state, col, values)
             state.base_cols[name] = col
-            state.order_by.append(col.asc())
+            state.order_by.append(col.desc())
 
         def _add_min_max(state, col, values):
             if (x := values.get("min")) is not None:

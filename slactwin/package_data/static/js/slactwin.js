@@ -84,7 +84,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
 
     self.initController = (controller, $scope) => {
         let firstCheck = true;
-        $scope.loadingMessage = "Reading Run Info";
+        $scope.loadingMessage = 'Reading Run Info';
 
         const init = () => {
             controller.simScope = $scope;
@@ -131,7 +131,7 @@ SIREPO.app.controller('VizController', function(appState, frameCache, panelState
     slactwinService.initController(self, $scope);
 
     $scope.$on('sr-run-loaded', () => {
-        $scope.loadingMessage = "";
+        $scope.loadingMessage = '';
         self.outputFiles = [];
         slactwinService.particles.forEach((info) => {
             var outputFile = {
@@ -190,7 +190,7 @@ SIREPO.app.controller('LatticeController', function(slactwinService, $scope) {
     slactwinService.initController(self, $scope);
 
     $scope.$on('sr-run-loaded', () => {
-        $scope.loadingMessage = "";
+        $scope.loadingMessage = '';
         self.hasLattice = true;
     });
 });
@@ -221,7 +221,7 @@ SIREPO.app.directive('appHeader', function(authState, panelState, slactwinServic
             <div data-app-header-right="nav">
               <app-header-right-sim-loaded data-ng-if="hasQuery()">
                 <div data-sim-sections="">
-                  <li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>
+                  <!--<li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>-->
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
 
                   <li class="sim-section" data-ng-class="{active: nav.isActive('vizualization')}"><a href data-ng-click="nav.openSection('viz')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
@@ -239,13 +239,13 @@ SIREPO.app.directive('appHeader', function(authState, panelState, slactwinServic
             $scope.hasQuery = slactwinService.getRunSummaryId;
 
             panelState.waitForUI(() => {
-                $($element).find("li[data-settings-menu='nav']").hide();
+                $($element).find('li[data-settings-menu="nav"]').hide();
             });
         },
     };
 });
 
-SIREPO.app.directive('latticeFooter', function(panelState, slactwinService) {
+SIREPO.app.directive('latticeFooter', function() {
     return {
         restrict: 'A',
         scope: {
@@ -253,7 +253,7 @@ SIREPO.app.directive('latticeFooter', function(panelState, slactwinService) {
             modelName: '@',
         },
         template: ``,
-        controller: function($scope) {
+        controller: function(panelState, slactwinService, $scope) {
 
             function detectOverlap(positions, pos) {
                 for (let p of positions) {
@@ -381,7 +381,7 @@ SIREPO.app.directive('latticeFooter', function(panelState, slactwinService) {
     };
 });
 
-SIREPO.app.directive('pvTable', function(appState, slactwinService) {
+SIREPO.app.directive('pvTable', function() {
     return {
         restrict: 'A',
         scope: {},
@@ -407,7 +407,7 @@ SIREPO.app.directive('pvTable', function(appState, slactwinService) {
               </tbody>
             <table>
         `,
-        controller: function($scope) {
+        controller: function(appState, slactwinService, $scope) {
             $scope.columns = [
                 ['Variable', 'Variable'],
                 ['PV Name', 'device_pv_name'],
@@ -462,7 +462,7 @@ SIREPO.app.directive('pvTable', function(appState, slactwinService) {
     };
 });
 
-SIREPO.app.directive('runNavigation', function(appState, requestSender, slactwinService) {
+SIREPO.app.directive('runNavigation', function() {
     return {
         restrict: 'A',
         scope: {},
@@ -476,7 +476,7 @@ SIREPO.app.directive('runNavigation', function(appState, requestSender, slactwin
               </div>
             </div>
         `,
-        controller: function($scope) {
+        controller: function(appState, requestSender, slactwinService, $scope) {
 
             const init = () => {
                 $scope.runSummaryIds = null;
@@ -506,7 +506,7 @@ SIREPO.app.directive('runNavigation', function(appState, requestSender, slactwin
     };
 });
 
-SIREPO.app.directive('loadingIndicator', function($timeout) {
+SIREPO.app.directive('loadingIndicator', function() {
     return {
         restrict: 'A',
         scope: {
@@ -515,18 +515,19 @@ SIREPO.app.directive('loadingIndicator', function($timeout) {
         template: `
             <div style="margin-left: 2em; margin-top: 1ex;" class="lead" data-ng-show="message && ready"><img src="/static/img/sirepo_animated.gif" /> {{ message }}</div>
         `,
-        controller: function($scope) {
+        controller: function($scope, $timeout) {
             $timeout(() => $scope.ready = true, 500);
         },
     };
 });
 
-SIREPO.app.directive('runSummary', function(appState, slactwinService) {
+SIREPO.app.directive('runSummary', function() {
     return {
         restrict: 'A',
         scope: {},
         template: `
-            <div style="margin-bottom: 1em">{{ summary.description }}</div>
+            <div>{{ summary.description }}</div>
+            <div style="margin-bottom: 1em">{{ dateValue(summary.snapshot_end) }}</div>
 
             <div>{{ summary.inputs['distgen:n_particle'] | number }} macroparticles</div>
             <div>{{ summary.Nbunch }} bunch{{ summary.Nbunch > 1 ? 'es' : '' }} of {{ models.beam.particle }}s</div>
@@ -539,7 +540,7 @@ SIREPO.app.directive('runSummary', function(appState, slactwinService) {
 
             <div style="margin-top: 1em">Run time: {{ summary.run_time / 60 | number:1 }} minutes</div>
         `,
-        controller: function($scope) {
+        controller: function(appState, slactwinService, timeService, $scope) {
             const init = () => {
                 $scope.summary = slactwinService.summary;
                 $scope.models = slactwinService.latticeModels();
@@ -558,13 +559,20 @@ SIREPO.app.directive('runSummary', function(appState, slactwinService) {
                 });
             };
 
+            $scope.dateValue = (value) => {
+                if (value) {
+                    return timeService.unixTimeToDateString(value);
+                }
+                return '';
+            };
+
             init();
             $scope.$on('sr-run-loaded', init);
         },
     };
 });
 
-SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinService) {
+SIREPO.app.directive('searchForm', function() {
     return {
         restrict: 'A',
         scope: {
@@ -579,7 +587,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
               <div data-ng-if="loadingMessage" data-loading-indicator="loadingMessage"></div>
             </div>
         `,
-        controller: function(slactwinService, $scope) {
+        controller: function(appState, requestSender, slactwinService, errorService, $scope) {
 
             const extractNames = (resp, columns) => {
                 if (angular.isObject(resp)) {
@@ -597,10 +605,16 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                 return columns;
             };
 
-            const getColumns = () => {
+            const init = () => {
+                $scope.loadingMessage = 'Loading runs';
                 requestSender.sendStatelessCompute(
                     appState,
                     (resp) => {
+                        $scope.loadingMessage = '';
+                        if (resp.error) {
+                            errorService.alertText(resp.error);
+                            return;
+                        }
                         $scope.model.columns = extractNames(resp, []);
                         getSearchResults();
                     },
@@ -615,13 +629,16 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             const getSearchFilter = () => {
-                $scope.loadingMessage = "Loading runs";
+                $scope.loadingMessage = 'Loading runs';
                 const res = {
-                    snapshot_end: {
-                        min: $scope.model.searchStartTime,
-                        max: $scope.model.searchStopTime,
-                    },
+                    snapshot_end: {},
                 };
+                if ($scope.model.searchStartTime) {
+                    res.snapshot_end.min = $scope.model.searchStartTime;
+                }
+                if ($scope.model.searchStopTime) {
+                    res.snapshot_end.max = $scope.model.searchStopTime;
+                }
                 for (const m of $scope.model.searchTerms) {
                     if (m.column === slactwinService.selectSearchFieldText
                         || (m.minValue === '' && m.maxValue === '')) {
@@ -639,6 +656,9 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
             };
 
             const getSearchResults = () => {
+                if (! ($scope.model.columns || []).length) {
+                    return;
+                }
                 $scope.searchResults = null;
                 const cols = appState.clone($scope.model.selectedColumns);
                 // remove snapshot_end col
@@ -646,7 +666,7 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                 requestSender.sendStatelessCompute(
                     appState,
                     (resp) => {
-                        $scope.loadingMessage = "";
+                        $scope.loadingMessage = '';
                         $scope.searchResults = resp.rows;
                     },
                     {
@@ -662,11 +682,6 @@ SIREPO.app.directive('searchForm', function(appState, requestSender, slactwinSer
                         },
                     },
                 );
-            };
-
-            const init = () => {
-                $scope.loadingMessage = "Loading runs";
-                getColumns();
             };
 
             init();
@@ -850,9 +865,7 @@ SIREPO.app.directive('searchResultsTable', function() {
                     <tr ng-repeat="row in searchResults track by $index">
                       <td>{{ dateValue(row.snapshot_end) }}</td>
                       <td data-ng-repeat="c in columnHeaders.slice(1)"><div class="text-right">{{ columnValue(row, c) | number:7 }}</div></td>
-
-                  <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openRun(row)">Open Run</button></div><div></td>
-
+                      <td style="text-align: right"><div class="sr-button-bar-parent"><div class="sr-button-bar"><button class="btn btn-info btn-xs sr-hover-button" data-ng-click="openRun(row)">Open Run</button></div><div></td>
                     </tr>
                 </table>
               </div>

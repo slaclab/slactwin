@@ -53,9 +53,9 @@ async def test_run_all():
             ),
         )
         # Since the db is committed, this is a fixed value
-        pkunit.pkeq(35002, r.rows[0].run_summary_id)
+        pkunit.pkeq(35002, r.rows[-1].run_summary_id)
         pkunit.pkeq(3, len(r.rows))
-        pkunit.pkeq(t, r.rows[0].snapshot_end)
+        pkunit.pkeq(t, r.rows[-1].snapshot_end)
         r = await c.post("run_summary_by_id", PKDict(run_summary_id=35002))
         pkunit.pkeq(1718804541, r.snapshot_end)
         with pkunit.pkexcept("NoRows"):

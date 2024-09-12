@@ -67,12 +67,12 @@ class Test:
                 additional_run_values=["pv^SOLN:GUNB:212:BACT"],
             )
             self.pkeq(3, len(a.rows))
-            self.pkeq("2024-06-19T13:42:21", a.rows[0].snapshot_end.isoformat())
-            self.pkeq("2024-06-19T13:58:07", a.rows[-1].snapshot_end.isoformat())
+            self.pkeq("2024-06-19T13:42:21", a.rows[-1].snapshot_end.isoformat())
+            self.pkeq("2024-06-19T13:58:07", a.rows[0].snapshot_end.isoformat())
             for r in a.rows:
                 self.pkok(
                     r.run_values["impact^end_cov_x__px"] >= 65, "value < 65 row={}", r
                 )
             self.pkeq(
-                0.044200997724189985, a.rows[0].run_values["pv^SOLN:GUNB:212:BACT"]
+                0.044200997724189985, a.rows[-1].run_values["pv^SOLN:GUNB:212:BACT"]
             )
