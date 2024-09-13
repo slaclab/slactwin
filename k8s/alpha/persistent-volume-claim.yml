@@ -7,9 +7,8 @@ metadata:
     app: sirepo-alpha
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
   storageClassName: sdf-group-ad
-  volumeName: sirepo-alpha-pv

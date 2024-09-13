@@ -1,11 +1,12 @@
+# TODO(e-carlin): Is there a way to get the stock pg image to read an
+# env file so we can move this config to it?
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pg
 data:
   # https://github.com/docker-library/docs/blob/master/postgres/README.md
-  POSTGRES_DB: mydatabase
-  POSTGRES_USER: myuser
-  # TODO(e-carlin): make this an actual secret
-  POSTGRES_PASSWORD: mypassword
+  POSTGRES_DB: slactwin
+  # TODO(e-carlin): Better name and share everywhere
+  POSTGRES_USER: vagrant
   PGDATA: /srv/slactwin_db/db

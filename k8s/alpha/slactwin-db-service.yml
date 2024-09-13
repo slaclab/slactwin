@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: slactwin-db
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  type: ClusterIP
+  ports:
+    # TODO(e-carlin): share with slactwin-dv-env.sh
+    - port: 9020
+      protocol: TCP
+  selector:
+    deployment: sirepo-alpha-slactwin-db

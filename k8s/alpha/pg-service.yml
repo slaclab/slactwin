@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: pg
+  namespace: sirepo-alpha
+  labels:
+    app: sirepo-alpha
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      protocol: TCP
+  selector:
+    deployment: sirepo-alpha-pg
