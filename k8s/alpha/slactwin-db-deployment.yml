@@ -34,10 +34,10 @@ spec:
                   key: slactwin-db-uri
           resources:
             requests:
-              memory: "4Gi"
+              memory: "16Gi"
               cpu: "1"
             limits:
-              memory: "4Gi"
+              memory: "16Gi"
               cpu: "1"
           volumeMounts:
             - mountPath: /srv

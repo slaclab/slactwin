@@ -45,10 +45,10 @@ spec:
           # TODO(e-carlin): Tune these resource limits.
           resources:
             requests:
-              memory: "2Gi"
+              memory: "16Gi"
               cpu: "1"
             limits:
-              memory: "2Gi"
+              memory: "16Gi"
               cpu: "1"
           volumeMounts:
             - mountPath: /srv
