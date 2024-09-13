@@ -1,4 +1,4 @@
-"""Execution template.
+"""Execution template. Responds to requests from the UI for database queries and plot data.
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -26,6 +26,7 @@ _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
 
 def background_percent_complete(report, run_dir, is_running):
+    """Called by the UI to get the status on a background job (report)"""
     if is_running:
         return PKDict(
             frameCount=0,
@@ -38,6 +39,7 @@ def background_percent_complete(report, run_dir, is_running):
 
 
 def sim_frame(frame_args):
+    """General plot request, provides bunch plot report data"""
     return sirepo.template.impactt.bunch_plot(
         frame_args,
         frame_args.frameIndex,
@@ -46,10 +48,14 @@ def sim_frame(frame_args):
 
 
 def sim_frame_statAnimation(frame_args):
+    """Specific plot request for the statAnimation plot"""
     return sirepo.template.impactt.stat_animation(_load_archive(frame_args), frame_args)
 
 
 def sim_frame_summaryAnimation(frame_args):
+    """Specific data request for the summaryAnimation model.
+    Queries the database and loads the lume-impact archive for a specific runSummaryId
+    """
     s = _summary_file(frame_args.runSummaryId)
     I = _load_archive(frame_args)
     with h5py.File(s.outputs.archive) as f:
@@ -71,6 +77,7 @@ def sim_frame_summaryAnimation(frame_args):
 
 
 def stateless_compute_db_api(data, **kwargs):
+    """Request from the UI for database queries, ex. run_kinds_and_values or runs_by_date_and_values"""
     try:
         return _db_api(**data.args)
     except ConnectionRefusedError:
@@ -80,6 +87,7 @@ def stateless_compute_db_api(data, **kwargs):
 
 
 def write_parameters(data, run_dir, is_parallel):
+    """There is no code generation for this application"""
     pass
 
 
@@ -118,6 +126,9 @@ def _summary_file(run_summary_id):
 
 
 def _summary_info(run_summary_id):
+    """Returns a descriptive name and date for the runSummaryId
+    Constructs the description from the summary filename, ex. lume-impact-live-demo-s3df-sc_inj
+    """
     s = _db_api("run_summary_by_id", run_summary_id=run_summary_id)
     m = re.search(r".*?/\d{4}/\d\d/\d\d/(.*?)-\d{4}", s.summary_path)
     return PKDict(
@@ -127,7 +138,9 @@ def _summary_info(run_summary_id):
 
 
 def _trim_beamline(data):
-    # remove zero quads and trim beamline at STOP element
+    """Updates the lume-impact lattice displayed from the UI.
+    Remove zero quads and trim beamline at STOP element
+    """
     util = sirepo.template.lattice.LatticeUtil(
         data, sirepo.sim_data.get_class("impactt").schema()
     )
@@ -136,6 +149,7 @@ def _trim_beamline(data):
         el = util.id_map[i]
         if el.get("type") == "QUADRUPOLE":
             if el.rf_frequency == 0:
+                # TODO(pjm): should insert a drift for the same length
                 continue
         bl.append(i)
         if el.get("type") == "STOP":
