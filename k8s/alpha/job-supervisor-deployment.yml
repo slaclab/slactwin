@@ -39,10 +39,10 @@ spec:
                   key: sirepo-job-server-secret
           resources:
             requests:
-              memory: "16Gi"
+              memory: "32Gi"
               cpu: "16"
             limits:
-              memory: "16Gi"
+              memory: "32Gi"
               cpu: "16"
           volumeMounts:
             - mountPath: /srv

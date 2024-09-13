@@ -31,10 +31,10 @@ spec:
                 name: pg
           resources:
             requests:
-              memory: "8Gi"
+              memory: "16Gi"
               cpu: "8"
             limits:
-              memory: "8Gi"
+              memory: "16Gi"
               cpu: "8"
           volumeMounts:
             - mountPath: /srv
