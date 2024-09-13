@@ -1,4 +1,7 @@
-"""Job command resources
+"""Resources for the slactwin simulation type.
+
+Configuration for slactwin job_cmds to communicate with the slactwin
+db service.
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -14,7 +17,14 @@ _cfg = None
 
 
 class Allocator(sirepo.global_resources.AllocatorBase):
+    """Manages access to resources."""
+
     def _get(self):
+        """Resources for job_cmds and the gui.
+
+        Returns:
+          PKDict: The resources.
+        """
         return PKDict(
             db_api=PKDict(
                 api_uri=_cfg.db_api.api_uri,
@@ -25,6 +35,16 @@ class Allocator(sirepo.global_resources.AllocatorBase):
         )
 
     def _redact_for_gui(self, resources):
+        """Redact resources sent to the GUI.
+
+        Resources sent to the GUI are easily read by the user so we
+        redact any sensitive information. For example, the authentication
+        secret used by job_cmds to communicate with the slactwin db
+        service should not be exposed to the user through the GUI.
+
+        Returns:
+          PKDict: Resources that are safe to send to the GUI.
+        """
         return PKDict()
 
 
