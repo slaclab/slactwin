@@ -35,10 +35,10 @@ spec:
           resources:
             requests:
               memory: "16Gi"
-              cpu: "8"
+              cpu: "1"
             limits:
               memory: "16Gi"
-              cpu: "8"
+              cpu: "1"
           volumeMounts:
             - mountPath: /srv
               name: storage
