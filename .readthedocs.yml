@@ -9,6 +9,7 @@ build:
     pre_build:
      # TODO(robnagler) remove once pykern is released
      - pip install git+https://github.com/radiasoft/pykern.git
-     - curl https://radia.run | bash -s readthedocs
+     # https://github.com/radiasoft/sirepo/issues/7252
+     - curl https://radia.run | SIREPO_FEATURE_CONFIG_SIM_TYPES=slactwin:impactt SIREPO_FEATURE_CONFIG_PACKAGE_PATH=slactwin:sirepo bash -s readthedocs
 sphinx:
   configuration: docs/conf.py
