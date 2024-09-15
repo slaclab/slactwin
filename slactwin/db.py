@@ -50,7 +50,6 @@ class _Db(slactwin.quest.Attr):
     on success or rollback on an exception.
     """
 
-
     ATTR_KEY = "db"
 
     def __init__(self, *args, **kwargs):

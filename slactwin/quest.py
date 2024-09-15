@@ -62,9 +62,11 @@ def start():
 
 class API(pykern.quest.API):
     """Superclass of quest entry points"""
+
     pass
 
 
 class Attr(pykern.quest.Attr):
     """Superclass of quest context objects"""
+
     pass
