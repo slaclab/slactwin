@@ -9,7 +9,7 @@ UI will change.
 Currently, SLACTwin supports rendering the output of
 `lume-impact-live-demo
 <https://github.com/ChristopherMayes/lume-impact-live-demo>`_.
-`Impact <https://amac.lbl.gov/~jiqiang/IMPACT/>`_ is a parallel
+`Impact-T <https://amac.lbl.gov/~jiqiang/IMPACT/>`_ is a parallel
 particle-in-cell code suite for modeling high intensity, high
 brightness beams in rf proton linacs, electron linacs and
 photoinjectors.
