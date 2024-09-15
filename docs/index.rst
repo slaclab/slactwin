@@ -14,7 +14,7 @@ particle-in-cell code suite for modeling high intensity, high
 brightness beams in rf proton linacs, electron linacs and
 photoinjectors.
 
-This software is open source, please read the `LICENSE file <http://github.com/slaclab/slactwin/LICENSE>`_.
+License: `http://github.com/slaclab/slactwin/LICENSE <http://github.com/slaclab/slactwin/LICENSE>`_.
 
 Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 
