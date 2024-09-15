@@ -1,19 +1,4 @@
-"""Database connections
-
-  su -
-  dnf install -y postgresql-server postgresql-devel
-  postgresql-setup --initdb
-  systemctl start postgresql
-  systemctl enable postgresql
-  su postgres -c 'createuser --no-superuser --createdb --no-createrole --no-password vagrant'
-  exit
-  pip install psycopg2
-  createdb slactwin
-  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/run_importer_test.py
-  dropdb slactwin
-  createdb slactwin
-  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin slactwin db insert-runs ~/tmp/iana/summary
-  SLACTWIN_DB_URI=postgresql://vagrant@/slactwin pykern test tests/db_{api,query}_test.py
+"""Wraps SQLAlchemy
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -32,6 +17,8 @@ import sys
 
 
 class BaseExc(Exception):
+    """Superclass for sll exceptions in this module"""
+
     def __init__(self, **context):
         a = [self.__class__.__name__]
         f = "exception={}"
@@ -45,18 +32,24 @@ class BaseExc(Exception):
 
 
 class NoRows(BaseExc):
-    """Expected at least one row"""
+    """Expected at least one row, but got none."""
 
     pass
 
 
 class MoreThanOneRow(BaseExc):
-    """Expected exactly one row"""
+    """Expected exactly one row, but got more than one."""
 
     pass
 
 
 class _Db(slactwin.quest.Attr):
+    """Database object bound to each `slactwin.quest`
+
+    All quests automatically begin a transaction at start and commit
+    on success or rollback on an exception.
+    """
+
 
     ATTR_KEY = "db"
 

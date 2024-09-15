@@ -1,4 +1,4 @@
-"""Import PV snapshots & Impact-T runs
+"""Database command-line utilities
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -13,15 +13,19 @@ import pykern.pkio
 class Commands(slactwin.pkcli.CommandsBase):
 
     def insert_runs(self, summary_dir):
-        """Load data from Impact-T runs into database.
+        """Load data from lume-impact-live-demo runs into db.
 
-        Summary json files output by Impact-T will be parsed and
-        relevant fields will be loaded into the databse.
+        Recursively searches `summary_dir` for any ``*.json`` files,
+        calling `slactwin.run_importer.insert_run_summary` for each
+        file. Commits after each run summary import. Terminates on first
+        run summary report in error or on successful completion.
+
+        Typically, `summary_dir` points to the ``summary`` directory
+        in the lume-impact-live-demo root which as subdirectories of the form
+        YYYY/MM/DD, e.g. ``summary/2024/11/02/*.json``.
 
         Args:
-          summary_dir (str): Directory containing summary .json files.
-            Possibly under nested directories (ex
-            summary/2024/11/02/*.json).
+          summary_dir (str): directory containing summary ``.json`` files
         """
         from slactwin import run_importer
 

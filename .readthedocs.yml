@@ -7,6 +7,8 @@ build:
     python: "3.9"
   jobs:
     pre_build:
+     # TODO(robnagler) remove once pykern is released
+     - pip install git+https://github.com/radiasoft/pykern.git
      - curl https://radia.run | bash -s readthedocs
 sphinx:
   configuration: docs/conf.py
