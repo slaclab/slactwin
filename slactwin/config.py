@@ -1,4 +1,4 @@
-"""common config utilities
+"""Common configuration
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -16,10 +16,26 @@ _cfg = None
 
 
 def cfg():
+    """`PKDict` of common configuration.
+
+    db_api
+       api_uri, auth_secret, tcp_ip, and tcp_port values. `PKDict`
+       is compatible with `pykern.http.server_start`,
+       `global_resources.Allocator`, and `db_api_client`.
+
+    Returns:
+        PKDict: configuration values. (Make a copy before modifying.)
+
+    """
     return _cfg
 
 
 def dev_path(path, **ensure_kwargs):
+    """Prefixes root of the directory for development to `path`.
+
+    Returns:
+        py.path: absolute path with parent directories created
+    """
     return _dev_root_d.join(path)
 
 
