@@ -11,13 +11,21 @@ import sirepo.sim_data
 class SimData(sirepo.sim_data.SimDataBase):
     @classmethod
     def fixup_old_data(cls, data, qcall, **kwargs):
-        """Apply any new schema information to an existing data instance"""
+        """Apply any new schema information to an existing data instance
+        Args:
+            data (PKDict): simulation instance
+        """
         cls._init_models(data.models)
 
     @classmethod
     def _compute_job_fields(cls, data, *args, **kwargs):
+        """Provides computation fields for job result caching. Not used by this application.
+        Args:
+            data (PKDict): simulation instance
+        """
         return []
 
     @classmethod
     def _lib_file_basenames(cls, *args, **kwargs):
+        """Provides a list of external input files for a job. Not used by this application."""
         return []
