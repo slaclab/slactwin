@@ -1,4 +1,4 @@
-"""Execution template. Responds to requests from the UI for database queries and plot data.
+"""Execution template for SLAC TWIN. Responds to requests from the UI for database queries and plot data.
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -26,7 +26,15 @@ _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
 
 def background_percent_complete(report, run_dir, is_running):
-    """Called by the UI to get the status on a background job (report)"""
+    """Called by the UI to get the status on a background job (report)
+
+    Args:
+        report (str): analysis model
+        run_dir (py.path.Local): job run directory
+        is_running (bool): True if the job is currently running
+    Returns:
+        PKDict: percentage complete summary info
+    """
     if is_running:
         return PKDict(
             frameCount=0,
@@ -39,7 +47,13 @@ def background_percent_complete(report, run_dir, is_running):
 
 
 def sim_frame(frame_args):
-    """General plot request, provides bunch plot report data"""
+    """Plot request, provides bunch plot report data
+
+    Args:
+        frame_args (PKDict): contains elementAnimation field values as well as the full simulation instance and job run_dir
+    Returns:
+        PKDict: heatmap plot data and report labels
+    """
     return sirepo.template.impactt.bunch_plot(
         frame_args,
         frame_args.frameIndex,
@@ -48,13 +62,23 @@ def sim_frame(frame_args):
 
 
 def sim_frame_statAnimation(frame_args):
-    """Specific plot request for the statAnimation plot"""
+    """Specific plot request for the statAnimation plot
+
+    Args:
+        frame_args (PKDict): contains statAnimation field values as well as the full simulation instance and job run_dir
+    Returns:
+        PKDict: parameter plot data and report labels
+    """
     return sirepo.template.impactt.stat_animation(_load_archive(frame_args), frame_args)
 
 
 def sim_frame_summaryAnimation(frame_args):
-    """Specific data request for the summaryAnimation model.
-    Queries the database and loads the lume-impact archive for a specific runSummaryId
+    """Specific data request for the summaryAnimation model. Queries the database and loads the lume-impact archive for a specific runSummaryId.
+
+    Args:
+        frame_args (PKDict): contains a runSummaryId field value
+    Returns:
+        PKDict: PV values, simulation input values and simulation output values extracted from the summary file and Impact-T archive
     """
     s = _summary_file(frame_args.runSummaryId)
     I = _load_archive(frame_args)
@@ -77,7 +101,11 @@ def sim_frame_summaryAnimation(frame_args):
 
 
 def stateless_compute_db_api(data, **kwargs):
-    """Request from the UI for database queries, ex. run_kinds_and_values or runs_by_date_and_values"""
+    """Request from the UI for database queries, ex. run_kinds_and_values or runs_by_date_and_values
+
+    Args:
+        data (PKDict): Contains api_name and api_args values for specific database queries.
+    """
     try:
         return _db_api(**data.args)
     except ConnectionRefusedError:
@@ -87,7 +115,13 @@ def stateless_compute_db_api(data, **kwargs):
 
 
 def write_parameters(data, run_dir, is_parallel):
-    """There is no code generation for this application"""
+    """There is no code generation for this application
+
+    Args:
+        data (PKDict): simulation instance
+        run_dir (py.path.Local): job run directory
+        is_parallel (bool): is this for a background job?
+    """
     pass
 
 
