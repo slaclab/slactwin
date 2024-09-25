@@ -5,22 +5,25 @@
 """
 
 import contextlib
+import pytest
+
+_NEW_SUMMARY_FILE = "lume-impact-live-demo-s3df-sc_inj-2024-06-19T07:03:29-07:00.json"
 
 
-def test_slactwin_stateless_compute(fc):
-    from slactwin import const
+@pytest.mark.asyncio
+async def test_slactwin_stateless_compute(fc):
     from pykern import pkunit
+    from slactwin import const
 
     pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
     with _server():
         from pykern import pkunit, pkdebug
         from pykern.pkcollections import PKDict
-        import time
+        import asyncio
+        import slactwin.run_importer
 
         fc.sr_sim_type_set("slactwin")
-        d = PKDict(name="new1", folder="/", simulationType=fc.sr_sim_type)
-        d = fc.sr_post("newSimulation", d)
-        pkdebug.pkdlog(d)
+        d = fc.sr_sim_data("SLAC Digital Twin Database", sim_type=fc.sr_sim_type)
         d.models.liveAnimation = PKDict(accelerator="sc_inj", twinModel="impact")
         r = fc.sr_post(
             "runSimulation",
@@ -31,25 +34,23 @@ def test_slactwin_stateless_compute(fc):
                 simulationType=d.simulationType,
             ),
         )
-        pkdebug.pkdlog(r)
-        # pkunit.pkok("outputInfo" not in r
-        time.sleep(100)
-        r = fc.sr_post("runStatus", r.nextRequest)
-        pkdebug.pkdlog(r)
-        assert 0
-
-
-def _do(fc, api_name, api_args):
-    from pykern.pkcollections import PKDict
-
-    return fc.sr_post(
-        "statelessCompute",
-        PKDict(
-            simulationType=fc.sr_sim_type,
-            method="db_api",
-            args=PKDict(api_name=api_name, api_args=api_args),
-        ),
-    )
+        i = None
+        for _ in range(10):
+            await asyncio.sleep(r.nextRequestSeconds)
+            r = fc.sr_post("runStatus", r.nextRequest)
+            if i := r.pkunchecked_nested_get("outputInfo.runSummaryId"):
+                break
+        else:
+            pkunit.pkfail("failed to get runSummaryId: runStatus={}", r)
+        pkunit.data_dir().join(_NEW_SUMMARY_FILE).copy(
+            slactwin.run_importer.cfg().summary_dir
+        )
+        for _ in range(10):
+            await asyncio.sleep(r.nextRequestSeconds)
+            r = fc.sr_post("runStatus", r.nextRequest)
+            if i != r.outputInfo.runSummaryId:
+                return
+        pkunit.pkfail("runSummaryId={} did not change: runStatus={}", i, r)
 
 
 @contextlib.contextmanager
