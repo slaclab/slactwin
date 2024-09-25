@@ -6,9 +6,11 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
+import contextlib
 import datetime
 import slactwin.db
 import slactwin.quest
+import slactwin.run_importer
 
 
 class DbAPI(slactwin.quest.API):
@@ -25,6 +27,10 @@ class DbAPI(slactwin.quest.API):
     api_error
         is None on success. Otherwise, contains an string describing the error.
     """
+
+    async def api_live_monitor(self, api_args):
+        with _raise_on_error():
+            await slactwin.run_importer.Client(qcall=self, **api_args).live_monitor()
 
     async def api_run_kinds_and_values(self, api_args):
         return await self.__query("run_kinds_and_values", api_args)
@@ -44,7 +50,7 @@ class DbAPI(slactwin.quest.API):
                 if hasattr(c, "timestamp") and callable(c.timestamp):
                     row[i] = int(c.timestamp())
 
-        try:
+        with _raise_on_error():
             # TODO(robnagler) generalize
             if x := api_args.get("min_max_values"):
                 if "snapshot_end" in x:
@@ -52,5 +58,11 @@ class DbAPI(slactwin.quest.API):
                         {k: _dt(v) for k, v in x.snapshot_end.items()}
                     )
             return self.db.query(api_name, **api_args)
-        except slactwin.db.BaseExc as e:
-            raise e.as_api_error()
+
+
+@contextlib.contextmanager
+def _raise_on_error():
+    try:
+        yield
+    except slactwin.db.BaseExc as e:
+        raise e.as_api_error()

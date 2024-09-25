@@ -155,12 +155,6 @@ def init_module():
     from slactwin import db_model, db_query
 
     @pykern.pkconfig.parse_none
-    def _path(value):
-        if value is not None:
-            return pykern.util.cfg_absolute_dir(value)
-        return slactwin.config.dev_path("summary").ensure(dir=True, ensure=True)
-
-    @pykern.pkconfig.parse_none
     def _uri(value):
         if value is None:
             return "sqlite:///" + str(

@@ -23,30 +23,55 @@ _SUMMARY_PATH_RE = re.compile(
     r"(.*)/summary/(\d{4}/\d\d/\d\d/).+-(\w+)-\d{4}-\d\d-\d\dT"
 )
 
+_cfg = None
 
-def init_module(loop):
+_notifier = None
+
+def cfg():
     global _cfg
-
-    @pykern.pkconfig.parse_none
-    def _path(value):
-        if value is not None:
-            return pykern.util.cfg_absolute_dir(value)
-        return slactwin.config.dev_path("summary").ensure(dir=True, ensure=True)
-
-    _cfg = pykern.pkconfig.init(
-        summary_dir=pykern.pkconfig.RequiredUnlessDev(
-            None,
-            _path,
-            "where the summary files can be found",
-        ),
-    )
-    _Watcher(loop)
-
+    if not _cfg:
+        _cfg = pykern.pkconfig.init(
+            summary_dir=pykern.pkconfig.RequiredUnlessDev(
+                None,
+                _summary_dir,
+                "where the summary files can be found",
+            ),
+        )
+    return _cfg
 
 def insert_run_summary(path, qcall):
-    _Parser(
-        summary=pykern.pkjson.load_any(path), summary_path=path, qcall=qcall
-    ).create()
+    return _Parser(summary_path=path, qcall=qcall).create()
+
+async def start_notifier():
+    global _notifier
+
+    if _notifier:
+        raise AssertionError("may only be called once")
+    _notifier = _SummaryNotifier()
+
+
+class NotifierClient:
+    def __init__(self, qcall, machine_name, twin_name, run_summary_id=None):
+        self.qcall = qcall
+        self.machine_name = machine_name
+        self.twin_name = twin_name
+        self.run_summary_id = run_summary_id
+
+    def live_monitor(self):
+        self.run_kind_id = await self.db.query(
+            "run_kind_by_names", machine_name=machine_name, twin_name=twin_name,
+        ).run_kind_id
+        if rv := _notifier.new_client(self):
+            return rv
+        self.queue = asyncio.Queue(1)
+        try:
+            await self.queue.get()
+        finally:
+            self.queue.task_done()
+
+
+
+
 
 
 class _Parser(PKDict):
@@ -54,11 +79,19 @@ class _Parser(PKDict):
     # save inputs and outputs in some type of row tag model
     # row ids are returned in searching
     def create(self):
+        """Inserts RunSummary and associated records
+        Returns:
+            PKDict: RunSummary record or None if it exists
+        """
+        if self.qcall.db.query(
+            "summary_path_exists", summary_path=str(self.summary_path)
+        ):
+            return None
+        self.summary = (pykern.pkjson.load_any(path),)
         v = self._summary_values(self.summary)
-        self._run_values_create(
-            self.qcall.db.insert("RunSummary", **v).run_summary_id,
-            v.run_kind_id,
-        )
+        rv = self.qcall.db.insert("RunSummary", **v)
+        self._run_values_create(rv.run_summary_id, v.run_kind_id)
+        return rv
 
     def _run_values_create(self, run_summary_id, run_kind_id):
         def _create(name, value):
@@ -166,24 +199,61 @@ class _Parser(PKDict):
         )
 
 
-class _Watcher(watchdog.events.FileSystemEventHandler):
-    def __init__(self, loop):
+class _SummaryNotifier:
+
+    def __init__(self):
+        self._queue = asyncio.Queue()
+        self._loop = asyncio.get_running_loop()
+        self._watcher = _SummaryWatcher(self._loop, self._queue)
+        self._run_kinds = PKDict()
+        self._loop.call_soon_threadsafe(self._new_summaries)
+
+    async def new_client(client):
+        if not (v := self._run_kinds.get(client.run_kind_id.run_kind_id)):
+            get max - return immediately
+            asyncio.
+            return value
+        if v.max_run_summary_id != client.run_summary_id:
+            return v.max_run_summary_id
+        v.clients.append(
+
+    async def _new_summaries(self):
+
+        def _notify(new_run):
+            if not new_run or (v := self.get(self._run_kinds, new_run.run_kind_id)):
+                return
+            # POSIT: old runs are not inserted after the watcher starts
+            v.max_run_summary_id = new_run.run_summary_id
+            for c in v.clients:
+                c.queue.put_nowait(v.max_run_summary_id)
+            v.clients = []
+
+        _init()
+        async for e in self._queue:
+            try:
+                with sirepo.quest.start() as qcall:
+                    _notify(insert_run_summary(e.src_path, qcall))
+            finally:
+                self._queue.task_done()
+
+class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
+    def __init__(self, loop, queue):
         super().__init__()
+        # Must be called from the main thread
+        self.summary_dir = _cfg().summary_dir
         self.__loop = loop
-        self.__queue = asyncio.Queue()
-        self.__loop.call_soon_threadsafe(self.__process)
+        self.__queue = queue
         o = watchdog.observers.Observer()
-        o.schedule(self, str(_cfg.summary_dir), recursive=True)
+        o.schedule(self, str(self.summary_dir), recursive=True)
         o.start()
 
     def on_created(self, event):
+        # Different thread so must share same loop as __process
         if not event.is_directory and event.src_path.endswith(".json"):
             self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event)
 
-    async def __process(self):
-        async for e in self.__queue:
-            try:
-                with sirepo.quest.start() as qcall:
-                    insert_run_summary(e.src_path, qcall)
-            finally:
-                self.__queue.task_done()
+@pykern.pkconfig.parse_none
+def _summary_dir(value):
+    if value is not None:
+        return pykern.util.cfg_absolute_dir(value)
+    return slactwin.config.dev_path("summary").ensure(dir=True, ensure=True)

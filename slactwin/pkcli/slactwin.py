@@ -16,16 +16,13 @@ def run_background(cfg_dir):
       cfg_dir (str): The directory to run in.
     """
 
-    async def _liveAnimation(api_args):
+    async def _liveAnimation(params):
         o = cfg_dir.join(slactwin.template.slactwin.LIVE_ANIMATION_OUT)
         c = slactwin.db_api_client.for_job_cmd()
+        r = params.liveAnimation
         while True:
-            pykern.pkio.atomic_write(
-                o,
-                pykern.pkjson.dump_bytes(
-                    await c.post("live_monitor", params.liveAnimation),
-                ),
-            )
+            r = await c.post("live_monitor", r)
+            pykern.pkio.atomic_write(o, pykern.pkjson.dump_bytes(r))
 
     cfg_dir = pykern.pkio.py_path(cfg_dir)
     if cfg_dir.join(template_common.PARAMETERS_PYTHON_FILE).exists():

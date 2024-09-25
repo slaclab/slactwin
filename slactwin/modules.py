@@ -10,7 +10,7 @@ import importlib
 
 _done = False
 
-_ORDER = ("slactwin.db",)
+_ORDER = "slactwin.db"
 
 
 def import_and_init():

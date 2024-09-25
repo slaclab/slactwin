@@ -24,4 +24,5 @@ class Commands(slactwin.pkcli.CommandsBase):
             attr_classes=quest.attr_classes(),
             api_classes=(db_api.DbAPI,),
             http_config=config.cfg().db_api,
+            coros=(run_importer.start_notifier),
         )
