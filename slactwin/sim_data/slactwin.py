@@ -18,11 +18,17 @@ class SimData(sirepo.sim_data.SimDataBase):
         cls._init_models(data.models)
 
     @classmethod
-    def _compute_job_fields(cls, data, *args, **kwargs):
-        """Provides computation fields for job result caching. Not used by this application.
+    def _compute_job_fields(cls, data, report, computeModel, *args, **kwargs):
+        """Provides computation fields for job result caching.
+
         Args:
             data (PKDict): simulation instance
         """
+        if computeModel == "liveAnimation":
+            return [
+                "liveAnimation.accelerator",
+                "liveAnimation.twinModel",
+            ]
         return []
 
     @classmethod

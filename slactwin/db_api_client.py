@@ -8,7 +8,19 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.http
+import sirepo.global_resources
 import slactwin.config
+
+
+def for_job_cmd():
+    return DbAPIClient(
+        # TODO(e-carlin): sid is not used but is required arg. Make optional.
+        # TODO(e-carlin): nested resources in global_resources should be converted to PKDict
+        # by the api infrastructure.
+        http_config=PKDict(
+            sirepo.global_resources.for_simulation("slactwin", "notused").db_api
+        ),
+    )
 
 
 class DbAPIClient(pykern.http.HTTPClient):
