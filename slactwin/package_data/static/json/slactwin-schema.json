@@ -169,7 +169,6 @@
         "liveAnimation": {
             "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
             "twinModel": ["Model", "TwinModel", "impact"]
-            "runSummaryId": ["", "String", "0"],
         },
         "searchSettings": {
             "accelerator": ["Accelerator", "Accelerator", "sc_inj"],

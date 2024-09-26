@@ -33,11 +33,10 @@ class Commands(slactwin.pkcli.CommandsBase):
             for p in pykern.pkio.walk_tree(summary_dir, file_re=r"\.json$"):
                 c = False
                 try:
-                    rv = run_importer.insert_run_summary(p, qcall)
+                    run_importer.insert_run_summary(p, qcall)
                     c = True
                 except Exception as e:
                     pkdlog("ERROR path={}", p)
                     raise
                 finally:
                     qcall.db.commit_or_rollback(commit=c)
-        return rv

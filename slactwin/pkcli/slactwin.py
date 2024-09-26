@@ -19,10 +19,17 @@ def run_background(cfg_dir):
     async def _liveAnimation(params):
         o = cfg_dir.join(slactwin.template.slactwin.LIVE_ANIMATION_OUT)
         c = slactwin.db_api_client.for_job_cmd()
-        r = params.liveAnimation
+        q = PKDict(
+            twin_name=params.liveAnimation.twinModel,
+            machine_name=params.liveAnimation.accelerator,
+            run_summary_id=None,
+        )
         while True:
-            r = await c.post("live_monitor", r)
-            pykern.pkio.atomic_write(o, pykern.pkjson.dump_bytes(r))
+            q.pkupdate(await c.post("live_monitor", q))
+            pykern.pkio.atomic_write(
+                o,
+                pykern.pkjson.dump_bytes(PKDict(runSummaryId=q.run_summary_id)),
+            )
 
     cfg_dir = pykern.pkio.py_path(cfg_dir)
     if cfg_dir.join(template_common.PARAMETERS_PYTHON_FILE).exists():

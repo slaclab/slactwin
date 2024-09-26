@@ -27,6 +27,7 @@ _cfg = None
 
 _notifier = None
 
+
 def cfg():
     global _cfg
     if not _cfg:
@@ -39,8 +40,25 @@ def cfg():
         )
     return _cfg
 
+
 def insert_run_summary(path, qcall):
     return _Parser(summary_path=path, qcall=qcall).create()
+
+
+async def next_summary(machine_name, twin_name, run_summary_id, qcall):
+    def _run_kind_id():
+        return (
+            await self.db.query(
+                "run_kind_by_names",
+                machine_name=machine_name,
+                twin_name=twin_name,
+            )
+        ).run_kind_id
+
+    return PKDict(
+        run_summary_id=await _notifier.next_id(_run_kind_id(), run_summary_id, qcall)
+    )
+
 
 async def start_notifier():
     global _notifier
@@ -48,30 +66,6 @@ async def start_notifier():
     if _notifier:
         raise AssertionError("may only be called once")
     _notifier = _SummaryNotifier()
-
-
-class NotifierClient:
-    def __init__(self, qcall, machine_name, twin_name, run_summary_id=None):
-        self.qcall = qcall
-        self.machine_name = machine_name
-        self.twin_name = twin_name
-        self.run_summary_id = run_summary_id
-
-    def live_monitor(self):
-        self.run_kind_id = await self.db.query(
-            "run_kind_by_names", machine_name=machine_name, twin_name=twin_name,
-        ).run_kind_id
-        if rv := _notifier.new_client(self):
-            return rv
-        self.queue = asyncio.Queue(1)
-        try:
-            await self.queue.get()
-        finally:
-            self.queue.task_done()
-
-
-
-
 
 
 class _Parser(PKDict):
@@ -200,35 +194,56 @@ class _Parser(PKDict):
 
 
 class _SummaryNotifier:
+    """Keeps db up to date with new summaries and notifies clients of updates"""
 
     def __init__(self):
         self._queue = asyncio.Queue()
-        self._loop = asyncio.get_running_loop()
-        self._watcher = _SummaryWatcher(self._loop, self._queue)
+        l = asyncio.get_running_loop()
+        self._watcher = _SummaryWatcher(l, self._queue)
         self._run_kinds = PKDict()
-        self._loop.call_soon_threadsafe(self._new_summaries)
+        l.run(self._process)
 
-    async def new_client(client):
-        if not (v := self._run_kinds.get(client.run_kind_id.run_kind_id)):
-            get max - return immediately
-            asyncio.
-            return value
-        if v.max_run_summary_id != client.run_summary_id:
-            return v.max_run_summary_id
-        v.clients.append(
+    async def next_id(self, run_kind_id, curr_id, qcall):
+        async def _queue(clients):
+            q = asyncio.Queue(1)
+            clients.append(q)
+            return await q.get()
 
-    async def _new_summaries(self):
+        async def _get_max():
+            if not (v := self._run_kinds.get(run_kind_id)):
+                r = await qcall.db.query("max_run_summary", run_kind_id)
+                if not (v := self._run_kinds.get(run_kind_id)):
+                    self._run_kinds[run_kind_id] = PKDict(
+                        max_id=r.run_kind_id, clients=[]
+                    )
+                    return r.run_kind_id
+            if v.max_id != curr_id:
+                return v.max_id
+            return None
+
+        if rv := await _get_max():
+            return rv
+        return await _queue(v.clients)
+
+    async def _process(self):
+        """Make db consistent with files, await new summaries, and notify clients"""
+
+        async def _init():
+            """Insert runs into db that are already on disk but do not yet exists"""
+            await asyncio.sleep(1)
+            db.insert_runs(self.summary_dir)
 
         def _notify(new_run):
+            """Notify any next_summary clients"""
             if not new_run or (v := self.get(self._run_kinds, new_run.run_kind_id)):
                 return
-            # POSIT: old runs are not inserted after the watcher starts
-            v.max_run_summary_id = new_run.run_summary_id
-            for c in v.clients:
-                c.queue.put_nowait(v.max_run_summary_id)
+            # POSIT: old runs must not be inserted after the watcher starts
+            v.max_id = new_run.max_id
+            for q in v.clients:
+                q.put_nowait(v.max_id)
             v.clients = []
 
-        _init()
+        await _init()
         async for e in self._queue:
             try:
                 with sirepo.quest.start() as qcall:
@@ -236,8 +251,11 @@ class _SummaryNotifier:
             finally:
                 self._queue.task_done()
 
+
 class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
     def __init__(self, loop, queue):
+        from slactwin.pkcli import db
+
         super().__init__()
         # Must be called from the main thread
         self.summary_dir = _cfg().summary_dir
@@ -246,11 +264,13 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         o = watchdog.observers.Observer()
         o.schedule(self, str(self.summary_dir), recursive=True)
         o.start()
+        db.insert_runs(self.summary_dir)
 
     def on_created(self, event):
         # Different thread so must share same loop as __process
         if not event.is_directory and event.src_path.endswith(".json"):
             self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event)
+
 
 @pykern.pkconfig.parse_none
 def _summary_dir(value):
