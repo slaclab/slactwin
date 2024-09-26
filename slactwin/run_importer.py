@@ -46,17 +46,15 @@ def insert_run_summary(path, qcall):
 
 
 async def next_summary(machine_name, twin_name, run_summary_id, qcall):
-    async def _run_kind_id():
-        return (
-            await self.db.query(
-                "run_kind_by_names",
-                machine_name=machine_name,
-                twin_name=twin_name,
-            )
+    def _run_kind_id():
+        return qcall.db.query(
+            "run_kind_by_names",
+            machine_name=machine_name,
+            twin_name=twin_name,
         ).run_kind_id
 
     return PKDict(
-        run_summary_id=await _notifier.next_id(_run_kind_id(), run_summary_id, qcall)
+        run_summary_id=await _notifier.next_id(_run_kind_id(), run_summary_id, qcall),
     )
 
 
@@ -204,25 +202,23 @@ class _SummaryNotifier:
         l.call_soon(self._process)
 
     async def next_id(self, run_kind_id, curr_id, qcall):
-        async def _queue(clients):
-            q = asyncio.Queue(1)
-            clients.append(q)
-            return await q.get()
-
-        async def _get_max():
+        def _get_max():
             if not (v := self._run_kinds.get(run_kind_id)):
-                r = await qcall.db.query("max_run_summary", run_kind_id)
-                if not (v := self._run_kinds.get(run_kind_id)):
-                    self._run_kinds[run_kind_id] = PKDict(
-                        max_id=r.run_kind_id, clients=[]
-                    )
-                    return r.run_kind_id
+                r = qcall.db.query("max_run_summary", run_kind_id=run_kind_id)
+                self._run_kinds[run_kind_id] = PKDict(
+                    max_id=r.run_summary_id, clients=[]
+                )
+                return r.run_kind_id
             if v.max_id != curr_id:
                 return v.max_id
             return None
 
-        if rv := await _get_max():
+        if rv := _get_max():
             return rv
+        q = asyncio.Queue(1)
+        self._run_kinds[run_kind_id].clients.append(q)
+        return await q.get()
+
         return await _queue(v.clients)
 
     async def _process(self):

@@ -137,7 +137,7 @@ def write_parameters(data, run_dir, is_parallel):
     """
 
     def _liveAnimation():
-        return str(PKDict(liveAnimation=data.models.liveAnimation))
+        return template_common.render_jinja(SIM_TYPE, data.models)
 
     if data.report == "liveAnimation":
         pykern.pkio.write_text(

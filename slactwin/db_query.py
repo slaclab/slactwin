@@ -48,19 +48,14 @@ class _DbQuery:
     def __call__(self, db, **kwargs):
         return self._method(self, db, **self._tables, **kwargs)
 
-    def _query_max_run_summary(self, db, RunSummary, RunKind, machine_name, twin_name):
+    def _query_max_run_summary(self, db, RunSummary, RunKind, run_kind_id):
         return PKDict(
             db.select_one(
                 sqlalchemy.select(RunSummary).where(
                     RunSummary.c.snapshot_end
-                    == sqlalchemy.select(sqlalchemy.max(RunSummary.c.snapshot_end))
-                    .join(
-                        RunKind,
-                        RunSummary.c.run_kind_id == RunKind.c.run_kind_id,
-                    )
+                    == sqlalchemy.select(sqlalchemy.func.max(RunSummary.c.snapshot_end))
                     .where(
-                        RunSummary.c.machine_name == machine_name,
-                        RunSummary.c.twin_name == twin_name,
+                        RunSummary.c.run_kind_id == run_kind_id,
                     )
                     .scalar_subquery(),
                 ),

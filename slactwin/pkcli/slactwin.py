@@ -23,8 +23,8 @@ def run_background(cfg_dir):
         o = cfg_dir.join(slactwin.template.slactwin.LIVE_ANIMATION_OUT)
         c = slactwin.db_api_client.for_job_cmd()
         q = PKDict(
-            twin_name=params.liveAnimation.twinModel,
-            machine_name=params.liveAnimation.accelerator,
+            twin_name=params.twinModel,
+            machine_name=params.accelerator,
             run_summary_id=None,
         )
         while True:
@@ -38,5 +38,5 @@ def run_background(cfg_dir):
     if cfg_dir.join(template_common.PARAMETERS_PYTHON_FILE).exists():
         # must be liveAnimation so this throws here
         asyncio.run(
-            _liveAnimation, pkdp(template_common.exec_parameters()).liveAnimation
+            _liveAnimation(template_common.exec_parameters().liveAnimation),
         )
