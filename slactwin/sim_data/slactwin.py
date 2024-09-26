@@ -32,6 +32,12 @@ class SimData(sirepo.sim_data.SimDataBase):
         return []
 
     @classmethod
+    def _compute_model(cls, analysis_model, *args, **kwargs):
+        if analysis_model == "liveAnimation":
+            return analysis_model
+        return super()._compute_model(analysis_model, *args, **kwargs)
+
+    @classmethod
     def _lib_file_basenames(cls, *args, **kwargs):
         """Provides a list of external input files for a job. Not used by this application."""
         return []

@@ -7,6 +7,7 @@
 from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp
+from sirepo.template import template_common
 from sirepo.template.impactt_parser import ImpactTParser
 import asyncio
 import h5py
@@ -40,7 +41,9 @@ def background_percent_complete(report, run_dir, is_running):
 
     def _liveAnimation(rv):
         if report == "liveAnimation":
-            rv.outputInfo = pykern.pkjson.load_any(run_dir.join(_LIVE_ANIMATION_OUT))
+            f = run_dir.join(LIVE_ANIMATION_OUT)
+            if f.exists():
+                rv.outputInfo = pykern.pkjson.load_any(f)
         return rv
 
     if is_running:
@@ -137,9 +140,9 @@ def write_parameters(data, run_dir, is_parallel):
         return str(PKDict(liveAnimation=data.models.liveAnimation))
 
     if data.report == "liveAnimation":
-        pkio.write_text(
+        pykern.pkio.write_text(
             run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
-            _liveAnimation(data),
+            _liveAnimation(),
         )
     return None
 

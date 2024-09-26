@@ -4,7 +4,10 @@
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
 
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
 from sirepo.template import template_common
+import asyncio
 import pykern.pkio
 import slactwin.template.slactwin
 
@@ -34,4 +37,6 @@ def run_background(cfg_dir):
     cfg_dir = pykern.pkio.py_path(cfg_dir)
     if cfg_dir.join(template_common.PARAMETERS_PYTHON_FILE).exists():
         # must be liveAnimation so this throws here
-        asyncio.run(_liveAnimation, template_common.exec_parameters().liveAnimation)
+        asyncio.run(
+            _liveAnimation, pkdp(template_common.exec_parameters()).liveAnimation
+        )
