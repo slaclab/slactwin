@@ -1,4 +1,4 @@
-"""Test stateless_compute_db_api
+"""Test liveAnimation simulation
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -11,7 +11,7 @@ _NEW_SUMMARY_FILE = "lume-impact-live-demo-s3df-sc_inj-2024-06-19T07:03:29-07:00
 
 
 @pytest.mark.asyncio
-async def test_slactwin_stateless_compute(fc):
+async def test_slactwin_live_animation(fc):
     from pykern import pkunit
     from slactwin import const
 
@@ -20,9 +20,8 @@ async def test_slactwin_stateless_compute(fc):
         from pykern import pkunit, pkdebug
         from pykern.pkcollections import PKDict
         import asyncio
-        import slactwin.run_importer
+        from slactwin import run_importer
 
-        fc.sr_sim_type_set("slactwin")
         d = fc.sr_sim_data("SLAC Digital Twin Database", sim_type=fc.sr_sim_type)
         d.models.liveAnimation = PKDict(accelerator="sc_inj", twinModel="impact")
         r = fc.sr_post(
@@ -38,16 +37,16 @@ async def test_slactwin_stateless_compute(fc):
         for _ in range(10):
             await asyncio.sleep(r.nextRequestSeconds)
             r = fc.sr_post("runStatus", r.nextRequest)
+            pkdebug.pkdp(r)
             if i := r.pkunchecked_nested_get("outputInfo.runSummaryId"):
                 break
         else:
             pkunit.pkfail("failed to get runSummaryId: runStatus={}", r)
-        pkunit.data_dir().join(_NEW_SUMMARY_FILE).copy(
-            slactwin.run_importer.cfg().summary_dir
-        )
+        pkunit.data_dir().join(_NEW_SUMMARY_FILE).copy(run_importer.cfg().summary_dir)
         for _ in range(10):
             await asyncio.sleep(r.nextRequestSeconds)
             r = fc.sr_post("runStatus", r.nextRequest)
+            pkdebug.pkdp(r)
             if i != r.outputInfo.runSummaryId:
                 return
         pkunit.pkfail("runSummaryId={} did not change: runStatus={}", i, r)

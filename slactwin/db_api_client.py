@@ -13,12 +13,13 @@ import slactwin.config
 
 
 def for_job_cmd():
+    c = sirepo.global_resources.for_simulation("slactwin", "notused")
     return DbAPIClient(
         # TODO(e-carlin): sid is not used but is required arg. Make optional.
         # TODO(e-carlin): nested resources in global_resources should be converted to PKDict
         # by the api infrastructure.
-        http_config=PKDict(
-            sirepo.global_resources.for_simulation("slactwin", "notused").db_api
+        http_config=PKDict(c.db_api).pkupdate(
+            request_config=PKDict(c.db_api_request_config)
         ),
     )
 

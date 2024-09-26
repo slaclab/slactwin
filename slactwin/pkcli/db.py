@@ -36,7 +36,6 @@ class Commands(slactwin.pkcli.CommandsBase):
                     run_importer.insert_run_summary(p, qcall)
                     c = True
                 except Exception as e:
-                    pkdlog("ERROR path={}", p)
-                    raise
+                    pkdlog("IGNORING exception={} path={} stack={}", e, p, pkdexc())
                 finally:
                     qcall.db.commit_or_rollback(commit=c)

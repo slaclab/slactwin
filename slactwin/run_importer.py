@@ -5,7 +5,7 @@
 """
 
 from pykern.pkcollections import PKDict
-from pykern.pkdebug import pkdc, pkdlog, pkdp
+from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdexc
 import asyncio
 import datetime
 import dateutil
@@ -42,7 +42,8 @@ def cfg():
 
 
 def insert_run_summary(path, qcall):
-    return _Parser(summary_path=path, qcall=qcall).create()
+    pkdp(path)
+    return _Parser(summary_path=pykern.pkio.py_path(path), qcall=qcall).create()
 
 
 async def next_summary(machine_name, twin_name, run_summary_id, qcall):
@@ -76,10 +77,10 @@ class _Parser(PKDict):
             PKDict: RunSummary record or None if it exists
         """
         if self.qcall.db.query(
-            "summary_path_exists", summary_path=str(self.summary_path)
+            "run_summary_path_exists", summary_path=str(self.summary_path)
         ):
             return None
-        self.summary = (pykern.pkjson.load_any(path),)
+        self.summary = pykern.pkjson.load_any(self.summary_path)
         v = self._summary_values(self.summary)
         rv = self.qcall.db.insert("RunSummary", **v)
         self._run_values_create(rv.run_summary_id, v.run_kind_id)
@@ -195,11 +196,12 @@ class _SummaryNotifier:
     """Keeps db up to date with new summaries and notifies clients of updates"""
 
     def __init__(self):
+        self._summary_dir = cfg().summary_dir
         self._queue = asyncio.Queue()
         l = asyncio.get_running_loop()
-        self._watcher = _SummaryWatcher(l, self._queue)
+        self._watcher = _SummaryWatcher(l, self._queue, self._summary_dir)
         self._run_kinds = PKDict()
-        l.call_soon(self._process)
+        l.create_task(self._process())
 
     async def next_id(self, run_kind_id, curr_id, qcall):
         def _get_max():
@@ -208,7 +210,7 @@ class _SummaryNotifier:
                 self._run_kinds[run_kind_id] = PKDict(
                     max_id=r.run_summary_id, clients=[]
                 )
-                return r.run_kind_id
+                return r.run_summary_id
             if v.max_id != curr_id:
                 return v.max_id
             return None
@@ -226,12 +228,15 @@ class _SummaryNotifier:
 
         async def _init():
             """Insert runs into db that are already on disk but do not yet exists"""
+            from slactwin.pkcli import db
+
             await asyncio.sleep(1)
-            db.insert_runs(self.summary_dir)
+            db.Commands().insert_runs(self._summary_dir)
+            pkdp("insert_runs done")
 
         def _notify(new_run):
             """Notify any next_summary clients"""
-            if not new_run or (v := self.get(self._run_kinds, new_run.run_kind_id)):
+            if not new_run or not (v := self._run_kinds.get(new_run.run_kind_id)):
                 return
             # POSIT: old runs must not be inserted after the watcher starts
             v.max_id = new_run.max_id
@@ -240,32 +245,45 @@ class _SummaryNotifier:
             v.clients = []
 
         await _init()
-        async for e in self._queue:
+        while True:
+            p = await self._queue.get()
+            pkdp(p)
             try:
-                with sirepo.quest.start() as qcall:
-                    _notify(insert_run_summary(e.src_path, qcall))
+                with slactwin.quest.start() as qcall:
+                    pkdp(p)
+                    _notify(pkdp(insert_run_summary(p, qcall)))
+            except Exception as e:
+                pkdlog("IGNORING exception={} path={} stack={}", e, p, pkdexc())
             finally:
                 self._queue.task_done()
 
 
 class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
-    def __init__(self, loop, queue):
-        from slactwin.pkcli import db
-
+    def __init__(self, loop, queue, summary_dir):
         super().__init__()
         # Must be called from the main thread
-        self.summary_dir = cfg().summary_dir
         self.__loop = loop
         self.__queue = queue
+        # TODO(robnagler) may need to optimize for size
+        self.__seen = set()
         o = watchdog.observers.Observer()
-        o.schedule(self, str(self.summary_dir), recursive=True)
+        o.schedule(self, str(summary_dir), recursive=True)
+        pkdp("starting")
         o.start()
-        db.Commands().insert_runs(self.summary_dir)
+        pkdp("after start")
 
     def on_created(self, event):
         # Different thread so must share same loop as __process
-        if not event.is_directory and event.src_path.endswith(".json"):
-            self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event)
+        pkdp(event)
+        if (
+            not event.is_directory
+            and event.event_type == "created"
+            and event.src_path.endswith(".json")
+            and event.src_path not in self.__seen
+        ):
+            pkdp(event.src_path)
+            self.__seen.add(event.src_path)
+            self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event.src_path)
 
 
 @pykern.pkconfig.parse_none

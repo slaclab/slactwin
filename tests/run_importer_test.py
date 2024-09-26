@@ -1,4 +1,4 @@
-"""read some json files
+"""Test run_importer
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -35,7 +35,6 @@ def test_parse():
                     base="end_norm_emit_4d",
                 )
                 pkunit.pkeq(4.592702508485681e-13, v)
-
 
 def _setup_data(summary, case_dir):
     from pykern import pkjson, pkio

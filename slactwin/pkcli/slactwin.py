@@ -28,7 +28,7 @@ def run_background(cfg_dir):
             run_summary_id=None,
         )
         while True:
-            q.pkupdate(await c.post("live_monitor", q))
+            q.pkupdate(await c.call_api("live_monitor", q))
             pykern.pkio.atomic_write(
                 o,
                 pykern.pkjson.dump_bytes(PKDict(runSummaryId=q.run_summary_id)),

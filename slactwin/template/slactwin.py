@@ -149,7 +149,7 @@ def write_parameters(data, run_dir, is_parallel):
 
 def _db_api(api_name, **kwargs):
     return asyncio.run(
-        slactwin.db_api_client.for_job_cmd().post(
+        slactwin.db_api_client.for_job_cmd().call_api(
             api_name,
             kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs),
         ),
