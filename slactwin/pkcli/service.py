@@ -18,11 +18,11 @@ class Commands(slactwin.pkcli.CommandsBase):
         databse should be routed through this service.
         """
         from pykern import http
-        from slactwin import config, modules, db_api, quest
+        from slactwin import config, modules, db_api, quest, run_importer
 
         http.server_start(
             attr_classes=quest.attr_classes(),
             api_classes=(db_api.DbAPI,),
             http_config=config.cfg().db_api,
-            coros=(run_importer.start_notifier),
+            coros=(run_importer.start_notifier(),),
         )

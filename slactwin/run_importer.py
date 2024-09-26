@@ -46,7 +46,7 @@ def insert_run_summary(path, qcall):
 
 
 async def next_summary(machine_name, twin_name, run_summary_id, qcall):
-    def _run_kind_id():
+    async def _run_kind_id():
         return (
             await self.db.query(
                 "run_kind_by_names",
@@ -201,7 +201,7 @@ class _SummaryNotifier:
         l = asyncio.get_running_loop()
         self._watcher = _SummaryWatcher(l, self._queue)
         self._run_kinds = PKDict()
-        l.run(self._process)
+        l.call_soon(self._process)
 
     async def next_id(self, run_kind_id, curr_id, qcall):
         async def _queue(clients):
@@ -258,13 +258,13 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
 
         super().__init__()
         # Must be called from the main thread
-        self.summary_dir = _cfg().summary_dir
+        self.summary_dir = cfg().summary_dir
         self.__loop = loop
         self.__queue = queue
         o = watchdog.observers.Observer()
         o.schedule(self, str(self.summary_dir), recursive=True)
         o.start()
-        db.insert_runs(self.summary_dir)
+        db.Commands().insert_runs(self.summary_dir)
 
     def on_created(self, event):
         # Different thread so must share same loop as __process
