@@ -30,7 +30,7 @@ class DbAPI(slactwin.quest.API):
 
     async def api_live_monitor(self, api_args):
         with _raise_on_error():
-            await slactwin.run_importer.Client(qcall=self, **api_args).live_monitor()
+            return await slactwin.run_importer.next_summary(qcall=self, **api_args)
 
     async def api_run_kinds_and_values(self, api_args):
         return await self.__query("run_kinds_and_values", api_args)

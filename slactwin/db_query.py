@@ -48,17 +48,6 @@ class _DbQuery:
     def __call__(self, db, **kwargs):
         return self._method(self, db, **self._tables, **kwargs)
 
-    def _query_run_kind_by_names(self, db, RunKind, machine_name, twin_name):
-        return PKDict(
-            db.select_one(
-                sqlalchemy.select(RunKind)
-                .where(
-                    RunSummary.c.machine_name == machine_name,
-                    RunSummary.c.twin_name == twin_name,
-                ),
-            ),
-        )
-
     def _query_max_run_summary(self, db, RunSummary, RunKind, machine_name, twin_name):
         return PKDict(
             db.select_one(
@@ -74,6 +63,16 @@ class _DbQuery:
                         RunSummary.c.twin_name == twin_name,
                     )
                     .scalar_subquery(),
+                ),
+            ),
+        )
+
+    def _query_run_kind_by_names(self, db, RunKind, machine_name, twin_name):
+        return PKDict(
+            db.select_one(
+                sqlalchemy.select(RunKind).where(
+                    RunKind.c.machine_name == machine_name,
+                    RunKind.c.twin_name == twin_name,
                 ),
             ),
         )
