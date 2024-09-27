@@ -22,13 +22,13 @@ async def test_run_all():
 
         modules.import_and_init()
         c = db_api_client.DbAPIClient()
-        r = await c.post("run_kinds_and_values", PKDict())
+        r = await c.call_api("run_kinds_and_values", PKDict())
         pkunit.pkeq(
             "impact^end_cov_x__px",
             r.machines.sc_inj.twins.impact.run_values[0],
         )
         t = int(datetime.datetime.fromisoformat("2024-06-19T13:42:21").timestamp())
-        r = await c.post(
+        r = await c.call_api(
             "runs_by_date_and_values",
             PKDict(
                 machine_name="sc_inj",
@@ -56,10 +56,10 @@ async def test_run_all():
         pkunit.pkeq(35002, r.rows[-1].run_summary_id)
         pkunit.pkeq(3, len(r.rows))
         pkunit.pkeq(t, r.rows[-1].snapshot_end)
-        r = await c.post("run_summary_by_id", PKDict(run_summary_id=35002))
+        r = await c.call_api("run_summary_by_id", PKDict(run_summary_id=35002))
         pkunit.pkeq(1718804541, r.snapshot_end)
         with pkunit.pkexcept("NoRows"):
-            r = await c.post("run_summary_by_id", PKDict(run_summary_id=999))
+            r = await c.call_api("run_summary_by_id", PKDict(run_summary_id=999))
 
 
 @contextlib.contextmanager

@@ -9,6 +9,7 @@ db service.
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
+import copy
 import pykern.pkasyncio
 import pykern.pkconfig
 import sirepo.global_resources
@@ -25,14 +26,7 @@ class Allocator(sirepo.global_resources.AllocatorBase):
         Returns:
           PKDict: The resources.
         """
-        return PKDict(
-            db_api=PKDict(
-                api_uri=_cfg.db_api.api_uri,
-                auth_secret=_cfg.db_api.auth_secret,
-                tcp_ip=_cfg.db_api.tcp_ip,
-                tcp_port=_cfg.db_api.tcp_port,
-            ),
-        )
+        return copy.deepcopy(_cfg)
 
     def _redact_for_gui(self, resources):
         """Redact resources sent to the GUI.
@@ -61,7 +55,14 @@ def _init():
             ),
             tcp_ip=(None, pykern.pkasyncio.cfg_ip, "IP address for server"),
             tcp_port=(9020, pykern.pkasyncio.cfg_ip, "port of server"),
-        )
+        ),
+        db_api_request_config=PKDict(
+            request_timeout=(
+                600,
+                pykern.pkconfig.parse_seconds,
+                "Long polling timeout for job_cmd",
+            ),
+        ),
     )
 
 

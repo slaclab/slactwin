@@ -7,6 +7,7 @@
 from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp
+from sirepo.template import template_common
 from sirepo.template.impactt_parser import ImpactTParser
 import asyncio
 import h5py
@@ -24,6 +25,8 @@ import slactwin.db_api_client
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
+LIVE_ANIMATION_OUT = "liveAnimation.json"
+
 
 def background_percent_complete(report, run_dir, is_running):
     """Called by the UI to get the status on a background job (report)
@@ -33,12 +36,22 @@ def background_percent_complete(report, run_dir, is_running):
         run_dir (py.path.Local): job run directory
         is_running (bool): True if the job is currently running
     Returns:
-        PKDict: percentage complete summary info
+        PKDict: percentage complete summary info and outputInfo
     """
+
+    def _liveAnimation(rv):
+        if report == "liveAnimation":
+            f = run_dir.join(LIVE_ANIMATION_OUT)
+            if f.exists():
+                rv.outputInfo = pykern.pkjson.load_any(f)
+        return rv
+
     if is_running:
-        return PKDict(
-            frameCount=0,
-            percentComplete=0,
+        return _liveAnimation(
+            PKDict(
+                frameCount=0,
+                percentComplete=0,
+            )
         )
     return PKDict(
         percentComplete=100,
@@ -122,25 +135,23 @@ def write_parameters(data, run_dir, is_parallel):
         run_dir (py.path.Local): job run directory
         is_parallel (bool): is this for a background job?
     """
-    pass
+
+    def _liveAnimation():
+        return template_common.render_jinja(SIM_TYPE, data.models)
+
+    if data.report == "liveAnimation":
+        pykern.pkio.write_text(
+            run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
+            _liveAnimation(),
+        )
+    return None
 
 
 def _db_api(api_name, **kwargs):
     return asyncio.run(
-        _db_api_client().post(
+        slactwin.db_api_client.for_job_cmd().call_api(
             api_name,
             kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs),
-        ),
-    )
-
-
-def _db_api_client():
-    return slactwin.db_api_client.DbAPIClient(
-        # TODO(e-carlin): sid is not used but is required arg. Make optional.
-        # TODO(e-carlin): nested resources in global_resources should be converted to PKDict
-        # by the api infrastructure.
-        http_config=PKDict(
-            sirepo.global_resources.for_simulation(SIM_TYPE, "notused").db_api
         ),
     )
 
