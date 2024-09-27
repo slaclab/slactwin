@@ -42,7 +42,6 @@ def cfg():
 
 
 def insert_run_summary(path, qcall):
-    pkdp(path)
     return _Parser(summary_path=pykern.pkio.py_path(path), qcall=qcall).create()
 
 
@@ -81,9 +80,8 @@ class _Parser(PKDict):
         ):
             return None
         self.summary = pykern.pkjson.load_any(self.summary_path)
-        v = self._summary_values(self.summary)
-        rv = self.qcall.db.insert("RunSummary", **v)
-        self._run_values_create(rv.run_summary_id, v.run_kind_id)
+        rv = self.qcall.db.insert("RunSummary", self._summary_values(self.summary))
+        self._run_values_create(rv.run_summary_id, rv.run_kind_id)
         return rv
 
     def _run_values_create(self, run_summary_id, run_kind_id):
@@ -232,14 +230,13 @@ class _SummaryNotifier:
 
             await asyncio.sleep(1)
             db.Commands().insert_runs(self._summary_dir)
-            pkdp("insert_runs done")
 
         def _notify(new_run):
             """Notify any next_summary clients"""
             if not new_run or not (v := self._run_kinds.get(new_run.run_kind_id)):
                 return
             # POSIT: old runs must not be inserted after the watcher starts
-            v.max_id = new_run.max_id
+            v.max_id = new_run.run_summary_id
             for q in v.clients:
                 q.put_nowait(v.max_id)
             v.clients = []
@@ -247,11 +244,9 @@ class _SummaryNotifier:
         await _init()
         while True:
             p = await self._queue.get()
-            pkdp(p)
             try:
                 with slactwin.quest.start() as qcall:
-                    pkdp(p)
-                    _notify(pkdp(insert_run_summary(p, qcall)))
+                    _notify(insert_run_summary(p, qcall))
             except Exception as e:
                 pkdlog("IGNORING exception={} path={} stack={}", e, p, pkdexc())
             finally:
@@ -268,20 +263,16 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         self.__seen = set()
         o = watchdog.observers.Observer()
         o.schedule(self, str(summary_dir), recursive=True)
-        pkdp("starting")
         o.start()
-        pkdp("after start")
 
     def on_created(self, event):
         # Different thread so must share same loop as __process
-        pkdp(event)
         if (
             not event.is_directory
             and event.event_type == "created"
             and event.src_path.endswith(".json")
             and event.src_path not in self.__seen
         ):
-            pkdp(event.src_path)
             self.__seen.add(event.src_path)
             self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event.src_path)
 
