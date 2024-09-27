@@ -48,6 +48,30 @@ class _DbQuery:
     def __call__(self, db, **kwargs):
         return self._method(self, db, **self._tables, **kwargs)
 
+    def _query_max_run_summary(self, db, RunSummary, RunKind, run_kind_id):
+        return PKDict(
+            db.select_one(
+                sqlalchemy.select(RunSummary).where(
+                    RunSummary.c.snapshot_end
+                    == sqlalchemy.select(sqlalchemy.func.max(RunSummary.c.snapshot_end))
+                    .where(
+                        RunSummary.c.run_kind_id == run_kind_id,
+                    )
+                    .scalar_subquery(),
+                ),
+            ),
+        )
+
+    def _query_run_kind_by_names(self, db, RunKind, machine_name, twin_name):
+        return PKDict(
+            db.select_one(
+                sqlalchemy.select(RunKind).where(
+                    RunKind.c.machine_name == machine_name,
+                    RunKind.c.twin_name == twin_name,
+                ),
+            ),
+        )
+
     def _query_run_kinds_and_values(self, db, RunKind, RunValueName):
 
         def _add(rv, machine_name, twin_name, run_value_name):
@@ -83,6 +107,16 @@ class _DbQuery:
                     RunSummary.c.run_summary_id == run_summary_id,
                 )
             )
+        )
+
+    def _query_run_summary_path_exists(self, db, RunSummary, summary_path):
+        return (
+            db.select_one_or_none(
+                sqlalchemy.select(RunSummary).where(
+                    RunSummary.c.summary_path == summary_path,
+                )
+            )
+            is not None
         )
 
     def _query_run_value(

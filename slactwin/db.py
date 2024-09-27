@@ -85,13 +85,30 @@ class _Db(slactwin.quest.Attr):
     def execute(self, stmt):
         return self.__conn().execute(stmt)
 
-    def insert(self, model, **values):
+    def insert(self, model, *args, **kwargs):
+        """Insert a record into the db.
+
+        Args:
+            model (str): name of the model to insert into
+            args (tuple): if supplied, ``args[0]`` is (shallow) copied to a `PKDict`
+            kwargs (dict): additional args are applied to `PKDict`
+        Returns:
+            PKDict: inserted values with primary_id (if generated)
+        """
         m = _models[model]
-        rv = m.fixup_insert(self, values)
-        r = self.execute(m.table.insert().values(**values))
-        if rv := getattr(r, "inserted_primary_key"):
-            return rv
-        return rv
+        v = PKDict(args[0]) if args else PKDict()
+        if kwargs:
+            v.pkupdate(kwargs)
+        v = m.fixup_pre_insert(self, v)
+        return m.fixup_post_insert(
+            self,
+            v,
+            getattr(
+                self.execute(m.table.insert().values(v)),
+                "inserted_primary_key",
+                None,
+            ),
+        )
 
     def query(self, name, **kwargs):
         return _queries[name](self, **kwargs)
@@ -153,12 +170,6 @@ class _Db(slactwin.quest.Attr):
 def init_module():
     global _cfg, _engine, _is_sqlite, _models, _queries
     from slactwin import db_model, db_query
-
-    @pykern.pkconfig.parse_none
-    def _path(value):
-        if value is not None:
-            return pykern.util.cfg_absolute_dir(value)
-        return slactwin.config.dev_path("summary").ensure(dir=True, ensure=True)
 
     @pykern.pkconfig.parse_none
     def _uri(value):

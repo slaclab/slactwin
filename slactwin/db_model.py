@@ -176,15 +176,41 @@ class _DbModel:
             self.primary_id = c.name
             self.primary_id_start = c.default.start
 
-    def fixup_insert(self, db, values):
-        rv = None
+    def fixup_post_insert(self, db, values, inserted_primary_key):
+        """Add in inserted_primary_key if is not None.
+
+        Args:
+            db (db._Db): database object
+            values (PKDict): values to insert
+        Returns:
+            PKDict: modified values
+        """
+        # we do not handle multi column inserted_primary_keys
+        if self.has_primary_id and inserted_primary_key is not None:
+            values[self.primary_id] = inserted_primary_key[self.primary_id]
+        return values
+
+    def fixup_pre_insert(self, db, values):
+        """Called before sqlalchemy insert to add missing columns
+
+        Adds ``created`` field if model has a created column and
+        values does not have a ``created`` key.
+
+        For sqlite, adds ``primary_id`` if model has a primary id and
+        values does not have one.
+
+        Args:
+            db (db._Db): database object
+            values (PKDict): values to insert
+        Returns:
+            PKDict: modified values
+
+        """
         if self.has_created and "created" not in values:
-            values["created"] = datetime.datetime.utcnow()
+            values.created = datetime.datetime.utcnow()
         if db.is_sqlite and self.has_primary_id and self.primary_id not in values:
             v = db.select_max_primary_id(self.name)
             values[self.primary_id] = (
                 self.primary_id_start if v is None else v + PRIMARY_ID_INC
             )
-            # mock the RETURNING result like Postgres does
-            rv = PKDict({self.primary_id: values[self.primary_id]})
-        return rv
+        return values

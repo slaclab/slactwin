@@ -166,6 +166,10 @@
             "notes": ["Notes", "Text", ""],
             "reportIndex": ["", "Integer"]
         },
+        "liveAnimation": {
+            "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
+            "twinModel": ["Model", "TwinModel", "impact"]
+        },
         "searchSettings": {
             "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
             "twinModel": ["Model", "TwinModel", "impact"],
