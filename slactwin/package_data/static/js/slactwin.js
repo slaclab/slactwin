@@ -67,7 +67,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         appState.saveChanges(names, () => {
             frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
                 if (data.error) {
-                    return;
+                    throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
                 }
                 frameCache.setFrameCount(1);
                 self.summary = data.summary;
