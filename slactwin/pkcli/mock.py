@@ -18,6 +18,19 @@ _LIVE_QUEUED = ".queued"
 class Commands(slactwin.pkcli.CommandsBase):
 
     def live(self, period=30):
+        """Mock the lume-live directory
+
+        Example:
+            cd ~/src/slaclab/slactwin/run
+            tar xzf ~/tmp/iana.tgz
+            mv iana/{archive,plot,snapshot,summary} .
+            rm -rf iana
+            rm slactwin.sqlite
+            slactwin mock live
+        Args:
+            period (float): how often to move summary files into position
+        """
+
         from slactwin import run_importer
 
         def _queued(summary_dir):
