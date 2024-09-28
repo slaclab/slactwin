@@ -33,7 +33,7 @@ SIREPO.app.config(function() {
     `;
 });
 
-SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentSimulation, $location, $rootScope) {
+SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentSimulation, requestSender, $location, $rootScope) {
     const self = {};
     self.computeModel = analysisModel => 'animation';
     self.selectSearchFieldText = 'Select Search Field';
@@ -112,6 +112,13 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return appState.models.externalLattice.models;
     };
 
+    self.openRun = (runSummaryId) => {
+        requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
+            ':simulationId': appState.models.simulation.simulationId,
+        });
+        self.setRunSummaryId(runSummaryId);
+    };
+
     self.selectElementId = (id) => {
         self.latticeModels().beamlines[0].items.forEach((v, idx) => {
             if (id === v) {
@@ -125,10 +132,100 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
     return self;
 });
 
-SIREPO.app.controller('VizController', function(appState, frameCache, panelState, slactwinService, $scope) {
+SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService) {
+    const self = {};
+    const controllerProxy = {
+        simComputeModel: 'liveAnimation',
+    };
+
+    self.canViewLive = true;
+    self.isLiveView = false;
+
+    const monitorLiveView = (simScope, firstCallback) => {
+        simStatus(simScope, (simScope, status) => {
+            if (firstCallback) {
+                firstCallback();
+                firstCallback = null;
+            }
+            if (status.state === 'error') {
+                self.isLiveView = false;
+                return;
+            }
+            openRun(status);
+        });
+    };
+
+    const openRun = (status) => {
+        if (status.state === 'running' && status.outputInfo && status.outputInfo.runSummaryId) {
+            if (parseInt(status.outputInfo.runSummaryId) !== slactwinService.getRunSummaryId()) {
+                //TODO(pjm): preserve lattice or viz pages
+                slactwinService.openRun(status.outputInfo.runSummaryId);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const simStatus = (simScope, callback) => {
+        controllerProxy.simScope = simScope;
+        simScope.$on('$destroy', () => {
+            callback = null;
+        });
+        controllerProxy.simHandleStatus = (status) => {
+            if (callback) {
+                callback(controllerProxy.simState, status);
+            }
+        };
+        controllerProxy.simState = persistentSimulation.initSimulationState(controllerProxy);
+    };
+
+
+    self.cancelLiveView = (simScope) => {
+        self.isLiveView = false;
+        simStatus(simScope, (simState, status) => {
+            if (status.state === 'pending' || status.state === 'running') {
+                simState.cancelSimulation();
+            }
+        });
+    };
+
+    self.checkIfLive = (controller, scope) => {
+        if (self.isLiveView) {
+            monitorLiveView(scope, () => {
+                slactwinService.initController(controller, scope);
+            });
+        }
+        else {
+            slactwinService.initController(controller, scope);
+        }
+    };
+
+    self.startLiveView = (simScope) => {
+        //TODO(pjm): should set liveAnimation accelerator and twinModel, save changes, then run the following in a callback
+        self.isLiveView = true;
+        let firstCheck = true;
+        simStatus(simScope, (simState, status) => {
+            if (openRun(status)) {
+                return;
+            }
+            if (['pending', 'running'].includes(status.state)) {
+                // already running
+                firstCheck = false;
+            }
+            if (firstCheck) {
+                firstCheck = false;
+                controllerProxy.simState.runSimulation();
+            }
+        });
+    };
+
+    return self;
+});
+
+SIREPO.app.controller('VizController', function(appState, frameCache, liveService, panelState, slactwinService, $scope) {
     const self = this;
 
-    slactwinService.initController(self, $scope);
+    liveService.checkIfLive(self, $scope);
 
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
@@ -176,18 +273,23 @@ SIREPO.app.controller('InitController', function(appState, requestSender, slactw
     init();
 });
 
-SIREPO.app.controller('SearchController', function(appState) {
+SIREPO.app.controller('SearchController', function(appState, liveService, $scope) {
     const self = this;
     self.appState = appState;
+    self.liveService = liveService;
+    liveService.canViewLive = false;
+
+    liveService.cancelLiveView($scope);
 });
 
 SIREPO.app.controller('BeamController', function() {
     const self = this;
 });
 
-SIREPO.app.controller('LatticeController', function(slactwinService, $scope) {
+SIREPO.app.controller('LatticeController', function(liveService, slactwinService, $scope) {
     const self = this;
-    slactwinService.initController(self, $scope);
+
+    liveService.checkIfLive(self, $scope);
 
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
@@ -368,7 +470,7 @@ SIREPO.app.directive('latticeFooter', function() {
                 }
             };
 
-            $scope.destroy = () => $('.sr-lattice-label').off();
+            $scope.$on('$destroy', () => $('.sr-lattice-label').off());
 
             $scope.$on('sr-beamlineItemSelected', (e, idx) => {
                 setSelectedId(slactwinService.latticeModels().beamlines[0].items[idx]);
@@ -467,8 +569,9 @@ SIREPO.app.directive('runNavigation', function() {
         restrict: 'A',
         scope: {},
         template: `
-            <div class="text-right" data-ng-if="runSummaryIds">
-              <div style="margin: 0 1em 1em 0">
+            <div class="text-right" style="margin: 0 25px 15px 0" data-ng-if="liveService.isLiveView"><span class="glyphicon glyphicon-play-circle"></span> Live</div>
+            <div class="text-right" data-ng-if="runSummaryIds && ! liveService.isLiveView">
+              <div style="margin: 0 15px 15px 0">
                 <button type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! runSummaryIds[0]">
                   <span class="glyphicon glyphicon-triangle-left"> </span></button>
                 <button type="button" class="btn btn-default" data-ng-click="next(1)" data-ng-disabled="! runSummaryIds[1]">
@@ -476,9 +579,10 @@ SIREPO.app.directive('runNavigation', function() {
               </div>
             </div>
         `,
-        controller: function(appState, requestSender, slactwinService, $scope) {
+        controller: function(appState, liveService, slactwinService, $scope) {
 
             const init = () => {
+                $scope.liveService = liveService;
                 $scope.runSummaryIds = null;
                 let prev;
                 for (const r of appState.models.searchSettings.rowIds) {
@@ -587,7 +691,7 @@ SIREPO.app.directive('searchForm', function() {
               <div data-ng-if="loadingMessage" data-loading-indicator="loadingMessage"></div>
             </div>
         `,
-        controller: function(appState, requestSender, slactwinService, errorService, $scope) {
+        controller: function(appState, errorService, liveService, requestSender, slactwinService, $scope) {
 
             const extractNames = (resp, columns) => {
                 if (angular.isObject(resp)) {
@@ -668,6 +772,7 @@ SIREPO.app.directive('searchForm', function() {
                     (resp) => {
                         $scope.loadingMessage = '';
                         $scope.searchResults = resp.rows;
+                        liveService.canViewLive = true;
                     },
                     {
                         method: 'db_api',
@@ -871,7 +976,7 @@ SIREPO.app.directive('searchResultsTable', function() {
               </div>
             </div>
         `,
-        controller: function(appState, requestSender, slactwinService, timeService, $scope) {
+        controller: function(appState, slactwinService, timeService, $scope) {
             $scope.slactwinService = slactwinService;
 
             const updateColumns = () => {
@@ -914,10 +1019,7 @@ SIREPO.app.directive('searchResultsTable', function() {
             $scope.openRun = (row) => {
                 $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
                 appState.saveChanges('searchSettings', () => {
-                    requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
-                        ':simulationId': appState.models.simulation.simulationId,
-                    });
-                    slactwinService.setRunSummaryId(row.run_summary_id);
+                    slactwinService.openRun(row.run_summary_id);
                 });
             };
 
@@ -935,6 +1037,30 @@ SIREPO.app.directive('searchResultsTable', function() {
             // };
 
             $scope.$watchCollection('model.selectedColumns', updateColumns);
+        },
+    };
+});
+
+SIREPO.app.directive('viewLiveButton', function() {
+    return {
+        restrict: 'A',
+        scope: {},
+        template: `
+            <div class="btn btn-default" data-ng-click="openLiveView()"><span
+              class="glyphicon glyphicon-play-circle"></span> View Live</div>
+            <div data-confirmation-modal="" data-is-required="true" data-id="st-starting-live-modal"
+              data-title="Live Monitor" data-ok-text="" data-cancel-text="">
+              <p>Please wait, initializing the live monitor.</p>
+            </div>
+        `,
+        controller: function(liveService, $scope) {
+
+            $scope.openLiveView = () => {
+                $('#st-starting-live-modal').modal('show');
+                liveService.startLiveView($scope);
+            };
+
+            $scope.$on('$destroy', () => $('#st-starting-live-modal').modal('hide'));
         },
     };
 });
