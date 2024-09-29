@@ -112,8 +112,8 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return appState.models.externalLattice.models;
     };
 
-    self.openRun = (runSummaryId) => {
-        requestSender.localRedirect(SIREPO.APP_SCHEMA.appModes.default.localRoute, {
+    self.openRun = (runSummaryId, route) => {
+        requestSender.localRedirect(route || SIREPO.APP_SCHEMA.appModes.default.localRoute, {
             ':simulationId': appState.models.simulation.simulationId,
         });
         self.setRunSummaryId(runSummaryId);
@@ -132,7 +132,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
     return self;
 });
 
-SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService) {
+SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService, uri, $location, $timeout) {
     const self = {};
     const controllerProxy = {
         simComputeModel: 'liveAnimation',
@@ -158,8 +158,17 @@ SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService
     const openRun = (status) => {
         if (status.state === 'running' && status.outputInfo && status.outputInfo.runSummaryId) {
             if (parseInt(status.outputInfo.runSummaryId) !== slactwinService.getRunSummaryId()) {
-                //TODO(pjm): preserve lattice or viz pages
-                slactwinService.openRun(status.outputInfo.runSummaryId);
+                //TODO(pjm): this logic needs help
+                let c = uri.firstComponent($location.url());
+                if (c === 'visualization' || c === 'lattice') {
+                }
+                else {
+                    c = null;
+                }
+                slactwinService.openRun(status.outputInfo.runSummaryId, c);
+                if (c === 'visualization' || c === 'lattice') {
+                    slactwinService.loadRun();
+                }
                 return true;
             }
         }
@@ -326,7 +335,7 @@ SIREPO.app.directive('appHeader', function(authState, panelState, slactwinServic
                   <!--<li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>-->
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
 
-                  <li class="sim-section" data-ng-class="{active: nav.isActive('vizualization')}"><a href data-ng-click="nav.openSection('viz')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
+                  <li class="sim-section" data-ng-class="{active: nav.isActive('visualization')}"><a href data-ng-click="nav.openSection('visualization')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
                 </div>
               </app-header-right-sim-loaded>
               <app-settings>

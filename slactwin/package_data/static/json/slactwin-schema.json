@@ -10,7 +10,7 @@
     },
     "appModes": {
         "default": {
-            "localRoute": "viz"
+            "localRoute": "visualization"
         }
     },
     "dynamicFiles": {
@@ -141,8 +141,8 @@
                 "reloadOnSearch": false
             }
         },
-        "viz": {
-            "route": "/vizualization/:simulationId",
+        "visualization": {
+            "route": "/visualization/:simulationId",
             "config": {
                 "controller": "VizController as viz",
                 "templateUrl": "/static/html/slactwin-viz.html",
