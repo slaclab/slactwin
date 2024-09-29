@@ -48,5 +48,6 @@ class Commands(slactwin.pkcli.CommandsBase):
         for p in _queued(run_importer.cfg().summary_dir):
             time.sleep(period)
             t = p.new(basename=p.purebasename)
-            p.rename(p.new(basename=p.purebasename))
+            p.copy(p.new(basename=p.purebasename))
+            p.remove()
             pkdlog("{}", t)

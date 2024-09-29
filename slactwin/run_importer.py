@@ -217,9 +217,9 @@ class _SummaryNotifier:
             return rv
         q = asyncio.Queue(1)
         self._run_kinds[run_kind_id].clients.append(q)
-        return await q.get()
-
-        return await _queue(v.clients)
+        rv = await q.get()
+        q.task_done()
+        return rv
 
     async def _process(self):
         """Make db consistent with files, await new summaries, and notify clients"""
