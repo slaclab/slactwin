@@ -82,6 +82,30 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         $location.search('runSummaryId', runSummaryId);
     };
 
+    self.initAnimation = ($scope, callback) => {
+        // Ensure the "animation" run is available before starting a live monitor
+        // otherwise the live monitor will prevent the "animation" from progressing
+        const c = {
+            simComputeModel: 'animation',
+            simScope: $scope,
+        };
+        let firstCheck = true;
+        //TODO(pjm): share code with initController below
+        c.simHandleStatus = (status) => {
+            if (status.state === 'completed') {
+                callback();
+                return;
+            }
+            if (firstCheck) {
+                firstCheck = false;
+                if (status.state !== 'pending') {
+                    c.simState.runSimulation();
+                }
+            }
+        };
+        c.simState = persistentSimulation.initSimulationState(c);
+    };
+
     self.initController = (controller, $scope) => {
         let firstCheck = true;
         $scope.loadingMessage = 'Reading Run Info';
@@ -92,14 +116,14 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
             controller.simState = persistentSimulation.initSimulationState(controller);
         };
 
-        controller.simHandleStatus = (data) => {
-            if (data.state === 'completed') {
+        controller.simHandleStatus = (status) => {
+            if (status.state === 'completed') {
                 self.loadRun();
                 return;
             }
             if (firstCheck) {
                 firstCheck = false;
-                if (data.state == 'missing' || data.state == 'error') {
+                if (status.state !== 'pending') {
                     controller.simState.runSimulation();
                 }
             }
@@ -236,6 +260,13 @@ SIREPO.app.controller('VizController', function(appState, frameCache, liveServic
 
     liveService.checkIfLive(self, $scope);
 
+    self.errorWatch = () => {
+        if ($scope.loadingMessage && panelState.getError('summaryAnimation')) {
+            panelState.clear('summaryAnimation');
+            liveService.checkIfLive(self, $scope);
+        }
+    };
+
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
         self.outputFiles = [];
@@ -282,13 +313,16 @@ SIREPO.app.controller('InitController', function(appState, requestSender, slactw
     init();
 });
 
-SIREPO.app.controller('SearchController', function(appState, liveService, $scope) {
+SIREPO.app.controller('SearchController', function(appState, liveService, slactwinService, $scope) {
     const self = this;
     self.appState = appState;
     self.liveService = liveService;
     liveService.canViewLive = false;
 
-    liveService.cancelLiveView($scope);
+    slactwinService.initAnimation($scope, () => {
+        liveService.cancelLiveView($scope);
+        liveService.canViewLive = true;
+    });
 });
 
 SIREPO.app.controller('BeamController', function() {
@@ -594,7 +628,7 @@ SIREPO.app.directive('runNavigation', function() {
                 $scope.liveService = liveService;
                 $scope.runSummaryIds = null;
                 let prev;
-                for (const r of appState.models.searchSettings.rowIds) {
+                for (const r of appState.models.searchSettings.rowIds || []) {
                     if ($scope.runSummaryIds) {
                         $scope.runSummaryIds[1] = r;
                         break;
@@ -698,6 +732,7 @@ SIREPO.app.directive('searchForm', function() {
             <div class="col-sm-12">
               <div data-search-results-table="searchResults" data-model="model"></div>
               <div data-ng-if="loadingMessage" data-loading-indicator="loadingMessage"></div>
+              <div data-ng-if="noResultsMessage">{{ noResultsMessage }}</div>
             </div>
         `,
         controller: function(appState, errorService, liveService, requestSender, slactwinService, $scope) {
@@ -772,6 +807,7 @@ SIREPO.app.directive('searchForm', function() {
                 if (! ($scope.model.columns || []).length) {
                     return;
                 }
+                $scope.noResultsMessage = '';
                 $scope.searchResults = null;
                 const cols = appState.clone($scope.model.selectedColumns);
                 // remove snapshot_end col
@@ -781,7 +817,9 @@ SIREPO.app.directive('searchForm', function() {
                     (resp) => {
                         $scope.loadingMessage = '';
                         $scope.searchResults = resp.rows;
-                        liveService.canViewLive = true;
+                        $scope.noResultsMessage = resp.rows && resp.rows.length
+                            ? ''
+                            : 'No records found for the search criteria';
                     },
                     {
                         method: 'db_api',
