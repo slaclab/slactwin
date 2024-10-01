@@ -17,7 +17,7 @@ import re
 import slactwin.config
 import slactwin.const
 import watchdog.events
-import watchdog.observers
+import watchdog.observers.polling
 
 _SUMMARY_PATH_RE = re.compile(
     r"(.*)/summary/(\d{4}/\d\d/\d\d/).+-(\w+)-\d{4}-\d\d-\d\dT"
@@ -261,7 +261,7 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         self.__queue = queue
         # TODO(robnagler) may need to optimize for size
         self.__seen = set()
-        o = watchdog.observers.Observer()
+        o = watchdog.observers.polling.PollingObserver()
         o.schedule(self, str(summary_dir), recursive=True)
         o.start()
 
