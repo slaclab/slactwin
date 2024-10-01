@@ -130,7 +130,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
             }
             if (firstCheck) {
                 firstCheck = false;
-                if (! ['pending', 'running'].includes(status.state)) {
+                if (controller.simState.isStopped()) {
                     controller.simState.runSimulation();
                 }
             }
@@ -182,12 +182,11 @@ SIREPO.app.factory('liveService', function(appState, persistentSimulation, slact
         controllerProxy.simState = persistentSimulation.initSimulationState(controllerProxy);
     };
 
-
     self.cancelLiveView = (simScope, callback) => {
         appState.models.searchSettings.isLive = '0';
         appState.saveChanges('searchSettings', () => {
             simStatus(simScope, (simState, status) => {
-                if (status.state === 'pending' || status.state === 'running') {
+                if (controllerProxy.simState.isProcessing()) {
                     simState.cancelSimulation();
                 }
                 callback();
@@ -203,7 +202,7 @@ SIREPO.app.factory('liveService', function(appState, persistentSimulation, slact
                 if (slactwinService.loadFromStatus(status)) {
                     return;
                 }
-                if (['pending', 'running'].includes(status.state)) {
+                if (controllerProxy.simState.isProcessing()) {
                     // already running
                     firstCheck = false;
                 }
