@@ -17,6 +17,7 @@ import pykern.pkjson
 import re
 import sirepo.global_resources
 import sirepo.sim_data
+import sirepo.simulation_db
 import sirepo.template.impactt
 import sirepo.template.lattice
 import sirepo.util
@@ -25,7 +26,7 @@ import slactwin.db_api_client
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
-LIVE_ANIMATION_OUT = "liveAnimation.json"
+LIVE_OUT = "live.json"
 
 
 def background_percent_complete(report, run_dir, is_running):
@@ -39,24 +40,21 @@ def background_percent_complete(report, run_dir, is_running):
         PKDict: percentage complete summary info and outputInfo
     """
 
-    def _liveAnimation(rv):
-        if report == "liveAnimation":
-            f = run_dir.join(LIVE_ANIMATION_OUT)
-            if f.exists():
-                rv.outputInfo = pykern.pkjson.load_any(f)
-        return rv
-
-    if is_running:
-        return _liveAnimation(
-            PKDict(
-                frameCount=0,
-                percentComplete=0,
-            )
-        )
-    return PKDict(
+    rv = PKDict(
         percentComplete=100,
         frameCount=1,
     )
+    is_live = (
+        sirepo.simulation_db.read_json(
+            run_dir.join(template_common.INPUT_BASE_NAME)
+        ).models.searchSettings.isLive
+        == "1"
+    )
+    if is_live:
+        f = run_dir.join(LIVE_OUT)
+        if f.exists():
+            rv.outputInfo = pykern.pkjson.load_any(f)
+    return rv
 
 
 def sim_frame(frame_args):
@@ -136,13 +134,10 @@ def write_parameters(data, run_dir, is_parallel):
         is_parallel (bool): is this for a background job?
     """
 
-    def _liveAnimation():
-        return template_common.render_jinja(SIM_TYPE, data.models)
-
-    if data.report == "liveAnimation":
+    if data.report == "animation" and data.models.searchSettings.isLive == "1":
         pykern.pkio.write_text(
             run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
-            _liveAnimation(),
+            template_common.render_jinja(SIM_TYPE, data.models),
         )
     return None
 

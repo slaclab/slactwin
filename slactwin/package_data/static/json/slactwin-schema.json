@@ -166,10 +166,6 @@
             "notes": ["Notes", "Text", ""],
             "reportIndex": ["", "Integer"]
         },
-        "liveAnimation": {
-            "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
-            "twinModel": ["Model", "TwinModel", "impact"]
-        },
         "searchSettings": {
             "accelerator": ["Accelerator", "Accelerator", "sc_inj"],
             "twinModel": ["Model", "TwinModel", "impact"],
@@ -178,7 +174,8 @@
             "presetTimePicker": ["", "PresetTimePicker", ""],
             "pageSize": ["Page Size", "Integer", 15],
             "searchTerms": ["", "SearchTerms", []],
-            "columns": ["", "Array", []]
+            "columns": ["", "Array", []],
+            "isLive": ["View Live", "Boolean", "0"]
         },
         "searchTerm": {
             "column": ["Column", "ColumnList", ""],

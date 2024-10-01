@@ -23,12 +23,16 @@ async def test_slactwin_live_animation(fc):
         from slactwin import run_importer
 
         d = fc.sr_sim_data("SLAC Digital Twin Database", sim_type=fc.sr_sim_type)
-        d.models.liveAnimation = PKDict(accelerator="sc_inj", twinModel="impact")
+        d.models.searchSettings.pkupdate(
+            accelerator="sc_inj",
+            twinModel="impact",
+            isLive="1",
+        )
         r = fc.sr_post(
             "runSimulation",
             PKDict(
                 models=d.models,
-                report="liveAnimation",
+                report="animation",
                 simulationId=d.models.simulation.simulationId,
                 simulationType=d.simulationType,
             ),
