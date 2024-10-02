@@ -19,8 +19,8 @@ def run_background(cfg_dir):
       cfg_dir (str): The directory to run in.
     """
 
-    async def _liveAnimation(params):
-        o = cfg_dir.join(slactwin.template.slactwin.LIVE_ANIMATION_OUT)
+    async def _runLive(params):
+        o = cfg_dir.join(slactwin.template.slactwin.LIVE_OUT)
         c = slactwin.db_api_client.for_job_cmd()
         q = PKDict(
             twin_name=params.twinModel,
@@ -39,7 +39,7 @@ def run_background(cfg_dir):
 
     cfg_dir = pykern.pkio.py_path(cfg_dir)
     if cfg_dir.join(template_common.PARAMETERS_PYTHON_FILE).exists():
-        # must be liveAnimation so this throws here
+        # must be live so this throws here
         asyncio.run(
-            _liveAnimation(template_common.exec_parameters().liveAnimation),
+            _runLive(template_common.exec_parameters().searchSettings),
         )
