@@ -33,7 +33,7 @@ SIREPO.app.config(function() {
     `;
 });
 
-SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentSimulation, requestSender, $location, $rootScope) {
+SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentSimulation, requestSender, uri, $location, $rootScope) {
     const self = {};
     self.computeModel = analysisModel => 'animation';
     self.selectSearchFieldText = 'Select Search Field';
@@ -53,6 +53,10 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
 
     self.getRunSummaryId = () => {
         return parseInt($location.search().runSummaryId);
+    };
+
+    self.isLiveView = () => {
+        return appState.models.searchSettings.isLive == '1';
     };
 
     self.loadRun = () => {
@@ -82,28 +86,28 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         $location.search('runSummaryId', runSummaryId);
     };
 
-    self.initAnimation = ($scope, callback) => {
-        // Ensure the "animation" run is available before starting a live monitor
-        // otherwise the live monitor will prevent the "animation" from progressing
-        const c = {
-            simComputeModel: 'animation',
-            simScope: $scope,
-        };
-        let firstCheck = true;
-        //TODO(pjm): share code with initController below
-        c.simHandleStatus = (status) => {
-            if (status.state === 'completed') {
-                callback();
-                return;
-            }
-            if (firstCheck) {
-                firstCheck = false;
-                if (status.state !== 'pending') {
-                    c.simState.runSimulation();
+    self.loadFromStatus = (status) => {
+        if (self.isLiveView()
+            && status.state === 'running'
+            && status.outputInfo
+            && status.outputInfo.runSummaryId
+        ) {
+            if (parseInt(status.outputInfo.runSummaryId) !== self.getRunSummaryId()) {
+                //TODO(pjm): this logic needs help
+                let c = uri.firstComponent($location.url());
+                if (c === 'visualization' || c === 'lattice') {
+                }
+                else {
+                    c = null;
+                }
+                self.openRun(status.outputInfo.runSummaryId, c);
+                if (c === 'visualization' || c === 'lattice') {
+                    self.loadRun();
+                    return true;
                 }
             }
-        };
-        c.simState = persistentSimulation.initSimulationState(c);
+        }
+        return false;
     };
 
     self.initController = (controller, $scope) => {
@@ -117,13 +121,16 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         };
 
         controller.simHandleStatus = (status) => {
-            if (status.state === 'completed') {
+            if (self.loadFromStatus(status)) {
+                return;
+            }
+            if (status.frameCount > 0) {
                 self.loadRun();
                 return;
             }
             if (firstCheck) {
                 firstCheck = false;
-                if (status.state !== 'pending') {
+                if (controller.simState.isStopped()) {
                     controller.simState.runSimulation();
                 }
             }
@@ -156,47 +163,10 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
     return self;
 });
 
-SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService, uri, $location, $timeout) {
+SIREPO.app.factory('liveService', function(appState, persistentSimulation, slactwinService) {
     const self = {};
     const controllerProxy = {
-        simComputeModel: 'liveAnimation',
-    };
-
-    self.canViewLive = true;
-    self.isLiveView = false;
-
-    const monitorLiveView = (simScope, firstCallback) => {
-        simStatus(simScope, (simScope, status) => {
-            if (firstCallback) {
-                firstCallback();
-                firstCallback = null;
-            }
-            if (status.state === 'error') {
-                self.isLiveView = false;
-                return;
-            }
-            openRun(status);
-        });
-    };
-
-    const openRun = (status) => {
-        if (status.state === 'running' && status.outputInfo && status.outputInfo.runSummaryId) {
-            if (parseInt(status.outputInfo.runSummaryId) !== slactwinService.getRunSummaryId()) {
-                //TODO(pjm): this logic needs help
-                let c = uri.firstComponent($location.url());
-                if (c === 'visualization' || c === 'lattice') {
-                }
-                else {
-                    c = null;
-                }
-                slactwinService.openRun(status.outputInfo.runSummaryId, c);
-                if (c === 'visualization' || c === 'lattice') {
-                    slactwinService.loadRun();
-                }
-                return true;
-            }
-        }
-        return false;
+        simComputeModel: 'animation',
     };
 
     const simStatus = (simScope, callback) => {
@@ -212,43 +182,35 @@ SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService
         controllerProxy.simState = persistentSimulation.initSimulationState(controllerProxy);
     };
 
-
-    self.cancelLiveView = (simScope) => {
-        self.isLiveView = false;
-        simStatus(simScope, (simState, status) => {
-            if (status.state === 'pending' || status.state === 'running') {
-                simState.cancelSimulation();
-            }
+    self.cancelLiveView = (simScope, callback) => {
+        appState.models.searchSettings.isLive = '0';
+        appState.saveChanges('searchSettings', () => {
+            simStatus(simScope, (simState, status) => {
+                if (controllerProxy.simState.isProcessing()) {
+                    simState.cancelSimulation();
+                }
+                callback();
+            });
         });
     };
 
-    self.checkIfLive = (controller, scope) => {
-        if (self.isLiveView) {
-            monitorLiveView(scope, () => {
-                slactwinService.initController(controller, scope);
-            });
-        }
-        else {
-            slactwinService.initController(controller, scope);
-        }
-    };
-
     self.startLiveView = (simScope) => {
-        //TODO(pjm): should set liveAnimation accelerator and twinModel, save changes, then run the following in a callback
-        self.isLiveView = true;
-        let firstCheck = true;
-        simStatus(simScope, (simState, status) => {
-            if (openRun(status)) {
-                return;
-            }
-            if (['pending', 'running'].includes(status.state)) {
-                // already running
-                firstCheck = false;
-            }
-            if (firstCheck) {
-                firstCheck = false;
-                controllerProxy.simState.runSimulation();
-            }
+        appState.models.searchSettings.isLive = '1';
+        appState.saveChanges('searchSettings', () => {
+            let firstCheck = true;
+            simStatus(simScope, (simState, status) => {
+                if (slactwinService.loadFromStatus(status)) {
+                    return;
+                }
+                if (controllerProxy.simState.isProcessing()) {
+                    // already running
+                    firstCheck = false;
+                }
+                if (firstCheck) {
+                    firstCheck = false;
+                    controllerProxy.simState.runSimulation();
+                }
+            });
         });
     };
 
@@ -257,13 +219,12 @@ SIREPO.app.factory('liveService', function(persistentSimulation, slactwinService
 
 SIREPO.app.controller('VizController', function(appState, frameCache, liveService, panelState, slactwinService, $scope) {
     const self = this;
-
-    liveService.checkIfLive(self, $scope);
+    slactwinService.initController(self, $scope);
 
     self.errorWatch = () => {
         if ($scope.loadingMessage && panelState.getError('summaryAnimation')) {
             panelState.clear('summaryAnimation');
-            liveService.checkIfLive(self, $scope);
+            slactwinService.initController(self, $scope);
         }
     };
 
@@ -313,16 +274,11 @@ SIREPO.app.controller('InitController', function(appState, requestSender, slactw
     init();
 });
 
-SIREPO.app.controller('SearchController', function(appState, liveService, slactwinService, $scope) {
+SIREPO.app.controller('SearchController', function(appState, liveService, $scope) {
     const self = this;
     self.appState = appState;
-    self.liveService = liveService;
-    liveService.canViewLive = false;
-
-    slactwinService.initAnimation($scope, () => {
-        liveService.cancelLiveView($scope);
-        liveService.canViewLive = true;
-    });
+    self.canViewLive = false;
+    liveService.cancelLiveView($scope, () => self.canViewLive = true);
 });
 
 SIREPO.app.controller('BeamController', function() {
@@ -331,8 +287,7 @@ SIREPO.app.controller('BeamController', function() {
 
 SIREPO.app.controller('LatticeController', function(liveService, slactwinService, $scope) {
     const self = this;
-
-    liveService.checkIfLive(self, $scope);
+    slactwinService.initController(self, $scope);
 
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
@@ -612,8 +567,8 @@ SIREPO.app.directive('runNavigation', function() {
         restrict: 'A',
         scope: {},
         template: `
-            <div class="text-right" style="margin: 0 25px 15px 0" data-ng-if="liveService.isLiveView"><span class="glyphicon glyphicon-play-circle"></span> Live</div>
-            <div class="text-right" data-ng-if="runSummaryIds && ! liveService.isLiveView">
+            <div class="text-right" style="margin: 0 25px 15px 0" data-ng-if="slactwinService.isLiveView()"><span class="glyphicon glyphicon-play-circle"></span> Live</div>
+            <div class="text-right" data-ng-if="runSummaryIds && ! slactwinService.isLiveView()">
               <div style="margin: 0 15px 15px 0">
                 <button type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! runSummaryIds[0]">
                   <span class="glyphicon glyphicon-triangle-left"> </span></button>
@@ -622,10 +577,10 @@ SIREPO.app.directive('runNavigation', function() {
               </div>
             </div>
         `,
-        controller: function(appState, liveService, slactwinService, $scope) {
+        controller: function(appState, slactwinService, $scope) {
 
             const init = () => {
-                $scope.liveService = liveService;
+                $scope.slactwinService = slactwinService;
                 $scope.runSummaryIds = null;
                 let prev;
                 for (const r of appState.models.searchSettings.rowIds || []) {

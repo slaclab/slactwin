@@ -24,18 +24,7 @@ class SimData(sirepo.sim_data.SimDataBase):
         Args:
             data (PKDict): simulation instance
         """
-        if computeModel == "liveAnimation":
-            return [
-                "liveAnimation.accelerator",
-                "liveAnimation.twinModel",
-            ]
         return []
-
-    @classmethod
-    def _compute_model(cls, analysis_model, *args, **kwargs):
-        if analysis_model == "liveAnimation":
-            return analysis_model
-        return super()._compute_model(analysis_model, *args, **kwargs)
 
     @classmethod
     def _lib_file_basenames(cls, *args, **kwargs):
