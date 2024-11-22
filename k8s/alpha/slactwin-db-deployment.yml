@@ -43,6 +43,9 @@ spec:
             - mountPath: /srv
               name: storage
               subPath: sw/lume/radiasoft/sirepo-alpha/srv
+            - mountPath: /sdf/group/ad/sw/lume/radiasoft/sirepo-alpha/srv/slactwin_db/lume-impact-live
+              name: storage
+              subPath: sw/lume/radiasoft/sirepo-alpha/srv/slactwin_db/lume-impact-live
       securityContext:
         runAsUser: 46588 # TODO(e-carlin): Need service user.
         runAsGroup: 1126 # TODO(e-carlin): Need service group.
