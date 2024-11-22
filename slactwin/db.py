@@ -126,7 +126,7 @@ class _Db(slactwin.quest.Attr):
                         for k, v in where.items()
                     )
                 )
-            return rv
+            return rv.limit(500)
 
         return self.execute(
             _stmt(_models[model_or_stmt].table)
