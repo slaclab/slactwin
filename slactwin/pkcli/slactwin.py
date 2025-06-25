@@ -21,7 +21,7 @@ def run_background(cfg_dir):
 
     async def _runLive(params):
         o = cfg_dir.join(slactwin.template.slactwin.LIVE_OUT)
-        c = slactwin.db_api_client.for_job_cmd()
+        c = await slactwin.db_api_client.for_job_cmd().connect()
         q = PKDict(
             twin_name=params.twinModel,
             machine_name=params.accelerator,

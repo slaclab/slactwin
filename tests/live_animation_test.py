@@ -10,9 +10,22 @@ import pytest
 _NEW_SUMMARY_FILE = "lume-impact-live-demo-s3df-sc_inj-2024-06-19T07:03:29-07:00.json"
 
 
+# TODO(robnagler) share
+def setup_module(module):
+    import os
+    from pykern import util
+
+    p = str(util.unbound_localhost_tcp_port(10000, 11000))
+    os.environ.update(
+        PYKERN_PKDEBUG_WANT_PID_TIME="1",
+        SLACTWIN_CONFIG_DB_API_TCP_PORT=p,
+        SLACTWIN_GLOBAL_RESOURCES_SLACTWIN_DB_API_TCP_PORT=p,
+    )
+
+
 @pytest.mark.asyncio
 async def test_slactwin_live_animation(fc):
-    from pykern import pkunit
+    from pykern import pkunit, pkdebug
     from slactwin import const
 
     pkunit.data_dir().join(const.DEV_DB_BASENAME).copy(pkunit.work_dir())
@@ -39,6 +52,7 @@ async def test_slactwin_live_animation(fc):
         )
         i = None
         for _ in range(10):
+            pkdebug.pkdp(r)
             await asyncio.sleep(r.nextRequestSeconds)
             _assert_db_ok(db_pid)
             r = fc.sr_post("runStatus", r.nextRequest)
@@ -75,35 +89,12 @@ def _assert_db_ok(pid):
 
 @contextlib.contextmanager
 def _db_service():
-    from pykern.pkcollections import PKDict
-    import os, signal, time
+    def _child():
+        from pykern import pkdebug
 
-    def _port():
-        from pykern import pkunit
-
-        # TODO(robnagler) need to pass this through to agent
-        return "9020"
-        return str(pkunit.unbound_localhost_tcp_port(10000, 11000))
-
-    port = _port()
-    c = PKDict(
-        PYKERN_PKDEBUG_WANT_PID_TIME="1",
-        SLACTWIN_CONFIG_DB_API_TCP_PORT=port,
-    )
-    os.environ.update(**c)
-    from pykern import pkconfig
-
-    pkconfig.reset_state_for_testing(c)
-    from pykern import pkdebug
-
-    p = os.fork()
-    if p == 0:
         try:
-            if port == "9020":
-                pkdebug.pkdlog("reusing port 9020; need to fix this")
-            pkdebug.pkdlog("start db service on port={}", port)
-            from slactwin.pkcli import service
             from slactwin import config, modules
+            from slactwin.pkcli import service
 
             modules.import_and_init()
             service.Commands().db()
@@ -112,6 +103,13 @@ def _db_service():
             raise
         finally:
             os._exit(0)
+
+    from pykern.pkcollections import PKDict
+    import os, signal, time
+
+    p = os.fork()
+    if p == 0:
+        _child()
     try:
         time.sleep(1)
         _assert_db_ok(p)
