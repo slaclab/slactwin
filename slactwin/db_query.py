@@ -17,7 +17,7 @@ api
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import inspect
-import pykern.http
+import pykern.util
 import re
 import slactwin.const
 import sqlalchemy
@@ -193,7 +193,7 @@ class _DbQuery:
                 if slactwin.const.RUN_VALUE_SEP in k:
                     _add_value(state, k, v)
                 else:
-                    raise pykern.http.APIError(
+                    raise pykern.util.APIError(
                         "invalid runs_by_date_and_values min_max_values name={}", k
                     )
             return state

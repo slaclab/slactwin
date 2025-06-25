@@ -143,12 +143,14 @@ def write_parameters(data, run_dir, is_parallel):
 
 
 def _db_api(api_name, **kwargs):
-    return asyncio.run(
-        slactwin.db_api_client.for_job_cmd().call_api(
+    async def _target():
+        c = await slactwin.db_api_client.for_job_cmd().connect()
+        return await c.call_api(
             api_name,
             kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs),
-        ),
-    )
+        )
+
+    return asyncio.run(_target())
 
 
 def _load_archive(frame_args):

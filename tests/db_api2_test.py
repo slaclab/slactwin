@@ -7,6 +7,19 @@
 import contextlib
 
 
+# TODO(robnagler) share
+def setup_module(module):
+    import os
+    from pykern import util
+
+    p = str(util.unbound_localhost_tcp_port(10000, 11000))
+    os.environ.update(
+        PYKERN_PKDEBUG_WANT_PID_TIME="1",
+        SLACTWIN_CONFIG_DB_API_TCP_PORT=p,
+        SLACTWIN_GLOBAL_RESOURCES_SLACTWIN_DB_API_TCP_PORT=p,
+    )
+
+
 def test_slactwin_stateless_compute(fc):
     from slactwin import const
     from pykern import pkunit
@@ -38,23 +51,10 @@ def _server():
     from pykern.pkcollections import PKDict
     import os, signal, time
 
-    port = _port()
-    import os
+    def _child():
+        from pykern import pkdebug
 
-    c = PKDict(
-        PYKERN_PKDEBUG_WANT_PID_TIME="1",
-        SLACTWIN_CONFIG_DB_API_TCP_PORT=port,
-    )
-    os.environ.update(**c)
-    from pykern import pkconfig
-
-    pkconfig.reset_state_for_testing(c)
-    from pykern import pkdebug
-
-    p = os.fork()
-    if p == 0:
         try:
-            pkdebug.pkdlog("start server")
             from slactwin.pkcli import service
             from slactwin import config, modules
 
@@ -64,17 +64,13 @@ def _server():
             pkdebug.pkdlog("server exception={} stack={}", e, pkdebug.pkdexc())
         finally:
             os._exit(0)
+
+    p = os.fork()
+    if p == 0:
+        _child()
     try:
         time.sleep(1)
         yield None
 
     finally:
         os.kill(p, signal.SIGKILL)
-
-
-def _port():
-    from pykern import pkunit
-
-    # TODO(robnagler) need to pass this through to agent
-    return "9020"
-    return str(pkunit.unbound_localhost_tcp_port(10000, 11000))

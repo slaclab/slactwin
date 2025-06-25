@@ -6,7 +6,12 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
+import pykern.api.server
+import slactwin.config
+import slactwin.db_api
 import slactwin.pkcli
+import slactwin.quest
+import slactwin.run_importer
 
 
 class Commands(slactwin.pkcli.CommandsBase):
@@ -17,12 +22,10 @@ class Commands(slactwin.pkcli.CommandsBase):
         the database of lume live runs. All reuqests for data from the
         databse should be routed through this service.
         """
-        from pykern import http
-        from slactwin import config, modules, db_api, quest, run_importer
 
-        http.server_start(
-            attr_classes=quest.attr_classes(),
-            api_classes=(db_api.DbAPI,),
-            http_config=config.cfg().db_api,
-            coros=(run_importer.start_notifier(),),
+        pykern.api.server.start(
+            attr_classes=slactwin.quest.attr_classes(),
+            api_classes=(slactwin.db_api.DbAPI,),
+            http_config=slactwin.config.cfg().db_api,
+            coros=(slactwin.run_importer.start_notifier(),),
         )

@@ -1,4 +1,4 @@
-"""Client to access database over HTTP
+"""Client to access database over pykern.api
 
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
@@ -7,7 +7,7 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
-import pykern.http
+import pykern.api.client
 import sirepo.global_resources
 import slactwin.config
 
@@ -24,8 +24,8 @@ def for_job_cmd():
     )
 
 
-class DbAPIClient(pykern.http.HTTPClient):
-    """See `pykern.http.HTTPClient` for how to make API calls."""
+class DbAPIClient(pykern.api.client.Client):
+    """See `pykern.api.client.Client` for how to make API calls."""
 
     def __init__(self, http_config=None):
         # TODO(e-carlin): In job_agent it is too late to properly setup env
