@@ -7,39 +7,13 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.pkconfig
+import pykern.sql_db
 import pykern.util
 import slactwin.config
 import slactwin.quest
 import sqlalchemy
 import sqlalchemy.sql.operators
 import sys
-
-
-class BaseExc(Exception):
-    """Superclass for sll exceptions in this module"""
-
-    def __init__(self, **context):
-        a = [self.__class__.__name__]
-        f = "exception={}"
-        for k, v in context.items():
-            f += " {}={}"
-            a.extend([k, v])
-        pkdlog(f, *a)
-
-    def as_api_error(self):
-        return pykern.util.APIError("db_error={}", self.__class__.__name__)
-
-
-class NoRows(BaseExc):
-    """Expected at least one row, but got none."""
-
-    pass
-
-
-class MoreThanOneRow(BaseExc):
-    """Expected exactly one row, but got more than one."""
-
-    pass
 
 
 class _Db(slactwin.quest.Attr):
@@ -53,122 +27,21 @@ class _Db(slactwin.quest.Attr):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._conn = None
-        self._txn = None
-        self.is_sqlite = _cfg.uri.startswith("sqlite")
-
-    def column_map(self, model, key_col, value_col, **where):
-        return PKDict({r[key_col]: r[value_col] for r in self.select(model, **where)})
+        self.session = _meta.session()
 
     def commit(self):
         self.commit_or_rollback(commit=True)
 
     def commit_or_rollback(self, commit):
-        if self._conn is None:
-            return
-        c = self._conn
-        t = self._txn
-        try:
-            self._conn = None
-            self._txn = None
-            if commit:
-                t.commit()
-            else:
-                t.rollback()
-        finally:
-            c.close()
-
-    def destroy(self, commit=False, **kwargs):
-        self.commit_or_rollback(commit=commit)
-
-    def execute(self, stmt):
-        return self.__conn().execute(stmt)
-
-    def insert(self, model, *args, **kwargs):
-        """Insert a record into the db.
-
-        Args:
-            model (str): name of the model to insert into
-            args (tuple): if supplied, ``args[0]`` is (shallow) copied to a `PKDict`
-            kwargs (dict): additional args are applied to `PKDict`
-        Returns:
-            PKDict: inserted values with primary_id (if generated)
-        """
-        m = _models[model]
-        v = PKDict(args[0]) if args else PKDict()
-        if kwargs:
-            v.pkupdate(kwargs)
-        v = m.fixup_pre_insert(self, v)
-        return m.fixup_post_insert(
-            self,
-            v,
-            getattr(
-                self.execute(m.table.insert().values(v)),
-                "inserted_primary_key",
-                None,
-            ),
-        )
+        self.__session.commit_or_rollback(commit=commit)
 
     def query(self, name, **kwargs):
-        return _queries[name](self, **kwargs)
-
-    def rollback(self):
-        self.commit_or_rollback(commit=False)
-
-    def select(self, model_or_stmt, **where):
-        def _stmt(table):
-            rv = sqlalchemy.select(table)
-            if where:
-                rv.where(
-                    *(
-                        sqlalchemy.sql.operators.eq(table.columns[k], v)
-                        for k, v in where.items()
-                    )
-                )
-            return rv.limit(500)
-
-        return self.execute(
-            _stmt(_models[model_or_stmt].table)
-            if isinstance(model_or_stmt, str)
-            else model_or_stmt
-        )
-
-    def select_max_primary_id(self, model):
-        m = _models[model]
-        return self.execute(
-            sqlalchemy.select(
-                sqlalchemy.func.max(m.table.columns[m.primary_id]),
-            )
-        ).scalar()
-
-    def select_or_insert(self, model, **values):
-        if m := self.select_one_or_none(model, **values):
-            return m
-        return self.insert(model, **values)
-
-    def select_one(self, model_or_stmt, **where):
-        if rv := self.select_one_or_none(model_or_stmt, **where):
-            return rv
-        raise NoRows(model_or_stmt=model_or_stmt, where=where)
-
-    def select_one_or_none(self, model_or_stmt, **where):
-        rv = None
-        for x in self.select(model_or_stmt, **where):
-            if rv is not None:
-                raise MoreThanOneRow(model_or_stmt=model_or_stmt, where=where)
-            rv = x
-        return rv
-
-    def __conn(self):
-        if self._conn is None:
-            self._conn = _engine.connect()
-            self._txn = self._conn.begin()
-        return self._conn
+        return _queries[name](self.session, **kwargs)
 
 
 def init_module():
-    global _cfg, _engine, _is_sqlite, _models, _queries
-    from slactwin import db_model, db_query
+    global _cfg, _meta, _queries
+    from slactwin import db_query
 
     @pykern.pkconfig.parse_none
     def _uri(value):
@@ -180,15 +53,46 @@ def init_module():
         return value
 
     _cfg = pykern.pkconfig.init(
-        debug=(False, bool, "turn on sqlalchemy tracing"),
         uri=pykern.pkconfig.RequiredUnlessDev(
             None,  # "postgresql://vagrant@/slactwin",
             _uri,
             "sqlalchemy create_engine uri, e.g. postgresql://vagrant@/slactwin",
         ),
     )
-    # TODO(robnagler): need to set connection args, e.g. pooling
-    _engine = sqlalchemy.create_engine(_cfg.uri, echo=_cfg.debug)
-    _models = db_model.init_by_db(_engine)
-    _queries = db_query.init_by_db(_models)
+    _meta = pykern.sql_db.Meta(
+        uri=_cfg.uri,
+        schema=PKDict(
+            run_kind=PKDict(
+                run_kind_id="primary_id 1",
+                machine_name="str 64",
+                twin_name="str 64",
+                created="datetime",
+                unique=(("machine_name", "twin_name"),),
+            ),
+            run_summary=PKDict(
+                run_summary_id="primary_id 2",
+                run_kind_id="primary_id",
+                created="datetime index",
+                run_end="datetime index",
+                archive_path="str 1024 unique",
+                snapshot_end="datetime index",
+                snapshot_path="str 1024 unique",
+                summary_path="str 1024 unique",
+            ),
+            run_value_name=PKDict(
+                run_value_name_id="primary_id 3",
+                created="datetime",
+                run_kind_id="primary_id",
+                name="str 64 index",
+                unique=(("run_kind_id", "name"),),
+            ),
+            run_value_float=PKDict(
+                run_summary_id="primary_id primary_key",
+                run_value_name_id="primary_id primary_key",
+                value="float 64 nullable",
+                index=(("run_summary_id", "run_value_name_id", "value"),),
+            ),
+        ),
+    )
+    _queries = db_query.init_by_db(_meta)
     slactwin.quest.register_attr(_Db)

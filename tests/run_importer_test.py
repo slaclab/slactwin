@@ -18,7 +18,7 @@ def test_parse():
                 e = _setup_data(f, d)
                 run_importer.insert_run_summary(f, qcall=qcall)
                 qcall.db.commit()
-                r = qcall.db.select_one("RunSummary", summary_path=str(e.summary_path))
+                r = qcall.db.session.select_one("run_summary", summary_path=str(e.summary_path))
                 pkunit.pkeq(e.snapshot_dt, r.snapshot_end)
                 pkunit.pkeq(e.snapshot_path, str(r.snapshot_path))
                 v = qcall.db.query(

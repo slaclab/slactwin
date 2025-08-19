@@ -12,4 +12,4 @@ RUN_VALUE_SEP = "^"
 
 DB_API_URI = "/slactwin-db"
 
-DEV_DB_BASENAME = "slactwin.sqlite"
+DEV_DB_BASENAME = "slactwin.sqlite3"
