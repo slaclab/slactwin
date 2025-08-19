@@ -80,7 +80,7 @@ class _Parser(PKDict):
         ):
             return None
         self.summary = pykern.pkjson.load_any(self.summary_path)
-        rv = self.qcall.db.session.insert("run_summary", self._summary_values(self.summary))
+        rv = self.qcall.db.session().insert("run_summary", self._summary_values(self.summary))
         self._run_values_create(rv.run_summary_id, rv.run_kind_id)
         return rv
 
@@ -96,7 +96,7 @@ class _Parser(PKDict):
                 and not isinstance(value, bool)
                 or value is None
             ):
-                self.qcall.db.session.insert(
+                self.qcall.db.session().insert(
                     "run_value_float",
                     run_summary_id=run_summary_id,
                     run_value_name_id=_name_id(name),
@@ -114,15 +114,15 @@ class _Parser(PKDict):
 
         def _name_id(name):
             if "_run_value_names" not in self:
-                self._run_value_names = self.qcall.db.session.column_map(
+                self._run_value_names = self.qcall.db.session().column_map(
                     "run_value_name",
                     key_col="name",
                     value_col="run_value_name_id",
-                    run_kind_id=run_kind_id,
+                    where=PKDict(run_kind_id=run_kind_id),
                 )
             if rv := self._run_value_names.get(name):
                 return rv
-            self._run_value_names[name] = self.qcall.db.session.insert(
+            self._run_value_names[name] = self.qcall.db.session().insert(
                 "run_value_name",
                 name=name,
                 run_kind_id=run_kind_id,
@@ -141,7 +141,7 @@ class _Parser(PKDict):
 
     def _run_kind(self, machine):
         def _id(name):
-            return self.qcall.db.session.select_or_insert(
+            return self.qcall.db.session().select_or_insert(
                 "run_kind", machine_name=machine, twin_name=name
             ).run_kind_id
 

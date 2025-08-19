@@ -27,16 +27,23 @@ class _Db(slactwin.quest.Attr):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.session = _meta.session()
+        self.__session = None
 
     def commit(self):
         self.commit_or_rollback(commit=True)
 
     def commit_or_rollback(self, commit):
-        self.__session.commit_or_rollback(commit=commit)
+        if (s := self.__session) is not None:
+            self.__session = None
+            s.commit_or_rollback(commit=commit)
 
     def query(self, name, **kwargs):
-        return _queries[name](self.session, **kwargs)
+        return _queries[name](self.session(), **kwargs)
+
+    def session(self):
+        if self.__session is None:
+            self.__session = _meta.session()
+        return self.__session
 
 
 def init_module():
