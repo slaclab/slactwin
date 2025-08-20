@@ -21,7 +21,7 @@ async def test_run_all():
         from pykern import pkdebug
 
         modules.import_and_init()
-        c = db_api_client.DbAPIClient()
+        c = await db_api_client.DbAPIClient().connect()
         r = await c.call_api("run_kinds_and_values", PKDict())
         pkunit.pkeq(
             "impact^end_cov_x__px",

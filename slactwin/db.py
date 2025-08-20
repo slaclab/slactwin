@@ -7,7 +7,6 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.pkconfig
-import pykern.quest
 import pykern.util
 import slactwin.config
 import slactwin.quest
@@ -28,7 +27,7 @@ class BaseExc(Exception):
         pkdlog(f, *a)
 
     def as_api_error(self):
-        return pykern.quest.APIError("db_error={}", self.__class__.__name__)
+        return pykern.util.APIError("db_error={}", self.__class__.__name__)
 
 
 class NoRows(BaseExc):
