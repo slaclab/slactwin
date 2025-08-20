@@ -8,6 +8,7 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import contextlib
 import datetime
+import pykern.sql_db
 import slactwin.db
 import slactwin.quest
 import slactwin.run_importer
@@ -64,5 +65,5 @@ class DbAPI(slactwin.quest.API):
 def _raise_on_error():
     try:
         yield
-    except slactwin.db.BaseExc as e:
+    except pykern.sql_db.BaseExc as e:
         raise e.as_api_error()

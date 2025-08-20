@@ -71,17 +71,20 @@ class _Parser(PKDict):
     # save inputs and outputs in some type of row tag model
     # row ids are returned in searching
     def create(self):
-        """Inserts RunSummary and associated records
+        """Inserts run_summary and associated records
         Returns:
-            PKDict: RunSummary record or None if it exists
+            PKDict: run_summary record or None if it exists
         """
         if self.qcall.db.query(
             "run_summary_path_exists", summary_path=str(self.summary_path)
         ):
             return None
         self.summary = pykern.pkjson.load_any(self.summary_path)
-        rv = self.qcall.db.insert("RunSummary", self._summary_values(self.summary))
+        rv = self.qcall.db.session().insert(
+            "run_summary", self._summary_values(self.summary)
+        )
         self._run_values_create(rv.run_summary_id, rv.run_kind_id)
+        self.qcall.db.commit()
         return rv
 
     def _run_values_create(self, run_summary_id, run_kind_id):
@@ -96,8 +99,8 @@ class _Parser(PKDict):
                 and not isinstance(value, bool)
                 or value is None
             ):
-                self.qcall.db.insert(
-                    "RunValueFloat",
+                self.qcall.db.session().insert(
+                    "run_value_float",
                     run_summary_id=run_summary_id,
                     run_value_name_id=_name_id(name),
                     value=value,
@@ -114,19 +117,23 @@ class _Parser(PKDict):
 
         def _name_id(name):
             if "_run_value_names" not in self:
-                self._run_value_names = self.qcall.db.column_map(
-                    "RunValueName",
+                self._run_value_names = self.qcall.db.session().column_map(
+                    "run_value_name",
                     key_col="name",
                     value_col="run_value_name_id",
-                    run_kind_id=run_kind_id,
+                    where=PKDict(run_kind_id=run_kind_id),
                 )
             if rv := self._run_value_names.get(name):
                 return rv
-            self._run_value_names[name] = self.qcall.db.insert(
-                "RunValueName",
-                name=name,
-                run_kind_id=run_kind_id,
-            ).run_value_name_id
+            self._run_value_names[name] = (
+                self.qcall.db.session()
+                .insert(
+                    "run_value_name",
+                    name=name,
+                    run_kind_id=run_kind_id,
+                )
+                .run_value_name_id
+            )
             return self._run_value_names[name]
 
         _create_one("impact", self.summary.outputs.items())
@@ -141,9 +148,11 @@ class _Parser(PKDict):
 
     def _run_kind(self, machine):
         def _id(name):
-            return self.qcall.db.select_or_insert(
-                "RunKind", machine_name=machine, twin_name=name
-            ).run_kind_id
+            return (
+                self.qcall.db.session()
+                .select_or_insert("run_kind", machine_name=machine, twin_name=name)
+                .run_kind_id
+            )
 
         if "impact_config" in self.summary.config:
             n = "impact"
@@ -225,7 +234,7 @@ class _SummaryNotifier:
         """Make db consistent with files, await new summaries, and notify clients"""
 
         async def _init():
-            """Insert runs into db that are already on disk but do not yet exists"""
+            """Insert runs into db that are already on disk but do not yet exist"""
             from slactwin.pkcli import db
 
             await asyncio.sleep(1)

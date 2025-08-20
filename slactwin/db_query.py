@@ -25,54 +25,56 @@ import sqlalchemy
 _query_builder = None
 
 
-def init_by_db(models):
+def init_by_db(meta):
     global _query_builder
 
     if _query_builder:
         raise AssertionError("duplicate initialization")
-    _query_builder = _DbQueryBuilder(models)
+    _query_builder = _DbQueryBuilder(meta)
     return _query_builder.queries
 
 
 class _DbQuery:
-    def __init__(self, models, name, method):
+    def __init__(self, meta, name, method):
         self._name = name
         self._method = method
-        self._tables = PKDict(self._init_tables(models, method))
+        self._tables = PKDict(self._init_tables(meta, method))
 
-    def _init_tables(self, models, method):
+    def __call__(self, session, **kwargs):
+        return self._method(self, session, **self._tables, **kwargs)
+
+    def _init_tables(self, meta, method):
         for a in inspect.getfullargspec(method).args:
-            if v := models.get(a):
-                yield a, v.table
+            if (t := meta.tables.get(a)) is not None:
+                yield a, t
 
-    def __call__(self, db, **kwargs):
-        return self._method(self, db, **self._tables, **kwargs)
-
-    def _query_max_run_summary(self, db, RunSummary, RunKind, run_kind_id):
+    def _query_max_run_summary(self, session, run_summary, run_kind, run_kind_id):
         return PKDict(
-            db.select_one(
-                sqlalchemy.select(RunSummary).where(
-                    RunSummary.c.snapshot_end
-                    == sqlalchemy.select(sqlalchemy.func.max(RunSummary.c.snapshot_end))
+            session.select_one(
+                sqlalchemy.select(run_summary).where(
+                    run_summary.c.snapshot_end
+                    == sqlalchemy.select(
+                        sqlalchemy.func.max(run_summary.c.snapshot_end)
+                    )
                     .where(
-                        RunSummary.c.run_kind_id == run_kind_id,
+                        run_summary.c.run_kind_id == run_kind_id,
                     )
                     .scalar_subquery(),
                 ),
             ),
         )
 
-    def _query_run_kind_by_names(self, db, RunKind, machine_name, twin_name):
+    def _query_run_kind_by_names(self, session, run_kind, machine_name, twin_name):
         return PKDict(
-            db.select_one(
-                sqlalchemy.select(RunKind).where(
-                    RunKind.c.machine_name == machine_name,
-                    RunKind.c.twin_name == twin_name,
+            session.select_one(
+                sqlalchemy.select(run_kind).where(
+                    run_kind.c.machine_name == machine_name,
+                    run_kind.c.twin_name == twin_name,
                 ),
             ),
         )
 
-    def _query_run_kinds_and_values(self, db, RunKind, RunValueName):
+    def _query_run_kinds_and_values(self, session, run_kind, run_value_name):
 
         def _add(rv, machine_name, twin_name, run_value_name):
             x = _add_level(rv, "machines", machine_name)
@@ -87,60 +89,63 @@ class _DbQuery:
             return pkdict[kind][name]
 
         rv = PKDict()
-        for r in db.select(
+        for r in session.select(
             sqlalchemy.select(
-                [RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name]
+                [run_kind.c.machine_name, run_kind.c.twin_name, run_value_name.c.name]
             )
             .join(
-                RunValueName,
-                RunKind.c.run_kind_id == RunValueName.c.run_kind_id,
+                run_value_name,
+                run_kind.c.run_kind_id == run_value_name.c.run_kind_id,
             )
-            .order_by(RunKind.c.machine_name, RunKind.c.twin_name, RunValueName.c.name)
+            .order_by(
+                run_kind.c.machine_name, run_kind.c.twin_name, run_value_name.c.name
+            )
         ):
             _add(rv, r[0], r[1], r[2])
         return rv
 
-    def _query_run_summary_by_id(self, db, RunSummary, run_summary_id):
+    def _query_run_summary_by_id(self, session, run_summary, run_summary_id):
         return PKDict(
-            db.select_one(
-                sqlalchemy.select(RunSummary).where(
-                    RunSummary.c.run_summary_id == run_summary_id,
+            session.select_one(
+                sqlalchemy.select(run_summary).where(
+                    run_summary.c.run_summary_id == run_summary_id,
                 )
             )
         )
 
-    def _query_run_summary_path_exists(self, db, RunSummary, summary_path):
+    def _query_run_summary_path_exists(self, session, run_summary, summary_path):
         return (
-            db.select_one_or_none(
-                sqlalchemy.select(RunSummary).where(
-                    RunSummary.c.summary_path == summary_path,
+            session.select_one_or_none(
+                sqlalchemy.select(run_summary).where(
+                    run_summary.c.summary_path == summary_path,
                 )
             )
             is not None
         )
 
     def _query_run_value(
-        self, db, RunValueName, RunValueFloat, run_summary_id, tag, base
+        self, session, run_value_name, run_value_float, run_summary_id, tag, base
     ):
-        return db.select_one(
-            sqlalchemy.select(RunValueFloat)
+        return session.select_one(
+            sqlalchemy.select(run_value_float)
             .join(
-                RunValueName,
-                RunValueFloat.c.run_value_name_id == RunValueName.c.run_value_name_id,
+                run_value_name,
+                run_value_float.c.run_value_name_id
+                == run_value_name.c.run_value_name_id,
             )
             .where(
-                RunValueName.c.name == tag + slactwin.const.RUN_VALUE_SEP + base,
-                RunValueFloat.c.run_summary_id == run_summary_id,
+                run_value_name.c.name == tag + slactwin.const.RUN_VALUE_SEP + base,
+                run_value_float.c.run_summary_id == run_summary_id,
             )
         ).value
 
     def _query_runs_by_date_and_values(
         self,
-        db,
-        RunKind,
-        RunSummary,
-        RunValueName,
-        RunValueFloat,
+        session,
+        run_kind,
+        run_summary,
+        run_value_name,
+        run_value_float,
         machine_name,
         twin_name,
         min_max_values,
@@ -165,14 +170,14 @@ class _DbQuery:
                 state.where.append(col <= x)
 
         def _add_value(state, name, values):
-            n = RunValueName.alias(f"rn{state.index}")
-            v = RunValueFloat.alias(f"rv{state.index}")
+            n = run_value_name.alias(f"rn{state.index}")
+            v = run_value_float.alias(f"rv{state.index}")
             state.index += 1
             state.value_cols[n.name] = n.c.name
             state.value_cols[v.name] = v.c.value
             state.select_from = state.select_from.join(
-                n, RunSummary.c.run_kind_id == n.c.run_kind_id
-            ).join(v, RunSummary.c.run_summary_id == v.c.run_summary_id)
+                n, run_summary.c.run_kind_id == n.c.run_kind_id
+            ).join(v, run_summary.c.run_summary_id == v.c.run_summary_id)
             state.where.extend(
                 [
                     n.c.name == name,
@@ -185,7 +190,7 @@ class _DbQuery:
             _add_date_time(
                 state,
                 "snapshot_end",
-                RunSummary.c.snapshot_end,
+                run_summary.c.snapshot_end,
                 min_max_values.pkdel("snapshot_end"),
             )
             for k, v in min_max_values.items():
@@ -213,7 +218,7 @@ class _DbQuery:
             return PKDict(rows=[PKDict(_row(r)) for r in select])
 
         def _select(state):
-            return db.select(
+            return session.select(
                 sqlalchemy.select(
                     tuple(state.base_cols.values()) + tuple(state.value_cols.values())
                 )
@@ -226,13 +231,13 @@ class _DbQuery:
             return PKDict(
                 index=1,
                 base_cols=PKDict(
-                    run_summary_id=RunSummary.c.run_summary_id,
-                    snapshot_path=RunSummary.c.snapshot_path,
-                    archive_path=RunSummary.c.archive_path,
-                    summary_path=RunSummary.c.summary_path,
+                    run_summary_id=run_summary.c.run_summary_id,
+                    snapshot_path=run_summary.c.snapshot_path,
+                    archive_path=run_summary.c.archive_path,
+                    summary_path=run_summary.c.summary_path,
                 ),
                 value_cols=PKDict(),
-                select_from=RunSummary,
+                select_from=run_summary,
                 where=[],
                 order_by=[],
             )
@@ -242,10 +247,10 @@ class _DbQuery:
 
 
 class _DbQueryBuilder:
-    def __init__(self, models):
-        self.queries = PKDict(self._init_queries(models))
+    def __init__(self, meta):
+        self.queries = PKDict(self._init_queries(meta))
 
-    def _init_queries(self, models):
+    def _init_queries(self, meta):
         for k, v in inspect.getmembers(_DbQuery, predicate=inspect.isfunction):
             if m := re.search(r"^_query_(\w+)$", k):
-                yield (m.group(1), _DbQuery(models, m.group(1), v))
+                yield (m.group(1), _DbQuery(meta, m.group(1), v))
