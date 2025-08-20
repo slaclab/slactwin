@@ -13,6 +13,7 @@ import slactwin.db
 import slactwin.quest
 import slactwin.run_importer
 
+
 class DbAPI(slactwin.quest.API):
     """API entry points to be dispatched
 

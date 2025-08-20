@@ -80,7 +80,9 @@ class _Parser(PKDict):
         ):
             return None
         self.summary = pykern.pkjson.load_any(self.summary_path)
-        rv = self.qcall.db.session().insert("run_summary", self._summary_values(self.summary))
+        rv = self.qcall.db.session().insert(
+            "run_summary", self._summary_values(self.summary)
+        )
         self._run_values_create(rv.run_summary_id, rv.run_kind_id)
         return rv
 
@@ -122,11 +124,15 @@ class _Parser(PKDict):
                 )
             if rv := self._run_value_names.get(name):
                 return rv
-            self._run_value_names[name] = self.qcall.db.session().insert(
-                "run_value_name",
-                name=name,
-                run_kind_id=run_kind_id,
-            ).run_value_name_id
+            self._run_value_names[name] = (
+                self.qcall.db.session()
+                .insert(
+                    "run_value_name",
+                    name=name,
+                    run_kind_id=run_kind_id,
+                )
+                .run_value_name_id
+            )
             return self._run_value_names[name]
 
         _create_one("impact", self.summary.outputs.items())
@@ -141,9 +147,11 @@ class _Parser(PKDict):
 
     def _run_kind(self, machine):
         def _id(name):
-            return self.qcall.db.session().select_or_insert(
-                "run_kind", machine_name=machine, twin_name=name
-            ).run_kind_id
+            return (
+                self.qcall.db.session()
+                .select_or_insert("run_kind", machine_name=machine, twin_name=name)
+                .run_kind_id
+            )
 
         if "impact_config" in self.summary.config:
             n = "impact"
