@@ -38,6 +38,10 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
     self.computeModel = analysisModel => 'animation';
     self.selectSearchFieldText = 'Select Search Field';
 
+    function isModalVisible() {
+        return $('.sr-modal-shown').length > 0;
+    }
+
     self.elementForName = (name) => {
         for (const el of self.latticeModels().elements) {
             if (el.name === name) {
@@ -59,15 +63,32 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         return appState.models.searchSettings.isLive == '1';
     };
 
-    self.loadRun = () => {
+    self.loadRun = ($scope) => {
         const names = [];
         const runSummaryId = self.getRunSummaryId();
+        if ($scope.runSummaryId && isModalVisible()) {
+            // don't load a new plot if the modal is visible - the modal would automatically dismiss
+            return;
+        }
+        //TODO(pjm): related to the note below, a modal may be dismissed when
+        // it is in a bad state (partially shown) and it doesn't clean up
+        // the modal backdrop in that case.
+        $('.modal-backdrop').remove();
+        if ($scope.runSummaryId === runSummaryId) {
+            return;
+        }
+        $scope.runSummaryId = runSummaryId;
         for (const m in appState.models) {
             if (appState.models[m] && 'runSummaryId' in appState.models[m]) {
                 appState.models[m].runSummaryId = runSummaryId;
                 names.push(m);
             }
         }
+        //TODO(pjm): there is a moment here when it waits for saveChanges
+        //  and then for the getFrame. If a modal editor is shown during that
+        //  period, it will get dismissed when the page updates at the end.
+        //  Could possibly show a "loading" icon and put a input blocker up
+        //  until the new data is displayed
         appState.saveChanges(names, () => {
             frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
                 if (data.error) {
@@ -86,7 +107,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         $location.search('runSummaryId', runSummaryId);
     };
 
-    self.loadFromStatus = (status) => {
+    self.loadFromStatus = ($scope, status) => {
         if (self.isLiveView()
             && status.state === 'running'
             && status.outputInfo
@@ -102,7 +123,7 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
                 }
                 self.openRun(status.outputInfo.runSummaryId, c);
                 if (c === 'visualization' || c === 'lattice') {
-                    self.loadRun();
+                    self.loadRun($scope);
                     return true;
                 }
             }
@@ -121,11 +142,11 @@ SIREPO.app.factory('slactwinService', function(appState, frameCache, persistentS
         };
 
         controller.simHandleStatus = (status) => {
-            if (self.loadFromStatus(status)) {
+            if (self.loadFromStatus($scope, status)) {
                 return;
             }
             if (status.frameCount > 0) {
-                self.loadRun();
+                self.loadRun($scope);
                 return;
             }
             if (firstCheck) {
@@ -199,7 +220,7 @@ SIREPO.app.factory('liveService', function(appState, persistentSimulation, slact
         appState.saveChanges('searchSettings', () => {
             let firstCheck = true;
             simStatus(simScope, (simState, status) => {
-                if (slactwinService.loadFromStatus(status)) {
+                if (slactwinService.loadFromStatus(simScope, status)) {
                     return;
                 }
                 if (controllerProxy.simState.isProcessing()) {
@@ -598,7 +619,7 @@ SIREPO.app.directive('runNavigation', function() {
             $scope.next = (direction) => {
                 if ($scope.runSummaryIds[direction]) {
                     slactwinService.setRunSummaryId($scope.runSummaryIds[direction]);
-                    slactwinService.loadRun();
+                    slactwinService.loadRun($scope);
                     init();
                 }
             };
