@@ -84,6 +84,7 @@ class _Parser(PKDict):
             "run_summary", self._summary_values(self.summary)
         )
         self._run_values_create(rv.run_summary_id, rv.run_kind_id)
+        self.qcall.db.commit()
         return rv
 
     def _run_values_create(self, run_summary_id, run_kind_id):
