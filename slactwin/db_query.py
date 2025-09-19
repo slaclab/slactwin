@@ -65,13 +65,18 @@ class _DbQuery:
         )
 
     def _query_run_kind_by_names(self, session, run_kind, machine_name, twin_name):
-        return PKDict(
-            session.select_one(
-                sqlalchemy.select(run_kind).where(
-                    run_kind.c.machine_name == machine_name,
-                    run_kind.c.twin_name == twin_name,
-                ),
+        return self._single_table_query(
+            session,
+            run_kind,
+            PKDict(
+                machine_name=machine_name,
+                twin_name=twin_name,
             ),
+        )
+
+    def _query_run_kind_by_id(self, session, run_kind, run_kind_id):
+        return self._single_table_query(
+            session, run_kind, PKDict(run_kind_id=run_kind_id)
         )
 
     def _query_run_kinds_and_values(self, session, run_kind, run_value_name):
@@ -105,12 +110,8 @@ class _DbQuery:
         return rv
 
     def _query_run_summary_by_id(self, session, run_summary, run_summary_id):
-        return PKDict(
-            session.select_one(
-                sqlalchemy.select(run_summary).where(
-                    run_summary.c.run_summary_id == run_summary_id,
-                )
-            )
+        return self._single_table_query(
+            session, run_summary, PKDict(run_summary_id=run_summary_id)
         )
 
     def _query_run_summary_path_exists(self, session, run_summary, summary_path):
@@ -244,6 +245,15 @@ class _DbQuery:
 
         s = _state()
         return _rows(s, _select(_additional(_min_max_values(s))))
+
+    def _single_table_query(self, session, table, query):
+        return PKDict(
+            session.select_one(
+                sqlalchemy.select(table).where(
+                    *[getattr(table.c, k) == v for k, v in query.items()]
+                ),
+            ),
+        )
 
 
 class _DbQueryBuilder:

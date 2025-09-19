@@ -10,13 +10,16 @@ from pykern.pkdebug import pkdc, pkdp
 from sirepo.template import template_common
 from sirepo.template.impactt_parser import ImpactTParser
 import asyncio
+import datetime
 import h5py
 import impact
 import pykern.pkio
 import pykern.pkjson
+import pytz
 import re
 import sirepo.global_resources
 import sirepo.sim_data
+import sirepo.sim_run
 import sirepo.simulation_db
 import sirepo.template.impactt
 import sirepo.template.lattice
@@ -111,6 +114,68 @@ def sim_frame_summaryAnimation(frame_args):
     )
 
 
+def stateful_compute_create_sim_for_run_summary(data, **kwargs):
+    c = _SIM_DATA.sim_db_client()
+
+    def _put_lib_file(tmp_dir, model_name, model, file_name):
+        n = f"{tmp_dir.join(file_name).computehash()}.txt"
+        c.put(
+            c.LIB_DIR,
+            _SIM_DATA.lib_file_name_with_model_field(
+                model_name,
+                "filename",
+                n,
+            ),
+            tmp_dir.join(file_name),
+            sim_type="impactt",
+        )
+        return n
+
+    def _sim_name(machine_name, timestamp):
+        # TODO(pjm): how should the time be encoded in the simulation name?
+        # SLAC local time (Pacific) or GMT?
+        # (The UI would be showing SLACTwin times in localtime for comparison)
+        t = (
+            timestamp.astimezone(pytz.timezone("US/Pacific"))
+            .isoformat()
+            .replace("T", " ")
+        )
+        return f"{machine_name}-{t}"
+
+    def _update_sim(run_summary_id, run_summary_url):
+        s = _db_api("run_summary_by_id", run_summary_id=run_summary_id)
+        k = _db_api("run_kind_by_id", run_kind_id=s.run_kind_id)
+        t = datetime.datetime.fromtimestamp(s.snapshot_end)
+        return PKDict(
+            name=_sim_name(k.machine_name, t),
+            folder=f"/SLACTwin/{k.machine_name}/{t.strftime('%Y-%m')}",
+            notes=f"Imported from $\\href{{ {run_summary_url} }}{{ \\text{{SLACTwin}} }}$",
+        )
+
+    with sirepo.sim_run.tmp_dir() as t:
+        I = impact.Impact(
+            workdir=str(t),
+            use_temp_dir=False,
+        )
+        I.load_archive(_summary_file(data.args.runSummaryId).outputs.archive)
+        I.numprocs = 1
+        I.configure()
+        I.write_input()
+        d = ImpactTParser().parse_file(pykern.pkio.read_text(t.join("ImpactT.in")))
+        for m in d.models.elements:
+            if m.type != "WRITE_BEAM" and m.get("filename"):
+                m.filename = _put_lib_file(t, m.type, m, m.filename)
+        d.models.distribution.filename = _put_lib_file(
+            t, "distribution", d.models.distribution, "partcl.data"
+        )
+        d.models.simulation.pkupdate(
+            _update_sim(data.args.runSummaryId, data.args.runSummaryUrl)
+        )
+        return PKDict(
+            sim_data=d,
+        )
+
+
 def stateless_compute_db_api(data, **kwargs):
     """Request from the UI for database queries, ex. run_kinds_and_values or runs_by_date_and_values
 
@@ -189,10 +254,10 @@ def _trim_beamline(data):
     bl = []
     for i in data.models.beamlines[0]["items"]:
         el = util.id_map[i]
-        if el.get("type") == "QUADRUPOLE":
-            if el.rf_frequency == 0:
-                # TODO(pjm): should insert a drift for the same length
-                continue
+        # TODO(pjm): can't remove elements unless beamline.positions is also updated
+        # if el.get("type") == "QUADRUPOLE":
+        #     if el.rf_frequency == 0:
+        #         continue
         bl.append(i)
         if el.get("type") == "STOP":
             break

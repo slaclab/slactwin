@@ -36,6 +36,9 @@ class DbAPI(slactwin.quest.API):
     async def api_run_kinds_and_values(self, api_args):
         return await self.__query("run_kinds_and_values", api_args)
 
+    async def api_run_kind_by_id(self, api_args):
+        return await self.__query("run_kind_by_id", api_args)
+
     async def api_run_summary_by_id(self, api_args):
         return await self.__query("run_summary_by_id", api_args)
 

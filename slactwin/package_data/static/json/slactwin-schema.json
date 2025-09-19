@@ -1,4 +1,7 @@
 {
+    "apiRoute": {
+        "slactwinSimFromRunSummary": "/slactwin-sim-from-run-summary"
+    },
     "appInfo": {
         "slactwin": {
             "longName": "SLAC Digital Twin Database",

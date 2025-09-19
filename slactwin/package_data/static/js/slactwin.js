@@ -5,6 +5,8 @@ SIREPO.app.config(function() {
     SIREPO.PLOTTING_SUMMED_LINEOUTS = true;
     SIREPO.lattice = {
         elementColor: {
+            // override red (alarm) color
+            QUADRUPOLE: 'orange',
         },
         elementPic: {
             drift: ['DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
@@ -316,7 +318,7 @@ SIREPO.app.controller('LatticeController', function(liveService, slactwinService
     });
 });
 
-SIREPO.app.directive('appFooter', function(slactwinService) {
+SIREPO.app.directive('appFooter', function() {
     return {
         restrict: 'A',
         scope: {
@@ -324,7 +326,73 @@ SIREPO.app.directive('appFooter', function(slactwinService) {
         },
         template: `
             <div data-common-footer="nav"></div>
+            <div data-confirmation-modal=""
+                data-id="sr-open-sim"
+                data-title="Open as a new Impact-T simulation"
+                data-cancel-text="{{ newSimURL ? 'Close' : 'Cancel' }}"
+                data-ok-text="{{ newSimURL || processingMessage ? '' : 'Create' }}"
+                data-ok-clicked="createSim()"
+            >
+              <div data-ng-if="! newSimURL && ! processingMessage">
+                <p>Create a Sirepo Impact-T simulation from this run summary?</p>
+              </div>
+              <div data-ng-if="processingMessage"><p>
+                  <span class="glyphicon glyphicon-hourglass"> </span>
+                  {{ processingMessage }}
+              </p></div>
+              <div data-ng-if="newSimURL">
+                <p>Impact-T simulation created:</p>
+                <p><a data-ng-click="closeModal()" href="{{ newSimURL }}" target="_blank">{{ newSimName }} </a></p>
+            </div>
         `,
+        controller: function(appState, requestSender, slactwinService, uri, $location, $scope) {
+
+            function init() {
+                $scope.newSimName = '';
+                $scope.newSimURL = '';
+                $scope.processingMessage = '';
+            }
+
+            $scope.closeModal = () => $('#sr-open-sim').modal('hide');
+
+            $scope.createSim = () => {
+                //TODO(pjm): get the simulation code (ex. Impact-T) from the current loaded run summary
+                $scope.processingMessage = "Creating Impact-T simulation, please wait.";
+
+                requestSender.sendRequest(
+                    'slactwinSimFromRunSummary',
+                    (resp) => {
+                        if (resp.error) {
+                            $scope.processingMessage = `An error occurred: ${resp.error}`;
+                        }
+                        else {
+                            console.log(resp);
+                            $scope.processingMessage = "";
+                            $scope.newSimName = resp.simulation.name;
+                            $scope.newSimURL = uri.formatLocal(
+                                'lattice',
+                                { simulationId: resp.simulation.simulationId },
+                                resp.simulationType,
+                            );
+                        }
+                    },
+                    {
+                        runSummaryId: slactwinService.getRunSummaryId(),
+                        runSummaryUrl: $location.absUrl(),
+                    },
+                );
+
+                $('#sr-open-sim').on('hidden.bs.modal', () => {
+                    init();
+                    $('#sr-open-sim').off('hidden.bs.modal');
+                });
+
+                // stay on the modal when Create is selected
+                return false;
+            };
+
+            init();
+        },
     };
 });
 
@@ -591,14 +659,16 @@ SIREPO.app.directive('runNavigation', function() {
             <div class="text-right" style="margin: 0 25px 15px 0" data-ng-if="slactwinService.isLiveView()"><span class="glyphicon glyphicon-play-circle"></span> Live</div>
             <div class="text-right" data-ng-if="runSummaryIds && ! slactwinService.isLiveView()">
               <div style="margin: 0 15px 15px 0">
-                <button type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! runSummaryIds[0]">
-                  <span class="glyphicon glyphicon-triangle-left"> </span></button>
+                <button title="Open Sirepo Simulation" type="button" class="btn btn-default" data-ng-click="openSim()">
+                  <span class="glyphicon glyphicon-file"></span> Open Sim</button>
+                <button title="Next" type="button" class="btn btn-default" data-ng-click="next(0)" data-ng-disabled="! runSummaryIds[0]">
+                  <span title="Previous" class="glyphicon glyphicon-triangle-left"> </span></button>
                 <button type="button" class="btn btn-default" data-ng-click="next(1)" data-ng-disabled="! runSummaryIds[1]">
                   <span class="glyphicon glyphicon-triangle-right"> </span></button>
               </div>
             </div>
         `,
-        controller: function(appState, slactwinService, $scope) {
+        controller: function(appState, requestSender, slactwinService, $scope) {
 
             const init = () => {
                 $scope.slactwinService = slactwinService;
@@ -622,6 +692,10 @@ SIREPO.app.directive('runNavigation', function() {
                     slactwinService.loadRun($scope);
                     init();
                 }
+            };
+
+            $scope.openSim = () => {
+                $('#sr-open-sim').modal('show');
             };
 
             init();
