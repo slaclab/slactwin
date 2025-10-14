@@ -7,15 +7,14 @@
 from datetime import datetime
 from functools import partial
 from pykern.pkcollections import PKDict
-from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdexc
 import epics
 import h5py
 import numpy
-import pykern.pkio
 import re
 import slactwin.pkcli
 import time
+import yaml
 
 
 class Commands(slactwin.pkcli.CommandsBase):
@@ -48,6 +47,19 @@ class Commands(slactwin.pkcli.CommandsBase):
             "CAMR:IN20:186:N_OF_COL",
             "CAMR:IN20:186:IMAGE",
             "BPMS:IN20:221:TMIT",
+        ),
+        f2e_inj=(
+            "SOLN:IN10:121:BACT",
+            "SOLN:IN10:111:BACT",
+            "QUAD:IN10:121:BACT",
+            "QUAD:IN10:122:BACT",
+            "QUAD:IN10:361:BACT",
+            "QUAD:IN10:371:BACT",
+            "QUAD:IN10:425:BACT",
+            "QUAD:IN10:441:BACT",
+            "QUAD:IN10:511:BACT",
+            "QUAD:IN10:525:BACT",
+            "BPMS:IN10:371:TMIT",
         ),
         sc_inj=(
             "SOLN:GUNB:212:BACT",
@@ -947,3 +959,43 @@ class Commands(slactwin.pkcli.CommandsBase):
                 continue
             return _create_hdf5(values)
         raise AssertionError("Exceeded connection attempts")
+
+    def archive_to_yaml(self, in_hdf5, out_yaml):
+        """Creates an IOC yaml file compatible with 'slicops ioc' from an pv archive file.
+
+        Args:
+            in_hdf5 (str): input hdf5 filename, created by create_archive()
+            out_yaml (str): output yaml filename
+        """
+
+        def _get_first_group(hdf5_file):
+            for k in hdf5_file:
+                if isinstance(hdf5_file[k], h5py.Group):
+                    return k, hdf5_file[k]
+
+        def _read_hdf5():
+            d = {}
+            i = PKDict()
+            with h5py.File(in_hdf5, "r") as f:
+                n, g = _get_first_group(f)
+                d["machine_name"] = n
+                for a in g.attrs.keys():
+                    v = g.attrs[a]
+                    if getattr(v, "item", None):
+                        # convert numpy type to python native
+                        v = v.item()
+                    d[a] = v
+                for k, v in g.items():
+                    if isinstance(v, h5py.Dataset):
+                        i[k] = v[:].tolist()
+            return d, i
+
+        d, i = _read_hdf5()
+        with open(out_yaml, "w") as f:
+            yaml.safe_dump(d, f)
+            # yaml is 100x slow for large arrays, so write manually
+            for k, v in i.items():
+                f.write(f"{k}: [")
+                for av in v:
+                    f.write(f"{av},")
+                f.write("]\n")
