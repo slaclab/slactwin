@@ -26,7 +26,7 @@ def test_parse():
                     ),
                 )
                 pkunit.pkeq(e.snapshot_dt, r.snapshot_end)
-                pkunit.pkeq(e.snapshot_path, str(r.snapshot_path))
+                # pkunit.pkeq(e.snapshot_path, str(r.snapshot_path))
                 v = qcall.db.query(
                     "run_value",
                     run_summary_id=r.run_summary_id,

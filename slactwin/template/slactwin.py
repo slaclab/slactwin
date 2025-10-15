@@ -108,9 +108,11 @@ def sim_frame_summaryAnimation(frame_args):
             Nbunch=I.header["Nbunch"],
             Nprow=I.header["Nprow"],
             Npcol=I.header["Npcol"],
+            summary_columns=_summary_columns(s.pv_mapping_dataframe),
         ).pkupdate(_summary_info(frame_args.runSummaryId)),
-        lattice=_trim_beamline(l),
+        lattice=_trim_beamline(l, s.pv_mapping_dataframe),
         particles=sirepo.template.impactt.output_info(l),
+        stat_columns=sirepo.template.impactt.stat_columns(I),
     )
 
 
@@ -177,7 +179,7 @@ def stateful_compute_create_sim_for_run_summary(data, **kwargs):
 
 
 def stateless_compute_db_api(data, **kwargs):
-    """Request from the UI for database queries, ex. run_kinds_and_values or runs_by_date_and_values
+    """Request from the UI for database queries, ex. run_values or runs_by_date_and_values
 
     Args:
         data (PKDict): Contains api_name and api_args values for specific database queries.
@@ -224,6 +226,19 @@ def _load_archive(frame_args):
     )
 
 
+def _summary_columns(dataframe):
+    # TODO(pjm): based on sim type
+    return [
+        ["Variable", "Variable"],
+        ["PV Name", "device_pv_name"],
+        ["PV Value", "pv_value", "pv_unit"],
+        ["IMPACT-T Name", "impact_name"],
+        ["IMPACT-T Value", "impact_value", "impact_unit"],
+        ["IMPACT-T Offset", "impact_offset"],
+        ["IMPACT-T Factor", "impact_factor"],
+    ]
+
+
 def _summary_file(run_summary_id):
     return pykern.pkjson.load_any(
         pykern.pkio.py_path(
@@ -244,22 +259,37 @@ def _summary_info(run_summary_id):
     )
 
 
-def _trim_beamline(data):
+def _trim_beamline(data, dataframe):
     """Updates the lume-impact lattice displayed from the UI.
-    Remove zero quads and trim beamline at STOP element
+    Trims beamline at STOP element. Removes dataframes for elements after the STOP element.
     """
+
     util = sirepo.template.lattice.LatticeUtil(
         data, sirepo.sim_data.get_class("impactt").schema()
     )
     bl = []
+    found_stop = False
+    el_by_name = PKDict()
+    # TODO(pjm): assumes sim has single beamline
     for i in data.models.beamlines[0]["items"]:
         el = util.id_map[i]
-        # TODO(pjm): can't remove elements unless beamline.positions is also updated
-        # if el.get("type") == "QUADRUPOLE":
-        #     if el.rf_frequency == 0:
-        #         continue
-        bl.append(i)
+        el_by_name[el.name] = el._id
+        if not found_stop:
+            bl.append(i)
         if el.get("type") == "STOP":
-            break
+            found_stop = True
+
+    # remove dataframe rows for elements after the STOP element
+    remove_frames = set()
+    dataframe.el_id = PKDict()
+    for k in dataframe.impact_name:
+        n = dataframe.impact_name[k].split(":")[0]
+        el_id = el_by_name.get(n)
+        if el_id and el_id not in bl:
+            remove_frames.add(k)
+        dataframe.el_id[k] = el_id
+    for k in remove_frames:
+        for f in dataframe.values():
+            del f[k]
     data.models.beamlines[0]["items"] = bl
     return data

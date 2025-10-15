@@ -29,8 +29,8 @@ def test_slactwin_stateless_compute(fc):
         from pykern import pkunit, pkdebug
         from pykern.pkcollections import PKDict
 
-        r = _do(fc, "run_kinds_and_values", PKDict())
-        pkunit.pkeq(["sc_inj"], list(r.machines.keys()))
+        r = _do(fc, "run_kinds", PKDict())
+        pkunit.pkeq(["sc_inj"], [v.machine_name for v in r.run_kinds])
 
 
 def _do(fc, api_name, api_args):

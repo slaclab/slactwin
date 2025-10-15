@@ -83,7 +83,6 @@ def init_module():
                 run_end="datetime index",
                 archive_path="str 1024 unique",
                 snapshot_end="datetime index",
-                snapshot_path="str 1024 unique",
                 summary_path="str 1024 unique",
             ),
             run_value_name=PKDict(

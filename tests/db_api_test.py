@@ -22,10 +22,10 @@ async def test_run_all():
 
         modules.import_and_init()
         c = await db_api_client.DbAPIClient().connect()
-        r = await c.call_api("run_kinds_and_values", PKDict())
+        r = await c.call_api("run_kinds", PKDict())
         pkunit.pkeq(
-            "impact^end_cov_x__px",
-            r.machines.sc_inj.twins.impact.run_values[0],
+            "impact",
+            r.run_kinds[0].twin_name,
         )
         t = int(datetime.datetime.fromisoformat("2024-06-19T13:42:21").timestamp())
         r = await c.call_api(

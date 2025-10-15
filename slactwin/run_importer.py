@@ -154,7 +154,10 @@ class _Parser(PKDict):
                 .run_kind_id
             )
 
-        if "impact_config" in self.summary.config:
+        if (
+            "impact_config" in self.summary.config
+            or "impact" in self.summary.config.command.lower()
+        ):
             n = "impact"
         else:
             raise ValueError(
@@ -162,16 +165,15 @@ class _Parser(PKDict):
             )
         return PKDict(run_kind_id=_id(n))
 
-    def _snapshot(self, root, dt_dir):
+    def _snapshot_end(self, root, dt_dir):
+        # TODO(pjm): the snapshot file is used only to determine the end time of the run
+        # no data is ever used from the file, it is already in the summary json file
         p = f"{root}/snapshot/{dt_dir}*{self.summary.isotime}.h5"
         if not (f := pykern.pkio.sorted_glob(p)):
             raise ValueError(f"no snapshot found for glob={p}")
         if len(f) > 1:
             raise ValueError(f"too many snapshots matching glob={p} matches={f}")
-        return PKDict(
-            snapshot_end=datetime.datetime.fromtimestamp(int(f[0].mtime())),
-            snapshot_path=str(f[0]),
-        )
+        return datetime.datetime.fromtimestamp(int(f[0].mtime()))
 
     def _summary_values(self, summary):
         # summary/yyyy/mm/dd
@@ -179,16 +181,11 @@ class _Parser(PKDict):
             raise ValueError(
                 f"summary path={self.summary_path} does not match regex={_SUMMARY_PATH_RE}"
             )
-        return (
-            self._run_kind(m.group(3))
-            .pkupdate(
-                self._snapshot(m.group(1), m.group(2)),
-            )
-            .pkupdate(
-                archive_path=self.summary.outputs.archive,
-                run_end=self._run_end(),
-                summary_path=str(self.summary_path),
-            )
+        return self._run_kind(m.group(3)).pkupdate(
+            snapshot_end=self._snapshot_end(m.group(1), m.group(2)),
+            archive_path=self.summary.outputs.archive,
+            run_end=self._run_end(),
+            summary_path=str(self.summary_path),
         )
 
     def _run_end(self):

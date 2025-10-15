@@ -35,10 +35,10 @@ async def test_slactwin_live_animation(fc):
         import asyncio, shutil
         from slactwin import run_importer
 
-        d = fc.sr_sim_data("SLAC Digital Twin Database", sim_type=fc.sr_sim_type)
+        d = fc.sr_sim_data("sc_inj impact", sim_type=fc.sr_sim_type)
         d.models.searchSettings.pkupdate(
-            accelerator="sc_inj",
-            twinModel="impact",
+            machine_name="sc_inj",
+            twin_name="impact",
             isLive="1",
         )
         r = fc.sr_post(

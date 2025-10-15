@@ -48,6 +48,7 @@ class Commands(slactwin.pkcli.CommandsBase):
             "CAMR:IN20:186:IMAGE",
             "BPMS:IN20:221:TMIT",
         ),
+        # TODO(pjm): see also slaclab F2_live_model
         f2e_inj=(
             "SOLN:IN10:121:BACT",
             "SOLN:IN10:111:BACT",
