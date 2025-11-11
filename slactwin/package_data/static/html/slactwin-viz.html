@@ -2,10 +2,11 @@
 <div>{{ viz.errorWatch() }}</div>
 <div class="container-fluid" data-ng-if="viz.simState.hasFrames()">
   <div class="row">
+    <div class="hidden-xl" data-run-navigation=""></div>
     <div data-column-for-aspect-ratio="statAnimation">
       <div data-report-panel="parameterWithExternalLattice" data-model-name="statAnimation"></div>
     </div>
-    <div data-run-navigation=""></div>
+    <div class="hidden-lg visible-xl" data-run-navigation=""></div>
     <div class="col-md-6 col-xl-4 col-xxl-2">
       <div data-simple-panel="summaryAnimation">
          <div data-run-summary=""></div>

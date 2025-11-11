@@ -33,12 +33,13 @@ class Test:
 
     def test_run_kinds(self):
         with self.setup_qcall() as qcall:
-            a = qcall.db.query("run_kinds_and_values")
-            self.pkeq(["sc_inj"], list(a.machines.keys()))
-            self.pkeq(["impact"], list(a.machines.sc_inj.twins.keys()))
+            a = qcall.db.query("run_kinds")
             self.pkeq(
-                "impact^end_cov_x__px",
-                a.machines.sc_inj.twins.impact.run_values[0],
+                dict(
+                    machine_name="sc_inj",
+                    twin_name="impact",
+                ),
+                a.run_kinds[0],
             )
 
     def test_run_summary_by_id(self):

@@ -23,8 +23,8 @@ def run_background(cfg_dir):
         o = cfg_dir.join(slactwin.template.slactwin.LIVE_OUT)
         c = await slactwin.db_api_client.for_job_cmd().connect()
         q = PKDict(
-            twin_name=params.twinModel,
-            machine_name=params.accelerator,
+            twin_name=params.twin_name,
+            machine_name=params.machine_name,
             run_summary_id=None,
         )
         while True:
