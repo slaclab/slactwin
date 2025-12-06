@@ -1,0 +1,363 @@
+"""Simple elegant runner
+
+:copyright: Copyright (c) 2025 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
+:license: http://github.com/slaclab/slactwin/LICENSE
+"""
+
+from pykern.pkcollections import PKDict
+from rslume.elegant import Elegant
+from scipy.interpolate import Akima1DInterpolator
+from sirepo.template import sdds_util
+from sirepo.template.code_variable import PurePythonEval
+import copy
+import functools
+import glob
+import json
+import math
+import matplotlib
+import matplotlib.pyplot as plt
+import os
+import pykern.pkio
+import pykern.pkjson
+import slactwin.simrun_util
+
+# TODO(pjm): move calc to util
+meV = 0.51099906
+
+_MODEL_NAME_TO_ELEGANT_FILE = PKDict(
+    cu_hxr="LCLS2cu/LCLS2cuH.ele",
+)
+
+
+def run(model_name, pv_filename, start_element_name, end_element_name):
+    # ex. run('cu_hxr', '2021.json', 'WS02', 'ENDL2')
+
+    def _add_variables(e, defaults):
+        for n, v in defaults.vars.items():
+            e._input.models.rpnVariables.append(
+                PKDict(
+                    name=n,
+                    value=v,
+                )
+            )
+
+    def _prepare_files():
+        # TODO(pjm): only use workdir for debugging, ensure lume removes default dir after running
+        workdir = "/home/vagrant/tmp/elegant"
+        pykern.pkio.unchecked_remove(workdir)
+        pykern.pkio.mkdir_parent(workdir)
+        assert "LCLS_LATTICE" in os.environ
+        p = pykern.pkio.py_path(os.environ["LCLS_LATTICE"])
+        # TODO(pjm): need a better solution than this, maybe simlink all files into a tmp directory
+        for d in ("wakefields", "beams"):
+            for f in glob.glob(str(p.join("elegant", d)) + "/*.*"):
+                pykern.pkio.py_path(f).copy(p.join("elegant", "models", "LCLS2cu"))
+        return workdir
+
+    def _update_fields(e, defaults):
+        for el in e._input.models.elements:
+            if el.name in defaults.fields:
+                el.pkupdate(defaults.fields[el.name])
+
+    defaults = _elegant_defaults()
+    workdir = _prepare_files()
+    e = Elegant(
+        f"{os.environ['LCLS_LATTICE']}/elegant/models/{_MODEL_NAME_TO_ELEGANT_FILE[model_name]}",
+        workdir=workdir,
+        use_temp_dir=False,
+        update_filenames=True,
+    )
+    _unique_klystrons(e, defaults)
+    e.fix_deprecated_n_kicks()
+    _update_fields(e, defaults)
+    e.slice(start_element_name, end_element_name)
+    # override to real value here, not approx 135 from actual sim
+    e.cmd("run_setup").p_central_mev = 134.9990329
+
+    # TODO(pjm): only needed when testing the design lattice (no pvdata updates)
+    # design twiss, different than elegant simulation default
+    e.cmd("twiss_output").pkupdate(
+        dict(
+            beta_x=1.11011741290,
+            alpha_x=0.06877052527316094,
+            beta_y=1.1550350841830834,
+            alpha_y=0.13564743199080678,
+        )
+    )
+
+    code_var = PurePythonEval()
+
+    def eval_expression(expression):
+        v, e = code_var.eval_var(expression, [], {})
+        assert not e, f"invalid expression: {expression}, err: {e}"
+        return v
+
+    tao_cmds = slactwin.simrun_util.build_commands(
+        model_name, json.load(open(pv_filename))
+    )
+
+    for cmd_str in tao_cmds:
+        cmd = slactwin.simrun_util.parse_cmd(cmd_str)
+        if not cmd or cmd[1] == "b1_gradient":
+            continue
+        if cmd[0] == "beginning":
+            m = PKDict(
+                beta_a="beta_x",
+                beta_b="beta_y",
+                alpha_a="alpha_x",
+                alpha_b="alpha_y",
+            )
+            e.cmd("twiss_output").pkupdate(
+                {
+                    m[cmd[1]]: cmd[2],
+                }
+            )
+            continue
+        if cmd[0] in defaults.overlays:
+            _apply_overlay(e, eval_expression(cmd[2]), defaults.overlays[cmd[0]])
+        n = f"{cmd[0]}_{cmd[1]}"
+        if n in defaults.vars:
+            defaults.vars[n] = cmd[2]
+            continue
+
+    _add_variables(e, defaults)
+    twiss_fn = f"{workdir}/twiss_output.filename.sdds"
+
+    m = _build_element_energy_map(e, twiss_fn)
+    SPEED_OF_LIGHT = 299792458  # [m/s]
+    eCharge = -1
+
+    for cmd_str in tao_cmds:
+        cmd = slactwin.simrun_util.parse_cmd(cmd_str)
+        if not cmd or cmd[1] != "b1_gradient":
+            continue
+        if cmd[0] not in m:
+            continue
+        # compute K1
+        el = e.el(cmd[0])
+        pc = m[cmd[0]] * meV
+        Bp = pc * 1e-3 / (SPEED_OF_LIGHT * 1e-9)
+        k1 = eval_expression(cmd[2]) / Bp * eCharge
+        el.k1 = k1
+
+    pykern.pkio.unchecked_remove(workdir)
+    pykern.pkio.mkdir_parent(workdir)
+    # e.run()
+    e.run_twiss_only()
+
+    _plot_twiss(twiss_fn)
+
+
+def _apply_overlay(E, value, config):
+    # TODO(pjm): assumes knot overlay
+    angle_deg = Akima1DInterpolator(config.knot_range, config.knot_value)(value)
+    theta = angle_deg * math.pi / 180
+    assert len(config.bend_names) == 4
+    for n in config.bend_names:
+        sign = 1 if n in (config.bend_names[0], config.bend_names[3]) else -1
+        e = E.el(n)
+        e.l = config.Lp * sign * theta / math.sin(sign * theta)
+        assert e.l > 0
+        e.angle = sign * theta
+        e["e2" if n in (config.bend_names[0], config.bend_names[2]) else "e1"] = (
+            sign * theta
+        )
+    for n in config.drift_names:
+        E.el(n).l += config.Lp_drift * (
+            1 / math.cos(theta) - 1 / math.cos(config.bc_theta_default)
+        )
+
+
+def _build_element_energy_map(e, twiss_fn):
+    e.run_twiss_only()
+    energies = PKDict(
+        {
+            n: sdds_util.extract_sdds_column(twiss_fn, n, 0)["values"]
+            for n in ("pCentral0", "ElementName", "ElementOccurence", "ElementType")
+        }
+    )
+    r = PKDict()
+    for idx in range(len(energies.pCentral0)):
+        n = energies.ElementName[idx]
+        en = energies.pCentral0[idx]
+        if n in r:
+            if not energies.ElementType[idx] in (
+                "RFCW",
+                "RFDF",
+                "LSCDRIFT",
+            ):
+                assert (
+                    r[n] == en
+                ), f"Element {energies.ElementType[idx]}: {n} present at multiple energies"
+            continue
+        r[n] = en
+    return r
+
+
+def _elegant_defaults():
+    # TODO(pjm): within LCLS_LATTICE dir?
+    with open("/home/vagrant/save/bmad/cu_hxr/elegant/elegant-defaults.json", "r") as f:
+        defaults = pykern.pkjson.load_any(f)
+    # TODO(pjm): generate from ipynb in LCLS_LATTICE
+    defaults.overlays = PKDict(
+        O_BC1_OFFSET=PKDict(
+            knot_range=[
+                -2.00000000e-01,
+                -1.33333333e-01,
+                -6.66666667e-02,
+                2.77555756e-17,
+                6.66666667e-02,
+                1.33333333e-01,
+                2.00000000e-01,
+                2.66666667e-01,
+                3.33333333e-01,
+                4.00000000e-01,
+            ],
+            knot_value=[
+                4.33589907,
+                2.89349031,
+                1.44761486,
+                0.0,
+                -1.44761486,
+                -2.89349031,
+                -4.33589907,
+                -5.77313792,
+                -7.20353921,
+                -8.6254818,
+            ],
+            Lp=0.2032,
+            Lp_drift=2.4349,
+            bc_theta_default=-0.093575352547,
+            bend_names=("BX11", "BX12", "BX13", "BX14"),
+            # D21oA D21oB
+            drift_names=("CS000016", "CS000021"),
+        ),
+        O_BC2_OFFSET=PKDict(
+            knot_range=[
+                -0.2,
+                -0.13333333,
+                -0.06666667,
+                0.0,
+                0.06666667,
+                0.13333333,
+                0.2,
+                0.26666667,
+                0.33333333,
+                0.4,
+                0.46666667,
+                0.53333333,
+                0.6,
+            ],
+            knot_value=[
+                1.10073799,
+                0.7338735,
+                0.3669512,
+                0.0,
+                -0.3669512,
+                -0.7338735,
+                -1.10073799,
+                -1.4675158,
+                -1.8341781,
+                -2.20069612,
+                -2.56704115,
+                -2.93318456,
+                -3.29909781,
+            ],
+            Lp=0.549,
+            Lp_drift=9.8602,
+            bc_theta_default=-0.036971268085,
+            bend_names=("BX21", "BX22", "BX23", "BX24"),
+            # D21oA D21oB
+            drift_names=("CS000032", "CS000039"),
+        ),
+    )
+    return defaults
+
+
+# TODO(pjm): temporary for manual verification
+def _plot_twiss(twiss_fn):
+
+    def _plot_sdds(
+        filename, x_column, y_columns, labels, right_columns=None, conversion=None
+    ):
+        def column(name):
+            v = sdds_util.extract_sdds_column(filename, name, 0)["values"]
+            if conversion and name in conversion:
+                return conversion[name](v)
+            return v
+
+        fig, ax = plt.subplots(figsize=(16, 4))
+        for y in y_columns:
+            ax.plot(column(x_column), column(y), label=labels[y])
+        plt.legend()
+        if right_columns:
+            matplotlib.rcParams["axes.prop_cycle"] = matplotlib.cycler(
+                color=["orangered", "limegreen", "royalblue"]
+            )
+            ax2 = ax.twinx()
+            for y in right_columns:
+                ax2.plot(column(x_column), column(y), label=labels[y])
+            s = column(x_column)
+            e = column(right_columns[0])
+            ax2.set_ylabel(labels["y2"])
+        ax.set_xlabel(labels["x"])
+        ax.set_ylabel(labels["y"])
+        plt.title(labels["title"])
+
+    def plot_title(filename):
+        e = slactwin.simrun_util.beta_gamma_to_energy_gev(
+            meV,
+            sdds_util.extract_sdds_column(filename, "pCentral0", 0)["values"],
+        )[-1]
+        return f"Final energy: {e*1e3:.5f} MeV"
+
+    _plot_sdds(
+        twiss_fn,
+        "s",
+        ["betax", "betay"],
+        right_columns=["pCentral0"],
+        labels=dict(
+            betax=r"$\beta_x$",
+            betay=r"$\beta_y$",
+            x="s (m)",
+            y="Twiss Beta (m)",
+            y2="Energy (GeV)",
+            pCentral0="Energy (GeV)",
+            title=plot_title(twiss_fn),
+        ),
+        conversion=dict(
+            pCentral0=functools.partial(
+                slactwin.simrun_util.beta_gamma_to_energy_gev, meV
+            ),
+        ),
+    )
+    plt.show()
+
+
+def _unique_klystrons(e, defaults):
+    """Rename klystron (RFCW) elements to match bmad names (not elegant names)"""
+    next_id = e.max_id() + 1
+    bl = []
+    l1x_id = None
+    for el_id in e._input.models.beamlines[0]["items"]:
+        el = e.el_for_id(el_id)
+        if el.type != "RFCW":
+            bl.append(el_id)
+            continue
+        if l1x_id:
+            bl.append(l1x_id)
+            l1x_id = None
+            continue
+        assert len(defaults.klystrons), f"ran out of klystrons: {el._id}: {el.name}"
+        n = defaults.klystrons.pop(0)
+        new_el = copy.copy(el)
+        new_el._id = next_id
+        next_id += 1
+        new_el.name = n
+        e._input.models.elements.append(new_el)
+        bl.append(new_el._id)
+        if n == "L1X":
+            # L1X is split in 2 for elegant
+            l1x_id = new_el._id
+    e._input.models.beamlines[0]["items"] = bl
+    assert len(defaults.klystrons) == 0, f"leftover RFCW names: {defaults.klystrons}"
