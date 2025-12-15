@@ -7,19 +7,35 @@ SIREPO.app.config(function() {
         elementColor: {
             // override red (alarm) color
             QUADRUPOLE: 'orange',
+            BMAPXY: 'magenta',
+            FTABLE: 'magenta',
+            KOCT: 'lightyellow',
+            KQUAD: 'tomato',
+            KSEXT: 'lightgreen',
+            MATTER: 'black',
+            OCTU: 'yellow',
+            QUAD: 'orange',
+            QUFRINGE: 'salmon',
+            SEXT: 'lightgreen',
+            VKICK: 'blue',
+            LMIRROR: 'lightblue',
+            REFLECT: 'blue',
         },
         elementPic: {
-            drift: ['DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
-            lens: ['ROTATIONALLY_SYMMETRIC_TO_3D'],
-            magnet: ['QUADRUPOLE', 'DIPOLE'],
-            solenoid: ['SOLENOID', 'SOLRF'],
-            watch: ['WRITE_BEAM', 'WRITE_SLICE_INFO'],
-            zeroLength: [
-                'CHANGE_TIMESTEP',
-                'OFFSET_BEAM',
-                'SPACECHARGE',
-                'STOP',
-            ],
+            alpha: ['ALPH'],
+            aperture: ['APCONTOUR', 'CLEAN', 'ECOL', 'MAXAMP', 'PEPPOT', 'RCOL', 'SCRAPER', 'TAPERAPC', 'TAPERAPE', 'TAPERAPR'],
+            bend: ['BRAT', 'BUMPER', 'CCBEND', 'CSBEND', 'CSRCSBEND', 'FMULT', 'FTABLE', 'KPOLY', 'KSBEND', 'KQUSE', 'MBUMPER', 'MULT', 'NIBEND', 'NISEPT', 'RBEN', 'SBEN', 'TUBEND'],
+            drift: ['CSRDRIFT', 'DRIF', 'EDRIFT', 'EMATRIX', 'LSCDRIFT', 'DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
+            lens: ['ROTATIONALLY_SYMMETRIC_TO_3D', 'LTHINLENS'],
+            magnet: ['BMAPXY', 'BOFFAXE', 'HKICK', 'KICKER', 'KOCT', 'KQUAD', 'KSEXT', 'MATTER', 'OCTU', 'POLYSERIES', 'QUAD', 'QUFRINGE', 'SEXT', 'VKICK', 'QUADRUPOLE', 'DIPOLE'],
+            malign: ['MALIGN'],
+            mirror: ['LMIRROR'],
+            recirc: ['RECIRC'],
+            rf: ['CEPL', 'FRFMODE', 'FTRFMODE', 'MODRF', 'MRFDF', 'RAMPP', 'RAMPRF', 'RFCA', 'RFCW', 'RFDF', 'RFMODE', 'RFTM110', 'RFTMEZ0', 'RMDF', 'SHRFDF', 'TMCF', 'TRFMODE', 'TWLA', 'TWMTA', 'TWPL'],
+            solenoid: ['MAPSOLENOID', 'SOLE', 'SOLENOID', 'SOLRF'],
+            undulator: ['CORGPIPE', 'CWIGGLER', 'GFWIGGLER', 'LSRMDLTR', 'MATR', 'UKICKMAP', 'WIGGLER'],
+            watch: ['WATCH', 'WRITE_BEAM'],
+            zeroLength: ['BRANCH', 'CENTER', 'CHARGE', 'DSCATTER', 'ELSE', 'EMITTANCE', 'ENERGY', 'FLOOR', 'HISTOGRAM', 'IBSCATTER', 'ILMATRIX', 'IONEFFECTS', 'MAGNIFY', 'MHISTOGRAM', 'PFILTER', 'REFLECT','REMCOR', 'RIMULT', 'ROTATE', 'SAMPLE', 'SCATTER', 'SCMULT', 'SCRIPT', 'SLICE', 'SREFFECTS', 'STRAY', 'TFBDRIVER', 'TFBPICKUP', 'TRCOUNT', 'TRWAKE', 'TWISS', 'WAKE', 'ZLONGIT', 'ZTRANSVERSE', 'CHANGE_TIMESTEP', 'OFFSET_BEAM', 'SPACECHARGE', 'STOP'],
         },
     };
     SIREPO.appFieldEditors += `
@@ -468,6 +484,9 @@ SIREPO.app.directive('appFooter', function() {
                     if (t === 'impact') {
                         return 'Impact-T';
                     }
+                    if (t === 'elegant') {
+                        return t;
+                    }
                     throw new Error(`Unhandled twin_name: ${t}`);
                 }
                 return '';
@@ -552,7 +571,8 @@ SIREPO.app.directive('latticeFooter', function() {
                 });
                 $('#sr-lattice').find('title').each((v, node) => {
                     const values = $(node).text().split(': ');
-                    if (values[1].indexOf('CHANGE_TIMESTEP') >= 0) {
+                    //TODO(pjm): only include elements in the pv dataframe table
+                    if (/TIMESTEP|DRIF|MONI|KICK|MARK|WATCH/.test(values[1])) {
                         return;
                     }
                     const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0;
@@ -699,13 +719,16 @@ SIREPO.app.directive('pvTable', function() {
                 });
             };
 
-            const isNumber = (row, col) => typeof cellValue(col, 1, row.index) === "number";
+            const isNumber = (row, col) => {
+                const v = cellValue(col, 1, row.index);
+                return typeof v === "number" || /^(\-|\d)/.test(v);
+            };
 
             $scope.colClass = (row, col) => isNumber(row, col) ? 'text-right' : 'text-left';
 
             $scope.formatCol = (row, col) => {
                 const v = cellValue(col, 1, row.index);
-                if (! isNumber(row, col)) {
+                if (typeof v !== "number") {
                     return v;
                 }
                 if (! v && ! col[2]) {
@@ -804,17 +827,10 @@ SIREPO.app.directive('runSummary', function() {
         template: `
             <div>{{ summary.description }}</div>
             <div style="margin-bottom: 1em">{{ dateValue(summary.snapshot_end) }}</div>
-
-            <div>{{ summary.inputs['distgen:n_particle'] | number }} macroparticles</div>
-            <div>{{ summary.Nbunch }} bunch{{ summary.Nbunch > 1 ? 'es' : '' }} of {{ models.beam.particle }}s</div>
-            <div>Total charge: {{ summary.inputs['distgen:total_charge:value'] | number:1 }} pC</div>
-            <div>Processor domain: {{ summary.Nprow }} x {{ summary.Npcol }} = {{ summary.Nprow * summary.Npcol }} CPUs</div>
-            <div>Space charge grid: {{ models.simulationSettings.Nx }} x {{ models.simulationSettings.Ny }} x {{ models.simulationSettings.Nz }}</div>
-            <div data-ng-if="timestep">Timestep: {{ models.simulationSettings.Dt * 1e12 | number:1 }} ps to {{ timestep.pos }} m, then {{ timestep.dt * 1e12 | number:1 }} ps until the end
-            <div>Final emittance(x, y): {{ summary.outputs.end_norm_emit_x * 1e6 | number:3 }}, {{ summary.outputs.end_norm_emit_y * 1e6 | number:3 }} µm</div>
-            <div>Final bunch length: {{ summary.outputs.end_sigma_z * 1e3 | number:2 }} mm</div>
-
-            <div style="margin-top: 1em">Run time: {{ summary.run_time / 60 | number:1 }} minutes</div>
+            <div data-ng-repeat="r in summary.summary_text track by $index">
+                {{ r }}
+            </div>
+            <div style="margin-top: 1em">Run time: {{ summary.run_time_minutes | number:1 }} minutes</div>
         `,
         controller: function(appState, slactwinService, timeService, $scope) {
             const init = () => {
@@ -1230,22 +1246,26 @@ SIREPO.app.directive('viewLiveButton', function() {
 });
 
 SIREPO.viewLogic('searchSettingsView', function(appState, slactwinService, uri, $scope) {
-    const runValuesChanged = () => {
+
+    const simRedirect = (field) => {
         const ss = appState.models.searchSettings;
         for (const r of slactwinService.runKinds) {
-            if (r.machine_name === ss.machine_name && r.twin_name == ss.twin_name) {
+            if (r[field] === ss[field]) {
                 if (appState.models.simulationId != r.simulationId) {
                     appState.clearModels();
                     uri.localRedirect('search-results', {
                         ':simulationId': r.simulationId,
                     });
                 }
-                return;
             }
         }
     };
+
     // not using $scope.watchFields because that includes a debouncer and the
     // switch to the new machine_name should be immediate
     appState.watchModelFields(
-        $scope, ['searchSettings.machine_name', 'searchSettings.twin_name'],  runValuesChanged);
+        $scope, ['searchSettings.machine_name'],  () => simRedirect('machine_name'));
+    appState.watchModelFields(
+        $scope, ['searchSettings.twin_name'],  () => simRedirect('twin_name'));
+
 });

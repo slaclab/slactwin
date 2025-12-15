@@ -29,11 +29,14 @@ def run(model_name, pv_filename, start_element_name, end_element_name):
 
     # TODO(pjm): could pass in path to private repo
     assert "LCLS_LATTICE" in os.environ
+    cmds, pvinfo = slactwin.simrun_util.build_commands(
+        model_name, json.load(open(pv_filename))
+    )
     o = evaluate_tao(
         Tao(
             f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
         ),
-        slactwin.simrun_util.build_commands(model_name, json.load(open(pv_filename))),
+        cmds,
     )
     _plot_twiss(o)
 

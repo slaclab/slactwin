@@ -159,21 +159,13 @@ class _Parser(PKDict):
             or "impact" in self.summary.config.command.lower()
         ):
             n = "impact"
+        elif "elegant" in self.summary.config.command.lower():
+            n = "elegant"
         else:
             raise ValueError(
                 f"unable to determine simulation type config={self.summary.config}"
             )
         return PKDict(run_kind_id=_id(n))
-
-    def _snapshot_end(self, root, dt_dir):
-        # TODO(pjm): the snapshot file is used only to determine the end time of the run
-        # no data is ever used from the file, it is already in the summary json file
-        p = f"{root}/snapshot/{dt_dir}*{self.summary.isotime}.h5"
-        if not (f := pykern.pkio.sorted_glob(p)):
-            raise ValueError(f"no snapshot found for glob={p}")
-        if len(f) > 1:
-            raise ValueError(f"too many snapshots matching glob={p} matches={f}")
-        return datetime.datetime.fromtimestamp(int(f[0].mtime()))
 
     def _summary_values(self, summary):
         # summary/yyyy/mm/dd
@@ -182,7 +174,9 @@ class _Parser(PKDict):
                 f"summary path={self.summary_path} does not match regex={_SUMMARY_PATH_RE}"
             )
         return self._run_kind(m.group(3)).pkupdate(
-            snapshot_end=self._snapshot_end(m.group(1), m.group(2)),
+            snapshot_end=datetime.datetime.fromisoformat(self.summary.isotime)
+            .astimezone()
+            .replace(tzinfo=None),
             archive_path=self.summary.outputs.archive,
             run_end=self._run_end(),
             summary_path=str(self.summary_path),

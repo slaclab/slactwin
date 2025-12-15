@@ -26,7 +26,6 @@ def test_parse():
                     ),
                 )
                 pkunit.pkeq(e.snapshot_dt, r.snapshot_end)
-                # pkunit.pkeq(e.snapshot_path, str(r.snapshot_path))
                 v = qcall.db.query(
                     "run_value",
                     run_summary_id=r.run_summary_id,
@@ -48,19 +47,12 @@ def _setup_data(summary, case_dir):
     from pykern.pkcollections import PKDict
     import datetime
 
-    def _snapshot_path():
-        return pkio.sorted_glob(
-            str(summary.dirpath().join("*")).replace("/summary/", "/snapshot/")
-        )[0]
-
     summary.write(summary.read().replace("CASE_DIR", str(case_dir)))
     j = pkjson.load_any(summary)
     rv = PKDict(
-        snapshot_path=_snapshot_path(),
         snapshot_dt=datetime.datetime.fromisoformat(j.isotime)
         .astimezone()
         .replace(tzinfo=None),
         summary_path=summary,
     )
-    rv.snapshot_path.setmtime(rv.snapshot_dt.timestamp())
     return rv
