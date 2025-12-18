@@ -507,11 +507,11 @@ SIREPO.app.directive('appHeader', function() {
             <div data-app-header-brand="nav"></div>
             <ul class="nav navbar-nav" data-ng-if=":: authState.isLoggedIn">
               <li class="sim-section" data-ng-class="{active: nav.isActive('search') || nav.isActive('search-results') }"><a href data-ng-click="openSearch()"><span class="glyphicon glyphicon-search"></span> Search</a></li>
+              <li data-ng-if="appState.isLoaded() && ! nav.isActive('search-results')" style="padding: 15px">{{ appState.models.simulation.name }}</li>
             </ul>
             <div data-app-header-right="nav">
               <app-header-right-sim-loaded data-ng-if="hasQuery()">
                 <div data-sim-sections="">
-                  <!--<li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>-->
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
 
                   <li class="sim-section" data-ng-class="{active: nav.isActive('visualization')}"><a href data-ng-click="nav.openSection('visualization')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
@@ -524,6 +524,7 @@ SIREPO.app.directive('appHeader', function() {
             </div>
         `,
         controller: function(appState, authState, panelState, uri, slactwinService, $element, $location, $scope) {
+            $scope.appState = appState;
             $scope.authState = authState;
             $scope.hasQuery = slactwinService.getRunSummaryId;
 
@@ -543,7 +544,7 @@ SIREPO.app.directive('appHeader', function() {
     };
 });
 
-SIREPO.app.directive('latticeFooter', function() {
+SIREPO.app.directive('latticeFooter', function(appState) {
     return {
         restrict: 'A',
         scope: {
@@ -565,17 +566,18 @@ SIREPO.app.directive('latticeFooter', function() {
                 $('.sr-lattice-label').remove();
                 const parentRect = $('#sr-lattice')[0].getBoundingClientRect();
                 const positions = [];
-                const labeled = [];
+                const visited = {};
                 $("[class^='sr-beamline']").each( (_ , element) => {
                     positions.push(element.getBoundingClientRect());
                 });
                 $('#sr-lattice').find('title').each((v, node) => {
                     const values = $(node).text().split(': ');
-                    //TODO(pjm): only include elements in the pv dataframe table
-                    if (/TIMESTEP|DRIF|MONI|KICK|MARK|WATCH/.test(values[1])) {
+                    const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0
+                          || values[1].indexOf('WATCH') >= 0;
+                    if (! $scope.names[values[0]] && ! isMonitorOrInstrument || visited[values[0]]) {
                         return;
                     }
-                    const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0;
+                    visited[values[0]] = true;
                     const rect = node.parentElement.getBoundingClientRect();
                     let pos = [
                         rect.left - parentRect.left,
@@ -598,10 +600,6 @@ SIREPO.app.directive('latticeFooter', function() {
                         })
                         .on('click', () => {
                             $scope.elementClicked(values[0]);
-                            $scope.$applyAsync();
-                        })
-                        .on('dblclick', () => {
-                            $scope.elementClicked(values[0], true);
                             $scope.$applyAsync();
                         })
                         .appendTo($('.sr-lattice-holder'));
@@ -659,7 +657,7 @@ SIREPO.app.directive('latticeFooter', function() {
                 }
             };
 
-            $scope.elementClicked = (name, showEditor) => {
+            $scope.elementClicked = (name) => {
                 const el = slactwinService.elementForName(name);
                 if (el) {
                     slactwinService.selectElementId(el._id);
@@ -673,6 +671,19 @@ SIREPO.app.directive('latticeFooter', function() {
             });
 
             $scope.$on('sr-renderBeamline', () => {
+                const ids = {};
+                const df = slactwinService.summary.pv_mapping_dataframe.el_id;
+                for (const el_id of Object.values(df)) {
+                    if (el_id) {
+                        ids[el_id] = true;
+                    }
+                }
+                $scope.names = {};
+                for (const el of slactwinService.latticeModels().elements) {
+                    if (ids[el._id]) {
+                        $scope.names[el.name] = true;
+                    }
+                }
                 panelState.waitForUI(labelElements);
             });
         },
@@ -728,7 +739,7 @@ SIREPO.app.directive('pvTable', function() {
 
             $scope.formatCol = (row, col) => {
                 const v = cellValue(col, 1, row.index);
-                if (typeof v !== "number") {
+                if (! SIREPO.NUMBER_REGEXP.test(v)) {
                     return v;
                 }
                 if (! v && ! col[2]) {

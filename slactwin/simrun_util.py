@@ -36,6 +36,8 @@ def build_commands(model_name, pvdata):
     def _add_pvinfo(record):
         if record["element"] not in pvinfo:
             pvinfo[record["element"]] = []
+        if "factor" not in record:
+            record["factor"] = 1
         pvinfo[record["element"]].append(record)
 
     def _klystron_summary(datamap):

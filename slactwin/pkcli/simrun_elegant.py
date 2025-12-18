@@ -29,8 +29,8 @@ _MODEL_NAME_TO_ELEGANT_FILE = PKDict(
 )
 
 
-def run(model_name, pv_filename, start_element_name, end_element_name):
-    # ex. run('cu_hxr', '2021.json', 'WS02', 'ENDL2')
+def run(model_name, pv_filename, start_element_name, end_element_name, watches=""):
+    # ex. slactwin simrun-elegant run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
 
     def _add_variables(e, defaults):
         for n, v in defaults.vars.items():
@@ -90,7 +90,11 @@ def run(model_name, pv_filename, start_element_name, end_element_name):
     e.fix_deprecated_n_kicks()
     _update_fields(e, defaults)
     e.slice(start_element_name, end_element_name)
+    e.set_watches(watches.split(":"))
+
     el_names = _element_name_set(e, el_map)
+
+    # TODO(pjm): command-line arg for overrides
     # override to real value here, not approx 135 from actual sim
     e.cmd("run_setup").p_central_mev = 134.9990329
 
@@ -188,8 +192,16 @@ def run(model_name, pv_filename, start_element_name, end_element_name):
     # TODO(pjm): map archive and summary to date directories with isotime suffix
     e.archive("out.h5")
     summary_out = PKDict(
+        # TODO(pjm): fix hard-coded
+        isotime="2024-06-19T00:23:17-07:00",
+        config=PKDict(
+            command="elegant",
+        ),
         pv_mapping_dataframe=pandas.DataFrame(summary).to_dict(),
-        outputs=_summary_outputs(e),
+        outputs=_summary_outputs(e).pkupdate(
+            # TODO(pjm): fix hard-coded
+            archive="/home/vagrant/src/slaclab/lcls-live/out.h5",
+        ),
     )
     pykern.pkjson.dump_pretty(summary_out, "summary.json")
     _plot_twiss(e)

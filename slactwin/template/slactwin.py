@@ -371,8 +371,8 @@ class _Elegant:
             el = util.id_map[i]
             el_by_name[el.name] = el._id
         dataframe.el_id = PKDict()
-        for n in dataframe.element:
-            dataframe.el_id[n] = el_by_name.get(n)
+        for idx, n in dataframe.element.items():
+            dataframe.el_id[str(idx)] = el_by_name.get(n)
         return dataframe
 
 
