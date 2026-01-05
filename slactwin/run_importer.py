@@ -161,6 +161,8 @@ class _Parser(PKDict):
             n = "impact"
         elif "elegant" in self.summary.config.command.lower():
             n = "elegant"
+        elif "pytao" in self.summary.config.command.lower():
+            n = "pytao"
         else:
             raise ValueError(
                 f"unable to determine simulation type config={self.summary.config}"

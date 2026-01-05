@@ -4,6 +4,7 @@
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
 
+from pmd_beamphysics import ParticleGroup
 from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp
@@ -207,6 +208,41 @@ def _db_api(api_name, **kwargs):
     return asyncio.run(_target())
 
 
+def _openpmd_particles(archive):
+    def _default_columns(info):
+        if info.name == "final_particles":
+            info.x = "delta_z"
+            info.y = "delta_energy"
+        else:
+            info.x = "x"
+            info.y = "y"
+        return info
+
+    res = []
+    visited = set()
+    for idx, n in enumerate(
+        ["initial_particles", "final_particles"] + list(archive.output.particles.keys())
+    ):
+        if n in visited:
+            continue
+        visited.add(n)
+        res.append(
+            _default_columns(
+                PKDict(
+                    modelKey=f"elementAnimation{idx}",
+                    reportIndex=idx,
+                    report="elementAnimation",
+                    name=n,
+                    frameCount=1,
+                    isHistogram=True,
+                    # TODO(pjm): move to more general (openpmd_util)
+                    columns=sirepo.template.impactt._BUNCH_COLUMNS,
+                )
+            )
+        )
+    return res
+
+
 def _summary_file(run_summary_id):
     return pykern.pkjson.load_any(
         pykern.pkio.py_path(
@@ -234,7 +270,23 @@ def _twin_implementation(run_summary_id):
         return _ImpactT(run_summary_id)
     if k.twin_name == "elegant":
         return _Elegant(run_summary_id)
+    if k.twin_name == "pytao":
+        return _PyTao(run_summary_id)
     assert False, f"unhandled twin_name: {k.twin_name}"
+
+
+def _update_dataframe(data, dataframe):
+    util = sirepo.template.lattice.LatticeUtil(
+        data, sirepo.sim_data.get_class("elegant").schema()
+    )
+    el_by_name = PKDict()
+    for i in data.models.beamlines[0]["items"]:
+        el = util.id_map[i]
+        el_by_name[el.name] = el._id
+    dataframe.el_id = PKDict()
+    for idx, n in dataframe.element.items():
+        dataframe.el_id[str(idx)] = el_by_name.get(n)
+    return dataframe
 
 
 class _Elegant:
@@ -258,8 +310,6 @@ class _Elegant:
         for f in ("x", "y1", "y2", "y3", "y4", "y5"):
             if frame_args[f] == _NONE:
                 continue
-            # TODO(pjm): stat column units
-            # units = I.units(frame_args[f])
             units = E.output.stats_unit[frame_args[f]]
             if units and str(units) and str(units) != "1":
                 if re.search(r"[_{}\\]", units):
@@ -270,7 +320,6 @@ class _Elegant:
                 units = ""
             p = stats[frame_args[f]]
             plots[f] = PKDict(
-                # label=f"{_plot_label(frame_args[f])}{units}",
                 label=f"${E.output.stats_label[frame_args[f]]}${units}",
                 dim=f,
                 points=p.tolist(),
@@ -292,7 +341,7 @@ class _Elegant:
         E = self.load_archive()
         return PKDict(
             summary=PKDict(
-                pv_mapping_dataframe=self._update_dataframe(
+                pv_mapping_dataframe=_update_dataframe(
                     E._input, s.pv_mapping_dataframe
                 ),
                 summary_columns=self._summary_columns(s.pv_mapping_dataframe),
@@ -304,7 +353,7 @@ class _Elegant:
             lattice=PKDict(
                 models=E._input.models,
             ),
-            particles=self._particles(E),
+            particles=_openpmd_particles(E),
             stat_columns=[_NONE] + list(E.output["stats"].keys()),
         )
 
@@ -318,40 +367,6 @@ class _Elegant:
             f"Final bunch length: {summary.outputs.end_Ss * 1e3:.3f} mm",
         ]
 
-    def _particles(self, E):
-        def _default_columns(info):
-            if info.name == "final_particles":
-                info.x = "delta_z"
-                info.y = "delta_energy"
-            else:
-                info.x = "x"
-                info.y = "y"
-            return info
-
-        res = []
-        visited = set()
-        for idx, n in enumerate(
-            ["initial_particles", "final_particles"] + list(E.output.particles.keys())
-        ):
-            if n in visited:
-                continue
-            visited.add(n)
-            res.append(
-                _default_columns(
-                    PKDict(
-                        modelKey=f"elementAnimation{idx}",
-                        reportIndex=idx,
-                        report="elementAnimation",
-                        name=n,
-                        frameCount=1,
-                        isHistogram=True,
-                        # TODO(pjm): move to more general (openpmd_util)
-                        columns=sirepo.template.impactt._BUNCH_COLUMNS,
-                    )
-                )
-            )
-        return res
-
     def _summary_columns(self, dataframe):
         return [
             ["Variable", "name"],
@@ -362,18 +377,98 @@ class _Elegant:
             ["elegant Factor", "factor"],
         ]
 
-    def _update_dataframe(self, data, dataframe):
-        util = sirepo.template.lattice.LatticeUtil(
-            data, sirepo.sim_data.get_class("elegant").schema()
+
+class _PyTao:
+
+    def __init__(self, run_summary_id):
+        self.run_summary_id = run_summary_id
+
+    def load_archive(self):
+        res = PKDict()
+        with h5py.File(_summary_file(self.run_summary_id).outputs.archive, "r") as f:
+            res.output = PKDict(stats=PKDict(), particles=PKDict())
+            for c in f["/pytao/stats"]:
+                res.output.stats[c] = f[f"/pytao/stats/{c}"][:]
+            res.lattice = pykern.pkjson.load_any(f["/pytao"].attrs["lattice"])
+            for p in f["/pytao/particles"]:
+                res.output.particles[p] = ParticleGroup(h5=f[f"/pytao/particles/{p}"])
+        return res
+
+    def stat_animation(self, frame_args):
+        # TODO(pjm): consolidate w/_Elegant
+        a = self.load_archive()
+        stats = a.output["stats"]
+        plots = PKDict()
+        if frame_args.x == _NONE:
+            frame_args.x = "s"
+        for f in ("x", "y1", "y2", "y3", "y4", "y5"):
+            if frame_args[f] == _NONE:
+                continue
+            # units = E.output.stats_unit[frame_args[f]]
+            units = ""
+            if units and str(units) and str(units) != "1":
+                if re.search(r"[_{}\\]", units):
+                    units = f" [$\\mathsf{{{units}}}$]"
+                else:
+                    units = f" [{units}]"
+            else:
+                units = ""
+            p = stats[frame_args[f]]
+            plots[f] = PKDict(
+                # label=f"${a.output.stats_label[frame_args[f]]}${units}",
+                label=frame_args[f],
+                dim=f,
+                points=p.tolist(),
+            )
+        return template_common.parameter_plot(
+            x=plots.x.points,
+            plots=[p for p in plots.values() if p.dim != "x"],
+            model=frame_args,
+            plot_fields=PKDict(
+                dynamicYLabel=True,
+                title="",
+                y_label="",
+                x_label=plots.x.label,
+            ),
         )
-        el_by_name = PKDict()
-        for i in data.models.beamlines[0]["items"]:
-            el = util.id_map[i]
-            el_by_name[el.name] = el._id
-        dataframe.el_id = PKDict()
-        for idx, n in dataframe.element.items():
-            dataframe.el_id[str(idx)] = el_by_name.get(n)
-        return dataframe
+
+    def summary_animation(self, frame_args):
+        s = _summary_file(self.run_summary_id)
+        a = self.load_archive()
+        return PKDict(
+            summary=PKDict(
+                # pv_mapping_dataframe=s.pv_mapping_dataframe,
+                pv_mapping_dataframe=_update_dataframe(
+                    # E._input,
+                    PKDict(
+                        models=a.lattice,
+                    ),
+                    s.pv_mapping_dataframe,
+                ),
+                summary_columns=self._summary_columns(s.pv_mapping_dataframe),
+                summary_text=[
+                    "some text",
+                ],
+                # TODO(pjm): save run_time
+                # run_time_minutes=I.output["run_info"]["run_time"] / 60,
+                run_time_minutes=3.1,
+            ).pkupdate(_summary_info(self.run_summary_id)),
+            lattice=PKDict(
+                models=a.lattice,
+            ),
+            particles=_openpmd_particles(a),
+            stat_columns=[_NONE] + list(a.output.stats.keys()),
+        )
+
+    def _summary_columns(self, dataframe):
+        return [
+            ["Variable", "name"],
+            ["PV Name", "device_pv_name"],
+            ["PV Value", "pv_value"],
+            ["Field", "attribute"],
+            ["PyTao Value", "value"],  # TODO(pjm): units
+            ["PyTao Factor", "factor"],
+        ]
 
 
 class _ImpactT:

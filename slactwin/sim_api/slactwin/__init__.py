@@ -53,6 +53,7 @@ class API(sirepo.quest.API):
                 name=name,
                 machine_name=machine_name,
                 twin_name=twin_name,
+                elementPosition="absolute" if "impact" in twin_name else "relative",
             )
             d.models.searchSettings.pkupdate(
                 machine_name=machine_name,

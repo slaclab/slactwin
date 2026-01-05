@@ -23,18 +23,18 @@ SIREPO.app.config(function() {
         },
         elementPic: {
             alpha: ['ALPH'],
-            aperture: ['APCONTOUR', 'CLEAN', 'ECOL', 'MAXAMP', 'PEPPOT', 'RCOL', 'SCRAPER', 'TAPERAPC', 'TAPERAPE', 'TAPERAPR'],
-            bend: ['BRAT', 'BUMPER', 'CCBEND', 'CSBEND', 'CSRCSBEND', 'FMULT', 'FTABLE', 'KPOLY', 'KSBEND', 'KQUSE', 'MBUMPER', 'MULT', 'NIBEND', 'NISEPT', 'RBEN', 'SBEN', 'TUBEND'],
+            aperture: ['APCONTOUR', 'CLEAN', 'ECOL', 'MAXAMP', 'PEPPOT', 'RCOL', 'SCRAPER', 'TAPERAPC', 'TAPERAPE', 'TAPERAPR', 'RCOLLIMATOR'],
+            bend: ['BRAT', 'BUMPER', 'CCBEND', 'CSBEND', 'CSRCSBEND', 'FMULT', 'FTABLE', 'KPOLY', 'KSBEND', 'KQUSE', 'MBUMPER', 'MULT', 'NIBEND', 'NISEPT', 'RBEN', 'SBEN', 'TUBEND', 'SBEND'],
             drift: ['CSRDRIFT', 'DRIF', 'EDRIFT', 'EMATRIX', 'LSCDRIFT', 'DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
             lens: ['ROTATIONALLY_SYMMETRIC_TO_3D', 'LTHINLENS'],
             magnet: ['BMAPXY', 'BOFFAXE', 'HKICK', 'KICKER', 'KOCT', 'KQUAD', 'KSEXT', 'MATTER', 'OCTU', 'POLYSERIES', 'QUAD', 'QUFRINGE', 'SEXT', 'VKICK', 'QUADRUPOLE', 'DIPOLE'],
             malign: ['MALIGN'],
             mirror: ['LMIRROR'],
             recirc: ['RECIRC'],
-            rf: ['CEPL', 'FRFMODE', 'FTRFMODE', 'MODRF', 'MRFDF', 'RAMPP', 'RAMPRF', 'RFCA', 'RFCW', 'RFDF', 'RFMODE', 'RFTM110', 'RFTMEZ0', 'RMDF', 'SHRFDF', 'TMCF', 'TRFMODE', 'TWLA', 'TWMTA', 'TWPL'],
+            rf: ['CEPL', 'FRFMODE', 'FTRFMODE', 'MODRF', 'MRFDF', 'RAMPP', 'RAMPRF', 'RFCA', 'RFCW', 'RFDF', 'RFMODE', 'RFTM110', 'RFTMEZ0', 'RMDF', 'SHRFDF', 'TMCF', 'TRFMODE', 'TWLA', 'TWMTA', 'TWPL', 'LCAVITY'],
             solenoid: ['MAPSOLENOID', 'SOLE', 'SOLENOID', 'SOLRF'],
             undulator: ['CORGPIPE', 'CWIGGLER', 'GFWIGGLER', 'LSRMDLTR', 'MATR', 'UKICKMAP', 'WIGGLER'],
-            watch: ['WATCH', 'WRITE_BEAM'],
+            watch: ['WATCH', 'WRITE_BEAM', 'MONITOR', 'MARKER'],
             zeroLength: ['BRANCH', 'CENTER', 'CHARGE', 'DSCATTER', 'ELSE', 'EMITTANCE', 'ENERGY', 'FLOOR', 'HISTOGRAM', 'IBSCATTER', 'ILMATRIX', 'IONEFFECTS', 'MAGNIFY', 'MHISTOGRAM', 'PFILTER', 'REFLECT','REMCOR', 'RIMULT', 'ROTATE', 'SAMPLE', 'SCATTER', 'SCMULT', 'SCRIPT', 'SLICE', 'SREFFECTS', 'STRAY', 'TFBDRIVER', 'TFBPICKUP', 'TRCOUNT', 'TRWAKE', 'TWISS', 'WAKE', 'ZLONGIT', 'ZTRANSVERSE', 'CHANGE_TIMESTEP', 'OFFSET_BEAM', 'SPACECHARGE', 'STOP'],
         },
     };
@@ -487,6 +487,9 @@ SIREPO.app.directive('appFooter', function() {
                     if (t === 'elegant') {
                         return t;
                     }
+                    if (t === 'pytao') {
+                        return 'PyTao';
+                    }
                     throw new Error(`Unhandled twin_name: ${t}`);
                 }
                 return '';
@@ -573,7 +576,8 @@ SIREPO.app.directive('latticeFooter', function(appState) {
                 $('#sr-lattice').find('title').each((v, node) => {
                     const values = $(node).text().split(': ');
                     const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0
-                          || values[1].indexOf('WATCH') >= 0;
+                          || values[1].indexOf('WATCH') >= 0
+                          || values[1].indexOf('MARKER') >= 0;
                     if (! $scope.names[values[0]] && ! isMonitorOrInstrument || visited[values[0]]) {
                         return;
                     }
