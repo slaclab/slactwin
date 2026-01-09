@@ -79,39 +79,32 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
         f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
     )
     summary = evaluate_tao(tao, cmds, pvinfo)
-    stats = _archive(
+    _archive(
+        model_name,
         tao,
+        summary,
         [start_element_name, end_element_name]
         + (watches.split(":") if watches else []),
     )
-    _summary(tao, summary, stats, end_element_name)
     # _plot_twiss(stats)
     # plt.show()
 
 
-def _summary(tao, summary, stats, end_element_name):
-
-    # print(f"summary: {summary}")
+def _summary(h5, model_name, isotime, tao, stats):
 
     def _summary_outputs():
         return PKDict({f"end_{c}": stats[c][-1] for c in stats})
 
-    summary_out = PKDict(
-        # TODO(pjm): fix hard-coded
-        isotime="2024-06-19T00:23:17-07:00",
-        config=PKDict(
-            command="pytao",
-        ),
-        pv_mapping_dataframe=pandas.DataFrame(summary).to_dict(),
-        outputs=_summary_outputs().pkupdate(
-            # TODO(pjm): fix hard-coded
-            archive="/home/vagrant/src/slaclab/slactwin/out-pytao.h5",
-        ),
-    )
-    pykern.pkjson.dump_pretty(summary_out, "summary-pytao.json")
+    g = h5.create_group("summary")
+    g.attrs["isotime"] = isotime
+    g.attrs["twin_name"] = "pytao"
+    g.attrs["machine_name"] = model_name
+    o = g.create_group("outputs")
+    for n, v in _summary_outputs().items():
+        o.attrs[n] = v
 
 
-def _archive(tao, watches):
+def _archive(model_name, tao, summary, watches):
 
     def _add_bunch_params(res, group):
         b = [tao.bunch_params(i) for i in _tao_lat_list(tao, "ele.ix_ele")]
@@ -132,13 +125,18 @@ def _archive(tao, watches):
                 res[c] = res[c] - res[c][0]
             group.create_dataset(c, data=res[c])
 
-    res = PKDict()
-    # TODO(pjm): location/name of summary and h5 output file
-    with h5py.File("out-pytao.h5", "w") as f:
+    stats = PKDict()
+
+    # TODO(pjm): fix hard-coded (parse from input file)
+    isotime = "2024-06-19T00:23:17-07:00"
+    isotime = slactwin.simrun_util.to_ca_isotime(isotime)
+    fn = f"pytao-{model_name}-{isotime}.h5"
+
+    with h5py.File(fn, "w") as f:
         g = f.create_group("pytao")
         gs = g.create_group("stats")
-        _add_element_values(res, gs)
-        _add_bunch_params(res, gs)
+        _add_element_values(stats, gs)
+        _add_bunch_params(stats, gs)
         for idx, n in enumerate(watches):
             P = pmd_beamphysics.ParticleGroup(data=tao.bunch_data(n))
             name = (
@@ -148,7 +146,13 @@ def _archive(tao, watches):
             )
             P.write(f, name=f"/pytao/particles/{name}")
         g.attrs["lattice"] = pykern.pkjson.dump_pretty(_tao_lattice(tao, watches))
-    return res
+        _summary(f, model_name, isotime, tao, stats)
+    pandas.DataFrame(summary).to_hdf(
+        fn,
+        key="/summary/pv_mapping_dataframe",
+        mode="r+",
+        format="table",
+    )
 
 
 # TODO(pjm): temporary for manual verification

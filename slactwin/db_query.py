@@ -5,7 +5,6 @@ api
    search start_dt and stop_dt
    search run value names with min and max
    list of return value names
-   summary_path
    achirve_path
    return cols with order by date time
 
@@ -117,11 +116,11 @@ class _DbQuery:
             session, run_summary, PKDict(run_summary_id=run_summary_id)
         )
 
-    def _query_run_summary_path_exists(self, session, run_summary, summary_path):
+    def _query_archive_path_exists(self, session, run_summary, archive_path):
         return (
             session.select_one_or_none(
                 sqlalchemy.select(run_summary).where(
-                    run_summary.c.summary_path == summary_path,
+                    run_summary.c.archive_path == archive_path,
                 )
             )
             is not None
@@ -237,7 +236,6 @@ class _DbQuery:
                 base_cols=PKDict(
                     run_summary_id=run_summary.c.run_summary_id,
                     archive_path=run_summary.c.archive_path,
-                    summary_path=run_summary.c.summary_path,
                 ),
                 value_cols=PKDict(),
                 select_from=run_summary.join(

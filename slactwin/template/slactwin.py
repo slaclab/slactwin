@@ -26,6 +26,7 @@ import sirepo.template.impactt
 import sirepo.template.lattice
 import sirepo.util
 import slactwin.db_api_client
+import slactwin.util
 
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
@@ -147,7 +148,7 @@ def stateful_compute_create_sim_for_run_summary(data, **kwargs):
             workdir=str(t),
             use_temp_dir=False,
         )
-        I.load_archive(_summary_file(data.args.runSummaryId).outputs.archive)
+        I.load_archive(_archive_path(data.args.runSummaryId))
         I.numprocs = 1
         I.configure()
         I.write_input()
@@ -208,6 +209,10 @@ def _db_api(api_name, **kwargs):
     return asyncio.run(_target())
 
 
+def _archive_path(run_summary_id):
+    return _db_api("run_summary_by_id", run_summary_id=run_summary_id).archive_path
+
+
 def _openpmd_particles(archive):
     def _default_columns(info):
         if info.name == "final_particles":
@@ -243,22 +248,17 @@ def _openpmd_particles(archive):
     return res
 
 
-def _summary_file(run_summary_id):
-    return pykern.pkjson.load_any(
-        pykern.pkio.py_path(
-            _db_api("run_summary_by_id", run_summary_id=run_summary_id).summary_path,
-        ),
-    )
+def _summary_data(run_summary_id):
+    res = slactwin.util.summary_from_archive(_archive_path(run_summary_id))
+    res.pv_mapping_dataframe = PKDict(res.pv_mapping_dataframe.to_dict())
+    return res
 
 
 def _summary_info(run_summary_id):
-    """Returns a descriptive name and date for the runSummaryId
-    Constructs the description from the summary filename, ex. lume-impact-live-demo-s3df-sc_inj
-    """
     s = _db_api("run_summary_by_id", run_summary_id=run_summary_id)
-    m = re.search(r".*?/\d{4}/\d\d/\d\d/(.*?)-\d{4}", s.summary_path)
+    k = _db_api("run_kind_by_id", run_kind_id=s.run_kind_id)
     return PKDict(
-        description=m.group(1) if m else "",
+        description=f"{k.machine_name} {k.twin_name}",
         snapshot_end=s.snapshot_end,
     )
 
@@ -297,9 +297,7 @@ class _Elegant:
     def load_archive(self):
         from rslume import elegant
 
-        return elegant.Elegant.from_archive(
-            _summary_file(self.run_summary_id).outputs.archive
-        )
+        return elegant.Elegant.from_archive(_archive_path(self.run_summary_id))
 
     def stat_animation(self, frame_args):
         E = self.load_archive()
@@ -337,14 +335,14 @@ class _Elegant:
         )
 
     def summary_animation(self, frame_args):
-        s = _summary_file(self.run_summary_id)
+        s = _summary_data(self.run_summary_id)
         E = self.load_archive()
         return PKDict(
             summary=PKDict(
                 pv_mapping_dataframe=_update_dataframe(
                     E._input, s.pv_mapping_dataframe
                 ),
-                summary_columns=self._summary_columns(s.pv_mapping_dataframe),
+                summary_columns=self._summary_columns(),
                 summary_text=self._summary_text(s, E, E._input.models),
                 # TODO(pjm): save run_time
                 # run_time_minutes=I.output["run_info"]["run_time"] / 60,
@@ -367,7 +365,7 @@ class _Elegant:
             f"Final bunch length: {summary.outputs.end_Ss * 1e3:.3f} mm",
         ]
 
-    def _summary_columns(self, dataframe):
+    def _summary_columns(self):
         return [
             ["Variable", "name"],
             ["PV Name", "device_pv_name"],
@@ -385,7 +383,7 @@ class _PyTao:
 
     def load_archive(self):
         res = PKDict()
-        with h5py.File(_summary_file(self.run_summary_id).outputs.archive, "r") as f:
+        with h5py.File(_archive_path(self.run_summary_id), "r") as f:
             res.output = PKDict(stats=PKDict(), particles=PKDict())
             for c in f["/pytao/stats"]:
                 res.output.stats[c] = f[f"/pytao/stats/{c}"][:]
@@ -433,21 +431,19 @@ class _PyTao:
         )
 
     def summary_animation(self, frame_args):
-        s = _summary_file(self.run_summary_id)
+        s = _summary_data(self.run_summary_id)
         a = self.load_archive()
         return PKDict(
             summary=PKDict(
-                # pv_mapping_dataframe=s.pv_mapping_dataframe,
                 pv_mapping_dataframe=_update_dataframe(
-                    # E._input,
                     PKDict(
                         models=a.lattice,
                     ),
                     s.pv_mapping_dataframe,
                 ),
-                summary_columns=self._summary_columns(s.pv_mapping_dataframe),
+                summary_columns=self._summary_columns(),
                 summary_text=[
-                    "some text",
+                    "summary text goes here",
                 ],
                 # TODO(pjm): save run_time
                 # run_time_minutes=I.output["run_info"]["run_time"] / 60,
@@ -460,7 +456,7 @@ class _PyTao:
             stat_columns=[_NONE] + list(a.output.stats.keys()),
         )
 
-    def _summary_columns(self, dataframe):
+    def _summary_columns(self):
         return [
             ["Variable", "name"],
             ["PV Name", "device_pv_name"],
@@ -477,23 +473,21 @@ class _ImpactT:
         self.run_summary_id = run_summary_id
 
     def load_archive(self):
-        return impact.Impact.from_archive(
-            _summary_file(self.run_summary_id).outputs.archive
-        )
+        return impact.Impact.from_archive(_archive_path(self.run_summary_id))
 
     def stat_animation(self, frame_args):
         return sirepo.template.impactt.stat_animation(self.load_archive(), frame_args)
 
     def summary_animation(self, frame_args):
-        s = _summary_file(self.run_summary_id)
+        s = _summary_data(self.run_summary_id)
         I = self.load_archive()
-        with h5py.File(s.outputs.archive) as f:
+        with h5py.File(_archive_path(self.run_summary_id)) as f:
             l = ImpactTParser().parse_file(f["/impact/input"].attrs["ImpactT.in"])
             l.models.simulation.visualizationBeamlineId = l.models.beamlines[0].id
         return PKDict(
             summary=PKDict(
                 pv_mapping_dataframe=s.pv_mapping_dataframe,
-                summary_columns=self._summary_columns(s.pv_mapping_dataframe),
+                summary_columns=self._summary_columns(),
                 summary_text=self._summary_text(s, I, l.models),
                 run_time_minutes=I.output["run_info"]["run_time"] / 60,
             ).pkupdate(_summary_info(self.run_summary_id)),
@@ -502,7 +496,7 @@ class _ImpactT:
             stat_columns=sirepo.template.impactt.stat_columns(I),
         )
 
-    def _summary_columns(self, dataframe):
+    def _summary_columns(self):
         return [
             ["Variable", "Variable"],
             ["PV Name", "device_pv_name"],
@@ -528,10 +522,10 @@ class _ImpactT:
                 timestep_pos = models.beamlines[0].positions[idx].elemedge
                 timestep_dt = change_timesteps[el_id].dt
         return [
-            f"{summary.inputs['distgen:n_particle']:,} macroparticles",
+            f"{I.header['Np']:,} macroparticles",
             # TODO(pjm): actually electrons, not "other"
             f"{I.header['Nbunch']} bunch{'es' if I.header['Nbunch'] > 1 else ''} of {models.beam.particle}",
-            f"Total charge: {summary.inputs['distgen:total_charge:value']:.1f} pC",
+            f"Total charge: {I.total_charge * 1e12:.1f} pC",
             f"Processor domain: {I.header['Nprow']} x {I.header['Npcol']} = {I.header['Nprow'] * I.header['Npcol']} CPUs",
             f"Space charge grid: {models.simulationSettings.Nx} x {models.simulationSettings.Ny} x {models.simulationSettings.Nz}",
             (

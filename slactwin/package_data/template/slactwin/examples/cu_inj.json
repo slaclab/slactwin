@@ -130,10 +130,10 @@
             ],
             "selectedColumns": [
                 "snapshot_end",
-                "impact^end_sigma_x",
-                "impact^end_sigma_y",
-                "impact^end_norm_emit_x",
-                "impact^end_norm_emit_y",
+                "outputs^end_sigma_x",
+                "outputs^end_sigma_y",
+                "outputs^end_norm_emit_x",
+                "outputs^end_norm_emit_y",
                 "pv^QUAD:IN20:121:BACT"
             ],
             "twin_name": "impact"

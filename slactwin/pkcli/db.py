@@ -12,25 +12,25 @@ import pykern.pkio
 
 class Commands(slactwin.pkcli.CommandsBase):
 
-    def insert_runs(self, summary_dir):
-        """Load data from lume-impact-live-demo runs into db.
+    def insert_runs(self, archive_dir):
+        """Load data from slactwin runs into db.
 
-        Recursively searches `summary_dir` for any ``*.json`` files,
+        Recursively searches `archive_dir` for any ``*.h5`` files,
         calling `slactwin.run_importer.insert_run_summary` for each
         file. Commits after each run summary import. Terminates on first
         run summary report in error or on successful completion.
 
-        Typically, `summary_dir` points to the ``summary`` directory
-        in the lume-impact-live-demo root which as subdirectories of the form
-        YYYY/MM/DD, e.g. ``summary/2024/11/02/*.json``.
+        Typically, `archive_dir` points to the ``archive`` directory
+        in the slactwin root which as subdirectories of the form
+        YYYY/MM/DD, e.g. ``archive/2024/11/02/*.h5``.
 
         Args:
-          summary_dir (str): directory containing summary ``.json`` files
+          archive_dir (str): directory containing archive ``.h5`` files
         """
         from slactwin import run_importer
 
         with self.quest_start() as qcall:
-            for p in pykern.pkio.walk_tree(summary_dir, file_re=r"\.json$"):
+            for p in pykern.pkio.walk_tree(archive_dir, file_re=r"\.h5$"):
                 c = False
                 try:
                     run_importer.insert_run_summary(p, qcall)

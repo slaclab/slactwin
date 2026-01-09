@@ -5,12 +5,14 @@
 """
 
 from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
 from rslume.elegant import Elegant
 from scipy.interpolate import Akima1DInterpolator
 from sirepo.template.code_variable import PurePythonEval
 import copy
 import functools
 import glob
+import h5py
 import json
 import math
 import matplotlib
@@ -143,22 +145,23 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                 for c in pvinfo[cmd[0]]:
                     if c.attribute == cmd[1]:
                         summary.append(c)
-                        c.value = cmd[2]
+                        c.value = str(cmd[2])
             continue
         if cmd[0] in defaults.overlays:
             v = _apply_overlay(e, eval_expression(cmd[2]), defaults.overlays[cmd[0]])
             if cmd[0] in pvinfo and defaults.overlays[cmd[0]].bend_names[0] in el_names:
                 assert len(pvinfo[cmd[0]]) == 1
                 p = pvinfo[cmd[0]][0]
-                p.pkupdate(value=v, factor=v / p.pv_value if p.pv_value else 0),
+                p.pkupdate(value=str(v), factor=v / p.pv_value if p.pv_value else 0),
                 summary += pvinfo[cmd[0]]
+
         n = f"{cmd[0]}_{cmd[1]}"
         if n in defaults.vars:
             defaults.vars[n] = cmd[2]
             if cmd[0] in pvinfo and _var_in_use(e, n, el_map):
                 for c in pvinfo[cmd[0]]:
                     if c.attribute in n:
-                        c.value = cmd[2]
+                        c.value = str(cmd[2])
                         summary.append(c)
 
     _add_variables(e, defaults)
@@ -182,34 +185,38 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
         el.k1 = k1
         if cmd[0] in pvinfo and cmd[0] in el_names:
             assert len(pvinfo[cmd[0]]) == 1
-            pvinfo[cmd[0]][0].value = k1
+            pvinfo[cmd[0]][0].value = str(k1)
             summary += pvinfo[cmd[0]]
 
     pykern.pkio.unchecked_remove(workdir)
     pykern.pkio.mkdir_parent(workdir)
     e.run()
 
-    # TODO(pjm): map archive and summary to date directories with isotime suffix
-    e.archive("out.h5")
-    summary_out = PKDict(
-        # TODO(pjm): fix hard-coded
-        isotime="2024-06-19T00:23:17-07:00",
-        config=PKDict(
-            command="elegant",
-        ),
-        pv_mapping_dataframe=pandas.DataFrame(summary).to_dict(),
-        outputs=_summary_outputs(e).pkupdate(
-            # TODO(pjm): fix hard-coded
-            archive="/home/vagrant/src/slaclab/lcls-live/out.h5",
-        ),
+    # TODO(pjm): fix hard-coded (parse from input file)
+    isotime = "2024-06-19T00:23:17-07:00"
+    isotime = slactwin.simrun_util.to_ca_isotime(isotime)
+    fn = f"elegant-{model_name}-{isotime}.h5"
+    e.archive(fn)
+    with h5py.File(fn, "r+") as f:
+        g = f.create_group("summary")
+        g.attrs["isotime"] = isotime
+        g.attrs["twin_name"] = "elegant"
+        g.attrs["machine_name"] = model_name
+        o = g.create_group("outputs")
+        for n, v in _summary_outputs(e).items():
+            o.attrs[n] = v
+    pandas.DataFrame(summary).to_hdf(
+        fn,
+        key="/summary/pv_mapping_dataframe",
+        mode="r+",
+        format="table",
     )
-    pykern.pkjson.dump_pretty(summary_out, "summary.json")
     _plot_twiss(e)
 
 
 def _apply_overlay(E, value, config):
     # TODO(pjm): assumes knot overlay
-    angle_deg = Akima1DInterpolator(config.knot_range, config.knot_value)(value)
+    angle_deg = Akima1DInterpolator(config.knot_range, config.knot_value)(value).item()
     theta = angle_deg * math.pi / 180
     assert len(config.bend_names) == 4
     for n in config.bend_names:

@@ -6,9 +6,11 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
+import datetime
 import lcls_live.datamaps
 import numpy
 import re
+import zoneinfo
 
 # TODO(pjm): this is temporary to get quads working
 # remove 2: ("SLED Motor Not At Limit", 65) fault
@@ -117,3 +119,13 @@ def parse_cmd(cmd_str):
         return None
     m = re.match(r"set ele (\w+?)\s(.*?)\s=\s(.*?)$", cmd_str)
     return [m.group(1), m.group(2), m.group(3)] if m else None
+
+
+def to_ca_isotime(isotime):
+    """Convert a string in iso format to a CA timezone iso format"""
+    return (
+        datetime.datetime.fromisoformat(isotime)
+        .replace(microsecond=0)
+        .astimezone(zoneinfo.ZoneInfo("America/Los_Angeles"))
+        .isoformat()
+    )

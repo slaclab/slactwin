@@ -1,4 +1,4 @@
-"""Import lume-impact-live-demo files manually or automatically
+"""Import archive files manually or automatically
 
 :copyright: Copyright (c) 2024 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
@@ -11,16 +11,16 @@ import datetime
 import dateutil
 import pykern.pkconfig
 import pykern.pkio
-import pykern.pkjson
 import pykern.util
 import re
 import slactwin.config
 import slactwin.const
+import slactwin.util
 import watchdog.events
 import watchdog.observers.polling
 
-_SUMMARY_PATH_RE = re.compile(
-    r"(.*)/summary/(\d{4}/\d\d/\d\d/).+-(\w+)-\d{4}-\d\d-\d\dT"
+_ARCHIVE_PATH_RE = re.compile(
+    r"(.*)/archive/(\d{4}/\d\d/\d\d/).+-(\w+)-\d{4}-\d\d-\d\dT"
 )
 
 _cfg = None
@@ -32,17 +32,17 @@ def cfg():
     global _cfg
     if not _cfg:
         _cfg = pykern.pkconfig.init(
-            summary_dir=pykern.pkconfig.RequiredUnlessDev(
+            archive_dir=pykern.pkconfig.RequiredUnlessDev(
                 None,
-                _summary_dir,
-                "where the summary files can be found",
+                _archive_dir,
+                "where the archive files can be found",
             ),
         )
     return _cfg
 
 
 def insert_run_summary(path, qcall):
-    return _Parser(summary_path=pykern.pkio.py_path(path), qcall=qcall).create()
+    return _Parser(archive_path=pykern.pkio.py_path(path), qcall=qcall).create()
 
 
 async def next_summary(machine_name, twin_name, run_summary_id, qcall):
@@ -76,10 +76,10 @@ class _Parser(PKDict):
             PKDict: run_summary record or None if it exists
         """
         if self.qcall.db.query(
-            "run_summary_path_exists", summary_path=str(self.summary_path)
+            "archive_path_exists", archive_path=str(self.archive_path)
         ):
             return None
-        self.summary = pykern.pkjson.load_any(self.summary_path)
+        self.summary = slactwin.util.summary_from_archive(self.archive_path)
         rv = self.qcall.db.session().insert(
             "run_summary", self._summary_values(self.summary)
         )
@@ -136,15 +136,12 @@ class _Parser(PKDict):
             )
             return self._run_value_names[name]
 
-        _create_one("impact", self.summary.outputs.items())
+        _create_one("outputs", self.summary.outputs.items())
         _create_one("pv", self._pv_items())
 
     def _pv_items(self):
-        s = set()
-        for i, n in self.summary.pv_mapping_dataframe.device_pv_name.items():
-            if n not in s:
-                s.add(n)
-                yield n, self.summary.pv_mapping_dataframe.pv_value[i]
+        for i, r in self.summary.pv_mapping_dataframe.iterrows():
+            yield r["device_pv_name"], r["pv_value"]
 
     def _run_kind(self, machine):
         def _id(name):
@@ -154,41 +151,19 @@ class _Parser(PKDict):
                 .run_kind_id
             )
 
-        if (
-            "impact_config" in self.summary.config
-            or "impact" in self.summary.config.command.lower()
-        ):
-            n = "impact"
-        elif "elegant" in self.summary.config.command.lower():
-            n = "elegant"
-        elif "pytao" in self.summary.config.command.lower():
-            n = "pytao"
-        else:
-            raise ValueError(
-                f"unable to determine simulation type config={self.summary.config}"
-            )
-        return PKDict(run_kind_id=_id(n))
+        return PKDict(run_kind_id=_id(self.summary.twin_name))
 
     def _summary_values(self, summary):
-        # summary/yyyy/mm/dd
-        if not (m := _SUMMARY_PATH_RE.search(str(self.summary_path))):
+        # archive/yyyy/mm/dd
+        if not (m := _ARCHIVE_PATH_RE.search(str(self.archive_path))):
             raise ValueError(
-                f"summary path={self.summary_path} does not match regex={_SUMMARY_PATH_RE}"
+                f"archive path={self.archive_path} does not match regex={_ARCHIVE_PATH_RE}"
             )
         return self._run_kind(m.group(3)).pkupdate(
             snapshot_end=datetime.datetime.fromisoformat(self.summary.isotime)
             .astimezone()
             .replace(tzinfo=None),
-            archive_path=self.summary.outputs.archive,
-            run_end=self._run_end(),
-            summary_path=str(self.summary_path),
-        )
-
-    def _run_end(self):
-        return (
-            dateutil.parser.isoparse(self.summary.isotime)
-            .astimezone()
-            .replace(tzinfo=None)
+            archive_path=str(self.archive_path),
         )
 
 
@@ -196,10 +171,10 @@ class _SummaryNotifier:
     """Keeps db up to date with new summaries and notifies clients of updates"""
 
     def __init__(self):
-        self._summary_dir = cfg().summary_dir
+        self._archive_dir = cfg().archive_dir
         self._queue = asyncio.Queue()
         l = asyncio.get_running_loop()
-        self._watcher = _SummaryWatcher(l, self._queue, self._summary_dir)
+        self._watcher = _SummaryWatcher(l, self._queue, self._archive_dir)
         self._run_kinds = PKDict()
         l.create_task(self._process())
 
@@ -231,7 +206,7 @@ class _SummaryNotifier:
             from slactwin.pkcli import db
 
             await asyncio.sleep(1)
-            db.Commands().insert_runs(self._summary_dir)
+            db.Commands().insert_runs(self._archive_dir)
 
         def _notify(new_run):
             """Notify any next_summary clients"""
@@ -256,7 +231,7 @@ class _SummaryNotifier:
 
 
 class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
-    def __init__(self, loop, queue, summary_dir):
+    def __init__(self, loop, queue, archive_dir):
         super().__init__()
         # Must be called from the main thread
         self.__loop = loop
@@ -264,7 +239,7 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         # TODO(robnagler) may need to optimize for size
         self.__seen = set()
         o = watchdog.observers.polling.PollingObserver()
-        o.schedule(self, str(summary_dir), recursive=True)
+        o.schedule(self, str(archive_dir), recursive=True)
         o.start()
 
     def on_created(self, event):
@@ -272,7 +247,7 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         if (
             not event.is_directory
             and event.event_type == "created"
-            and event.src_path.endswith(".json")
+            and event.src_path.endswith(".h5")
             and event.src_path not in self.__seen
         ):
             self.__seen.add(event.src_path)
@@ -280,8 +255,8 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
 
 
 @pykern.pkconfig.parse_none
-def _summary_dir(value):
+def _archive_dir(value):
     if value is not None:
         return pykern.util.cfg_absolute_dir(value)
     # Needs to exist, because _SummaryWatcher checks it
-    return slactwin.config.dev_path("summary").ensure(dir=True)
+    return slactwin.config.dev_path("archive").ensure(dir=True)

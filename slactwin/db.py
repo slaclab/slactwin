@@ -80,10 +80,8 @@ def init_module():
                 run_summary_id="primary_id 2",
                 run_kind_id="primary_id",
                 created="datetime index",
-                run_end="datetime index",
                 archive_path="str 1024 unique",
                 snapshot_end="datetime index",
-                summary_path="str 1024 unique",
             ),
             run_value_name=PKDict(
                 run_value_name_id="primary_id 3",
@@ -93,8 +91,8 @@ def init_module():
                 unique=(("run_kind_id", "name"),),
             ),
             run_value_float=PKDict(
-                run_summary_id="primary_id primary_key",
-                run_value_name_id="primary_id primary_key",
+                run_summary_id="primary_id primary_key index",
+                run_value_name_id="primary_id primary_key index",
                 value="float 64 nullable",
                 index=(("run_summary_id", "run_value_name_id", "value"),),
             ),
