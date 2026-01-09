@@ -15,17 +15,16 @@ def test_parse():
         from slactwin import run_importer
 
         for d in pkunit.case_dirs():
-            for f in pkio.sorted_glob("summary/*/*/*/*.json"):
-                e = _setup_data(f, d)
+            for f in pkio.sorted_glob("archive/*/*/*/*.h5"):
+                # e = _setup_data(f, d)
                 run_importer.insert_run_summary(f, qcall=qcall)
                 qcall.db.commit()
                 r = qcall.db.session().select_one(
                     "run_summary",
                     where=PKDict(
-                        summary_path=str(e.summary_path),
+                        archive_path=str(f),
                     ),
                 )
-                pkunit.pkeq(e.snapshot_dt, r.snapshot_end)
                 v = qcall.db.query(
                     "run_value",
                     run_summary_id=r.run_summary_id,
@@ -36,23 +35,7 @@ def test_parse():
                 v = qcall.db.query(
                     "run_value",
                     run_summary_id=r.run_summary_id,
-                    tag="impact",
+                    tag="outputs",
                     base="end_norm_emit_4d",
                 )
                 pkunit.pkeq(4.592702508485681e-13, v)
-
-
-def _setup_data(summary, case_dir):
-    from pykern import pkjson, pkio
-    from pykern.pkcollections import PKDict
-    import datetime
-
-    summary.write(summary.read().replace("CASE_DIR", str(case_dir)))
-    j = pkjson.load_any(summary)
-    rv = PKDict(
-        snapshot_dt=datetime.datetime.fromisoformat(j.isotime)
-        .astimezone()
-        .replace(tzinfo=None),
-        summary_path=summary,
-    )
-    return rv

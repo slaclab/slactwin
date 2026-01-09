@@ -7,8 +7,6 @@
 import contextlib
 import pytest
 
-_NEW_SUMMARY_FILE = "lume-impact-live-demo-s3df-sc_inj-2024-06-19T07:03:29-07:00.json"
-
 
 @pytest.mark.asyncio
 async def test_notifier():
@@ -32,8 +30,8 @@ async def test_notifier():
         for s in pkio.sorted_glob(pkunit.data_dir().join("record1", "*")):
             shutil.copytree(
                 str(s),
-                str(run_importer.cfg().summary_dir.new(basename=s.basename)),
-                # summary_dir exists even though it is empty
+                str(run_importer.cfg().archive_dir.new(basename=s.basename)),
+                # archive_dir exists even though it is empty
                 dirs_exist_ok=True,
             )
         with _timeout("second"):
