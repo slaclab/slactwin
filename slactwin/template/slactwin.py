@@ -270,8 +270,8 @@ def _twin_implementation(run_summary_id):
         return _ImpactT(run_summary_id)
     if k.twin_name == "elegant":
         return _Elegant(run_summary_id)
-    if k.twin_name == "pytao":
-        return _PyTao(run_summary_id)
+    if k.twin_name == "bmad":
+        return _Bmad(run_summary_id)
     assert False, f"unhandled twin_name: {k.twin_name}"
 
 
@@ -376,7 +376,7 @@ class _Elegant:
         ]
 
 
-class _PyTao:
+class _Bmad:
 
     def __init__(self, run_summary_id):
         self.run_summary_id = run_summary_id
@@ -385,11 +385,11 @@ class _PyTao:
         res = PKDict()
         with h5py.File(_archive_path(self.run_summary_id), "r") as f:
             res.output = PKDict(stats=PKDict(), particles=PKDict())
-            for c in f["/pytao/stats"]:
-                res.output.stats[c] = f[f"/pytao/stats/{c}"][:]
-            res.lattice = pykern.pkjson.load_any(f["/pytao"].attrs["lattice"])
-            for p in f["/pytao/particles"]:
-                res.output.particles[p] = ParticleGroup(h5=f[f"/pytao/particles/{p}"])
+            for c in f["/bmad/stats"]:
+                res.output.stats[c] = f[f"/bmad/stats/{c}"][:]
+            res.lattice = pykern.pkjson.load_any(f["/bmad"].attrs["lattice"])
+            for p in f["/bmad/particles"]:
+                res.output.particles[p] = ParticleGroup(h5=f[f"/bmad/particles/{p}"])
         return res
 
     def stat_animation(self, frame_args):
@@ -462,8 +462,8 @@ class _PyTao:
             ["PV Name", "device_pv_name"],
             ["PV Value", "pv_value"],
             ["Field", "attribute"],
-            ["PyTao Value", "value"],  # TODO(pjm): units
-            ["PyTao Factor", "factor"],
+            ["Bmad Value", "value"],  # TODO(pjm): units
+            ["Bmad Factor", "factor"],
         ]
 
 

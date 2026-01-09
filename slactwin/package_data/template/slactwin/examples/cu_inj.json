@@ -6,9 +6,7 @@
             "colorMap": "viridis",
             "histogramBins": 50,
             "notes": "",
-            "plotName": "initial_particles",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "x",
             "y": "y"
         },
@@ -17,9 +15,7 @@
             "colorMap": "viridis",
             "histogramBins": 30,
             "notes": "",
-            "plotName": "final_particles",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "delta_z",
             "y": "energy"
         },
@@ -28,9 +24,7 @@
             "colorMap": "viridis",
             "histogramBins": 50,
             "notes": "",
-            "plotName": "YAG02",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "x",
             "y": "y"
         },
@@ -39,9 +33,7 @@
             "colorMap": "viridis",
             "histogramBins": 50,
             "notes": "",
-            "plotName": "YAG03",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "x",
             "y": "y"
         },
@@ -50,9 +42,7 @@
             "colorMap": "viridis",
             "histogramBins": 50,
             "notes": "",
-            "plotName": "OTR1",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "x",
             "y": "y"
         },
@@ -61,9 +51,7 @@
             "colorMap": "viridis",
             "histogramBins": 50,
             "notes": "",
-            "plotName": "OTR2",
             "plotType": "3d",
-            "runSummaryId": 43002,
             "x": "x",
             "y": "y"
         },
@@ -75,7 +63,7 @@
         "searchSettings": {
             "machine_name": "cu_inj",
             "searchStartTime": 60,
-            "searchStopTime": 1791059460,
+            "searchStopTime": 1893524400,
             "searchTerms": [
                 {
                     "column": "Select Search Field",
@@ -151,7 +139,6 @@
             "leftLimit": 2e-06,
             "notes": "",
             "rightLimit": 0,
-            "runSummaryId": 43002,
             "x": "mean_z",
             "y1": "norm_emit_x",
             "y1Position": "left",

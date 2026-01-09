@@ -30,6 +30,8 @@ _MODEL_NAME_TO_ELEGANT_FILE = PKDict(
     cu_hxr="LCLS2cu/LCLS2cuH.ele",
 )
 
+_TWIN_NAME = "elegant"
+
 
 def run(model_name, pv_filename, start_element_name, end_element_name, watches=""):
     # ex. slactwin simrun-elegant run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
@@ -195,12 +197,12 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     # TODO(pjm): fix hard-coded (parse from input file)
     isotime = "2024-06-19T00:23:17-07:00"
     isotime = slactwin.simrun_util.to_ca_isotime(isotime)
-    fn = f"elegant-{model_name}-{isotime}.h5"
+    fn = f"{_TWIN_NAME}-{model_name}-{isotime}.h5"
     e.archive(fn)
     with h5py.File(fn, "r+") as f:
         g = f.create_group("summary")
         g.attrs["isotime"] = isotime
-        g.attrs["twin_name"] = "elegant"
+        g.attrs["twin_name"] = _TWIN_NAME
         g.attrs["machine_name"] = model_name
         o = g.create_group("outputs")
         for n, v in _summary_outputs(e).items():
@@ -262,7 +264,7 @@ def _build_element_energy_map(e):
 
 
 def _elegant_defaults():
-    # TODO(pjm): within LCLS_LATTICE dir?
+    # TODO(pjm): within LCLS_LATTICE dir - or in slactwin?
     with open("/home/vagrant/save/bmad/cu_hxr/elegant/elegant-defaults.json", "r") as f:
         defaults = pykern.pkjson.load_any(f)
     # TODO(pjm): generate from ipynb in LCLS_LATTICE

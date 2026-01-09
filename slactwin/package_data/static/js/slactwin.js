@@ -487,8 +487,8 @@ SIREPO.app.directive('appFooter', function() {
                     if (t === 'elegant') {
                         return t;
                     }
-                    if (t === 'pytao') {
-                        return 'PyTao';
+                    if (t === 'bmad') {
+                        return 'Bmad';
                     }
                     throw new Error(`Unhandled twin_name: ${t}`);
                 }

@@ -243,6 +243,7 @@ class _DbQuery:
                     run_summary.c.run_kind_id == run_kind.c.run_kind_id,
                 ),
                 where=[
+                    run_kind.c.twin_name == twin_name,
                     run_kind.c.machine_name == machine_name,
                 ],
                 order_by=[],

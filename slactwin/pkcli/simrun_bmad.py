@@ -1,10 +1,8 @@
-"""Simple pytao runner
+"""Simple Bmad runner
 
 :copyright: Copyright (c) 2025 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
-
-# TODO(pjm): rename modules from pytao to bmad
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
@@ -42,9 +40,11 @@ _STAT_FIELDS = [
     "p0c",
 ]
 
+_TWIN_NAME = "bmad"
+
 
 def run(model_name, pv_filename, start_element_name, end_element_name, watches=""):
-    # ex. slactwin simrun-pytao run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
+    # ex. slactwin simrun-bmad run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
 
     def evaluate_tao(tao, cmds, pvinfo):
         res = []
@@ -97,7 +97,7 @@ def _summary(h5, model_name, isotime, tao, stats):
 
     g = h5.create_group("summary")
     g.attrs["isotime"] = isotime
-    g.attrs["twin_name"] = "pytao"
+    g.attrs["twin_name"] = _TWIN_NAME
     g.attrs["machine_name"] = model_name
     o = g.create_group("outputs")
     for n, v in _summary_outputs().items():
@@ -130,10 +130,10 @@ def _archive(model_name, tao, summary, watches):
     # TODO(pjm): fix hard-coded (parse from input file)
     isotime = "2024-06-19T00:23:17-07:00"
     isotime = slactwin.simrun_util.to_ca_isotime(isotime)
-    fn = f"pytao-{model_name}-{isotime}.h5"
+    fn = f"{_TWIN_NAME}-{model_name}-{isotime}.h5"
 
     with h5py.File(fn, "w") as f:
-        g = f.create_group("pytao")
+        g = f.create_group(_TWIN_NAME)
         gs = g.create_group("stats")
         _add_element_values(stats, gs)
         _add_bunch_params(stats, gs)
@@ -144,7 +144,7 @@ def _archive(model_name, tao, summary, watches):
                 if idx == 0
                 else "final_particles" if idx == 1 else n
             )
-            P.write(f, name=f"/pytao/particles/{name}")
+            P.write(f, name=f"/{_TWIN_NAME}/particles/{name}")
         g.attrs["lattice"] = pykern.pkjson.dump_pretty(_tao_lattice(tao, watches))
         _summary(f, model_name, isotime, tao, stats)
     pandas.DataFrame(summary).to_hdf(
