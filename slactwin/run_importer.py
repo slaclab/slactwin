@@ -242,16 +242,19 @@ class _SummaryWatcher(watchdog.events.FileSystemEventHandler):
         o.schedule(self, str(archive_dir), recursive=True)
         o.start()
 
-    def on_created(self, event):
+    # TODO(pjm): this was changed from on_created()
+    #  becuase the event can fire before the file is full written.
+    #  If on_created() is required, then it should verify the h5 file can be read
+    def on_moved(self, event):
         # Different thread so must share same loop as __process
         if (
             not event.is_directory
-            and event.event_type == "created"
-            and event.src_path.endswith(".h5")
-            and event.src_path not in self.__seen
+            and event.event_type == "moved"
+            and event.dest_path.endswith(".h5")
+            and event.dest_path not in self.__seen
         ):
-            self.__seen.add(event.src_path)
-            self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event.src_path)
+            self.__seen.add(event.dest_path)
+            self.__loop.call_soon_threadsafe(self.__queue.put_nowait, event.dest_path)
 
 
 @pykern.pkconfig.parse_none

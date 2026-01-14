@@ -10,6 +10,7 @@ from sirepo.template import template_common
 import asyncio
 import pykern.pkio
 import slactwin.template.slactwin
+import tornado.simple_httpclient
 
 
 def run_background(cfg_dir):

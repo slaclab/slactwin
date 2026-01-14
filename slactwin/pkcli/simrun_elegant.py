@@ -4,6 +4,7 @@
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
 
+from pmd_beamphysics import ParticleGroup
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 from rslume.elegant import Elegant
@@ -18,16 +19,17 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-import pandas
+import pmd_beamphysics
 import pykern.pkio
 import pykern.pkjson
+import pykern.pkresource
 import slactwin.simrun_util
 
 # TODO(pjm): move calc to util
 meV = 0.51099906
 
 _MODEL_NAME_TO_ELEGANT_FILE = PKDict(
-    cu_hxr="LCLS2cu/LCLS2cuH.ele",
+    cu_hxr="elegant/models/LCLS2cu/LCLS2cuH.ele",
 )
 
 _TWIN_NAME = "elegant"
@@ -62,18 +64,27 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                     return True
         return False
 
-    def _prepare_files():
-        # TODO(pjm): only use workdir for debugging, ensure lume removes default dir after running
+    def _prepare_elegant_input_files(path, beam_in=None):
+        # rslume-elegant requires all input files in one directory
+        for n in ("wakefields", "beams"):
+            for f in glob.glob(str(path.join("../..", n)) + "/*.*"):
+                s = pykern.pkio.py_path(f)
+                t = path.join(s.basename)
+                if not t.exists():
+                    t.mksymlinkto(s, absolute=False)
+
+        # TODO(pjm): not hardcoded
         workdir = "/home/vagrant/tmp/elegant"
         pykern.pkio.unchecked_remove(workdir)
         pykern.pkio.mkdir_parent(workdir)
-        assert "LCLS_LATTICE" in os.environ
-        p = pykern.pkio.py_path(os.environ["LCLS_LATTICE"])
-        # TODO(pjm): need a better solution than this, maybe simlink all files into a tmp directory
-        for d in ("wakefields", "beams"):
-            for f in glob.glob(str(p.join("elegant", d)) + "/*.*"):
-                pykern.pkio.py_path(f).copy(p.join("elegant", "models", "LCLS2cu"))
-        return workdir
+        if beam_in:
+            b = path.join(pykern.pkio.py_path(beam_in).basename + ".ssds")
+            pmd_beamphysics.interfaces.elegant.write_elegant(
+                ParticleGroup(beam_in),
+                str(b),
+            )
+            return workdir, b.basename
+        return workdir, None
 
     def _summary_outputs(e):
         return PKDict({f"end_{c}": e.output.stats[c][-1] for c in e.output.stats})
@@ -83,15 +94,20 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
             if el.name in defaults.fields:
                 el.pkupdate(defaults.fields[el.name])
 
-    defaults = _elegant_defaults()
-    workdir = _prepare_files()
+    defaults = _elegant_defaults(model_name)
+    elegant_in = pykern.pkio.py_path(
+        f"{os.environ['LCLS_LATTICE']}/{_MODEL_NAME_TO_ELEGANT_FILE[model_name]}"
+    )
+    workdir, beam_in = _prepare_elegant_input_files(
+        elegant_in.dirpath(), "/home/vagrant/tmp/cu_hxr-particles.h5"
+    )
     e = Elegant(
-        f"{os.environ['LCLS_LATTICE']}/elegant/models/{_MODEL_NAME_TO_ELEGANT_FILE[model_name]}",
+        elegant_in,
         workdir=workdir,
         use_temp_dir=False,
     )
     el_map = _unique_klystrons(e, defaults)
-    e.fix_deprecated_n_kicks()
+    e.fix_deprecated_elements()
     _update_fields(e, defaults)
     e.slice(start_element_name, end_element_name)
     e.set_watches(watches.split(":"))
@@ -101,6 +117,12 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     # TODO(pjm): command-line arg for overrides
     # override to real value here, not approx 135 from actual sim
     e.cmd("run_setup").p_central_mev = 134.9990329
+
+    if beam_in:
+        e.cmd("sdds_beam").pkupdate(
+            input=beam_in,
+            sample_interval=1,
+        )
 
     # TODO(pjm): only needed when testing the design lattice (no pvdata updates)
     # design twiss, different than elegant simulation default
@@ -194,9 +216,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     pykern.pkio.mkdir_parent(workdir)
     e.run()
 
-    # TODO(pjm): fix hard-coded (parse from input file)
-    isotime = "2024-06-19T00:23:17-07:00"
-    isotime = slactwin.simrun_util.to_ca_isotime(isotime)
+    isotime = slactwin.simrun_util.ca_isotime_from_filename(pv_filename)
     fn = f"{_TWIN_NAME}-{model_name}-{isotime}.h5"
     e.archive(fn)
     with h5py.File(fn, "r+") as f:
@@ -207,13 +227,8 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
         o = g.create_group("outputs")
         for n, v in _summary_outputs(e).items():
             o.attrs[n] = v
-    pandas.DataFrame(summary).to_hdf(
-        fn,
-        key="/summary/pv_mapping_dataframe",
-        mode="r+",
-        format="table",
-    )
-    _plot_twiss(e)
+    slactwin.simrun_util.summary_to_hdf(summary, fn)
+    # _plot_twiss(e)
 
 
 def _apply_overlay(E, value, config):
@@ -263,9 +278,8 @@ def _build_element_energy_map(e):
     return r
 
 
-def _elegant_defaults():
-    # TODO(pjm): within LCLS_LATTICE dir - or in slactwin?
-    with open("/home/vagrant/save/bmad/cu_hxr/elegant/elegant-defaults.json", "r") as f:
+def _elegant_defaults(model_name):
+    with open(pykern.pkresource.file_path(f"{model_name}-elegant.json"), "r") as f:
         defaults = pykern.pkjson.load_any(f)
     # TODO(pjm): generate from ipynb in LCLS_LATTICE
     defaults.overlays = PKDict(

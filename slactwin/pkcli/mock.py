@@ -7,8 +7,8 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.pkio
-import time
 import slactwin.pkcli
+import time
 
 
 # Needs a "." so purebasename works
@@ -38,9 +38,6 @@ class Commands(slactwin.pkcli.CommandsBase):
         for p in _queued(run_importer.cfg().archive_dir):
             time.sleep(period)
             t = p.new(basename=p.purebasename)
-            # TODO(pjm): copy may trigger the run_importer before the file has been completely written
-            #  "Unable to open file (truncated file"
-            #  should use move instead
-            p.copy(p.new(basename=p.purebasename))
-            p.remove()
+            # move file because copy could trigger event before file is fully written
+            p.move(t)
             pkdlog("{}", t)

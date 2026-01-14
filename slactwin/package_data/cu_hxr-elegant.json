@@ -1,0 +1,1730 @@
+{
+    "fields": {
+        "K21_1B": {
+            "phase": "K21_1_phase_deg + 90 + O_L1_phase_deg",
+            "volt": "K21_1_in_use * K21_1_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K21_1C": {
+            "phase": "K21_1_phase_deg + 90 + O_L1_phase_deg",
+            "volt": "K21_1_in_use * K21_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K21_1D": {
+            "phase": "K21_1_phase_deg + 90 + O_L1_phase_deg",
+            "volt": "K21_1_in_use * K21_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K21_3B": {
+            "phase": "K21_3_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_3_in_use * K21_3_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K21_3C": {
+            "phase": "K21_3_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_3_in_use * K21_3_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K21_3D": {
+            "phase": "K21_3_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_3_in_use * K21_3_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K21_4A": {
+            "phase": "K21_4_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_4_in_use * K21_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_4B": {
+            "phase": "K21_4_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_4_in_use * K21_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_4C": {
+            "phase": "K21_4_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_4_in_use * K21_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_4D": {
+            "phase": "K21_4_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_4_in_use * K21_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_5A": {
+            "phase": "K21_5_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_5_in_use * K21_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_5B": {
+            "phase": "K21_5_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_5_in_use * K21_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_5C": {
+            "phase": "K21_5_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_5_in_use * K21_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_5D": {
+            "phase": "K21_5_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_5_in_use * K21_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_6A": {
+            "phase": "K21_6_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_6_in_use * K21_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_6B": {
+            "phase": "K21_6_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_6_in_use * K21_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_6C": {
+            "phase": "K21_6_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_6_in_use * K21_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_6D": {
+            "phase": "K21_6_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_6_in_use * K21_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_7A": {
+            "phase": "K21_7_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_7_in_use * K21_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_7B": {
+            "phase": "K21_7_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_7_in_use * K21_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_7C": {
+            "phase": "K21_7_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_7_in_use * K21_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_7D": {
+            "phase": "K21_7_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_7_in_use * K21_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_8A": {
+            "phase": "K21_8_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_8_in_use * K21_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_8B": {
+            "phase": "K21_8_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_8_in_use * K21_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_8C": {
+            "phase": "K21_8_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_8_in_use * K21_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K21_8D": {
+            "phase": "K21_8_phase_deg + 90 + O_L2_phase_deg + SBST_21_phase_deg",
+            "volt": "K21_8_in_use * K21_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_1A": {
+            "phase": "K22_1_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_1_in_use * K22_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_1B": {
+            "phase": "K22_1_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_1_in_use * K22_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_1C": {
+            "phase": "K22_1_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_1_in_use * K22_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_1D": {
+            "phase": "K22_1_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_1_in_use * K22_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_2A": {
+            "phase": "K22_2_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_2_in_use * K22_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_2B": {
+            "phase": "K22_2_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_2_in_use * K22_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_2C": {
+            "phase": "K22_2_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_2_in_use * K22_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_2D": {
+            "phase": "K22_2_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_2_in_use * K22_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_3A": {
+            "phase": "K22_3_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_3_in_use * K22_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_3B": {
+            "phase": "K22_3_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_3_in_use * K22_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_3C": {
+            "phase": "K22_3_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_3_in_use * K22_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_3D": {
+            "phase": "K22_3_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_3_in_use * K22_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_4A": {
+            "phase": "K22_4_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_4_in_use * K22_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_4B": {
+            "phase": "K22_4_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_4_in_use * K22_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_4C": {
+            "phase": "K22_4_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_4_in_use * K22_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_4D": {
+            "phase": "K22_4_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_4_in_use * K22_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_5A": {
+            "phase": "K22_5_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_5_in_use * K22_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_5B": {
+            "phase": "K22_5_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_5_in_use * K22_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_5C": {
+            "phase": "K22_5_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_5_in_use * K22_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_5D": {
+            "phase": "K22_5_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_5_in_use * K22_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_6A": {
+            "phase": "K22_6_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_6_in_use * K22_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_6B": {
+            "phase": "K22_6_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_6_in_use * K22_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_6C": {
+            "phase": "K22_6_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_6_in_use * K22_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_6D": {
+            "phase": "K22_6_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_6_in_use * K22_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_7A": {
+            "phase": "K22_7_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_7_in_use * K22_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_7B": {
+            "phase": "K22_7_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_7_in_use * K22_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_7C": {
+            "phase": "K22_7_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_7_in_use * K22_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_7D": {
+            "phase": "K22_7_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_7_in_use * K22_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_8A": {
+            "phase": "K22_8_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_8_in_use * K22_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_8B": {
+            "phase": "K22_8_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_8_in_use * K22_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_8C": {
+            "phase": "K22_8_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_8_in_use * K22_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K22_8D": {
+            "phase": "K22_8_phase_deg + 90 + O_L2_phase_deg + SBST_22_phase_deg",
+            "volt": "K22_8_in_use * K22_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_1A": {
+            "phase": "K23_1_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_1_in_use * K23_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_1B": {
+            "phase": "K23_1_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_1_in_use * K23_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_1C": {
+            "phase": "K23_1_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_1_in_use * K23_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_1D": {
+            "phase": "K23_1_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_1_in_use * K23_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_2A": {
+            "phase": "K23_2_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_2_in_use * K23_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_2B": {
+            "phase": "K23_2_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_2_in_use * K23_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_2C": {
+            "phase": "K23_2_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_2_in_use * K23_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_2D": {
+            "phase": "K23_2_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_2_in_use * K23_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_3A": {
+            "phase": "K23_3_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_3_in_use * K23_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_3B": {
+            "phase": "K23_3_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_3_in_use * K23_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_3C": {
+            "phase": "K23_3_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_3_in_use * K23_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_3D": {
+            "phase": "K23_3_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_3_in_use * K23_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_4A": {
+            "phase": "K23_4_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_4_in_use * K23_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_4B": {
+            "phase": "K23_4_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_4_in_use * K23_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_4C": {
+            "phase": "K23_4_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_4_in_use * K23_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_4D": {
+            "phase": "K23_4_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_4_in_use * K23_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_5A": {
+            "phase": "K23_5_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_5_in_use * K23_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_5B": {
+            "phase": "K23_5_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_5_in_use * K23_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_5C": {
+            "phase": "K23_5_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_5_in_use * K23_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_5D": {
+            "phase": "K23_5_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_5_in_use * K23_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_6A": {
+            "phase": "K23_6_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_6_in_use * K23_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_6B": {
+            "phase": "K23_6_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_6_in_use * K23_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_6C": {
+            "phase": "K23_6_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_6_in_use * K23_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_6D": {
+            "phase": "K23_6_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_6_in_use * K23_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_7A": {
+            "phase": "K23_7_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_7_in_use * K23_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_7B": {
+            "phase": "K23_7_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_7_in_use * K23_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_7C": {
+            "phase": "K23_7_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_7_in_use * K23_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_7D": {
+            "phase": "K23_7_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_7_in_use * K23_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_8A": {
+            "phase": "K23_8_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_8_in_use * K23_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_8B": {
+            "phase": "K23_8_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_8_in_use * K23_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_8C": {
+            "phase": "K23_8_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_8_in_use * K23_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K23_8D": {
+            "phase": "K23_8_phase_deg + 90 + O_L2_phase_deg + SBST_23_phase_deg",
+            "volt": "K23_8_in_use * K23_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_1A": {
+            "phase": "K24_1_phase_deg + 90",
+            "volt": "K24_1_in_use * K24_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_1B": {
+            "phase": "K24_1_phase_deg + 90",
+            "volt": "K24_1_in_use * K24_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_1C": {
+            "phase": "K24_1_phase_deg + 90",
+            "volt": "K24_1_in_use * K24_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_1D": {
+            "phase": "K24_1_phase_deg + 90",
+            "volt": "K24_1_in_use * K24_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_2A": {
+            "phase": "K24_2_phase_deg + 90",
+            "volt": "K24_2_in_use * K24_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_2B": {
+            "phase": "K24_2_phase_deg + 90",
+            "volt": "K24_2_in_use * K24_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_2C": {
+            "phase": "K24_2_phase_deg + 90",
+            "volt": "K24_2_in_use * K24_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_2D": {
+            "phase": "K24_2_phase_deg + 90",
+            "volt": "K24_2_in_use * K24_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_3A": {
+            "phase": "K24_3_phase_deg + 90",
+            "volt": "K24_3_in_use * K24_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_3B": {
+            "phase": "K24_3_phase_deg + 90",
+            "volt": "K24_3_in_use * K24_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_3C": {
+            "phase": "K24_3_phase_deg + 90",
+            "volt": "K24_3_in_use * K24_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_3D": {
+            "phase": "K24_3_phase_deg + 90",
+            "volt": "K24_3_in_use * K24_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_4A": {
+            "phase": "K24_4_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_4_in_use * K24_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_4B": {
+            "phase": "K24_4_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_4_in_use * K24_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_4C": {
+            "phase": "K24_4_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_4_in_use * K24_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_4D": {
+            "phase": "K24_4_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_4_in_use * K24_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_5A": {
+            "phase": "K24_5_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_5_in_use * K24_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_5B": {
+            "phase": "K24_5_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_5_in_use * K24_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_5C": {
+            "phase": "K24_5_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_5_in_use * K24_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_5D": {
+            "phase": "K24_5_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_5_in_use * K24_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_6A": {
+            "phase": "K24_6_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_6_in_use * K24_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_6B": {
+            "phase": "K24_6_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_6_in_use * K24_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_6C": {
+            "phase": "K24_6_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_6_in_use * K24_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K24_6D": {
+            "phase": "K24_6_phase_deg + 90 + O_L2_phase_deg + SBST_24_phase_deg",
+            "volt": "K24_6_in_use * K24_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_1A": {
+            "phase": "K25_1_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_1_in_use * K25_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_1B": {
+            "phase": "K25_1_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_1_in_use * K25_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_1D": {
+            "phase": "K25_1_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_1_in_use * K25_1_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K25_2A": {
+            "phase": "K25_2_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_2_in_use * K25_2_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_2B": {
+            "phase": "K25_2_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_2_in_use * K25_2_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_2C": {
+            "phase": "K25_2_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_2_in_use * K25_2_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K25_3A": {
+            "phase": "K25_3_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_3_in_use * K25_3_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_3B": {
+            "phase": "K25_3_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_3_in_use * K25_3_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K25_3C": {
+            "phase": "K25_3_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_3_in_use * K25_3_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K25_4A": {
+            "phase": "K25_4_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_4_in_use * K25_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_4B": {
+            "phase": "K25_4_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_4_in_use * K25_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_4C": {
+            "phase": "K25_4_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_4_in_use * K25_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_4D": {
+            "phase": "K25_4_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_4_in_use * K25_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_5A": {
+            "phase": "K25_5_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_5_in_use * K25_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_5B": {
+            "phase": "K25_5_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_5_in_use * K25_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_5C": {
+            "phase": "K25_5_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_5_in_use * K25_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_5D": {
+            "phase": "K25_5_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_5_in_use * K25_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_6A": {
+            "phase": "K25_6_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_6_in_use * K25_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_6B": {
+            "phase": "K25_6_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_6_in_use * K25_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_6C": {
+            "phase": "K25_6_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_6_in_use * K25_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_6D": {
+            "phase": "K25_6_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_6_in_use * K25_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_7A": {
+            "phase": "K25_7_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_7_in_use * K25_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_7B": {
+            "phase": "K25_7_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_7_in_use * K25_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_7C": {
+            "phase": "K25_7_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_7_in_use * K25_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_7D": {
+            "phase": "K25_7_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_7_in_use * K25_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_8A": {
+            "phase": "K25_8_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_8_in_use * K25_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_8B": {
+            "phase": "K25_8_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_8_in_use * K25_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_8C": {
+            "phase": "K25_8_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_8_in_use * K25_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K25_8D": {
+            "phase": "K25_8_phase_deg + 90 + O_L3_phase_deg + SBST_25_phase_deg",
+            "volt": "K25_8_in_use * K25_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_1A": {
+            "phase": "K26_1_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_1_in_use * K26_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_1B": {
+            "phase": "K26_1_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_1_in_use * K26_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_1C": {
+            "phase": "K26_1_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_1_in_use * K26_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_1D": {
+            "phase": "K26_1_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_1_in_use * K26_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_2A": {
+            "phase": "K26_2_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_2_in_use * K26_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_2B": {
+            "phase": "K26_2_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_2_in_use * K26_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_2C": {
+            "phase": "K26_2_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_2_in_use * K26_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_2D": {
+            "phase": "K26_2_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_2_in_use * K26_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_3A": {
+            "phase": "K26_3_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_3_in_use * K26_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_3B": {
+            "phase": "K26_3_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_3_in_use * K26_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_3C": {
+            "phase": "K26_3_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_3_in_use * K26_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_3D": {
+            "phase": "K26_3_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_3_in_use * K26_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_4A": {
+            "phase": "K26_4_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_4_in_use * K26_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_4B": {
+            "phase": "K26_4_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_4_in_use * K26_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_4C": {
+            "phase": "K26_4_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_4_in_use * K26_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_4D": {
+            "phase": "K26_4_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_4_in_use * K26_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_5A": {
+            "phase": "K26_5_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_5_in_use * K26_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_5B": {
+            "phase": "K26_5_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_5_in_use * K26_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_5C": {
+            "phase": "K26_5_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_5_in_use * K26_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_5D": {
+            "phase": "K26_5_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_5_in_use * K26_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_6A": {
+            "phase": "K26_6_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_6_in_use * K26_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_6B": {
+            "phase": "K26_6_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_6_in_use * K26_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_6C": {
+            "phase": "K26_6_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_6_in_use * K26_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_6D": {
+            "phase": "K26_6_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_6_in_use * K26_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_7A": {
+            "phase": "K26_7_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_7_in_use * K26_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_7B": {
+            "phase": "K26_7_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_7_in_use * K26_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_7C": {
+            "phase": "K26_7_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_7_in_use * K26_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_7D": {
+            "phase": "K26_7_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_7_in_use * K26_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_8A": {
+            "phase": "K26_8_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_8_in_use * K26_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_8B": {
+            "phase": "K26_8_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_8_in_use * K26_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_8C": {
+            "phase": "K26_8_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_8_in_use * K26_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K26_8D": {
+            "phase": "K26_8_phase_deg + 90 + O_L3_phase_deg + SBST_26_phase_deg",
+            "volt": "K26_8_in_use * K26_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_1A": {
+            "phase": "K27_1_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_1_in_use * K27_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_1B": {
+            "phase": "K27_1_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_1_in_use * K27_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_1C": {
+            "phase": "K27_1_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_1_in_use * K27_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_1D": {
+            "phase": "K27_1_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_1_in_use * K27_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_2A": {
+            "phase": "K27_2_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_2_in_use * K27_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_2B": {
+            "phase": "K27_2_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_2_in_use * K27_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_2C": {
+            "phase": "K27_2_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_2_in_use * K27_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_2D": {
+            "phase": "K27_2_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_2_in_use * K27_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_3A": {
+            "phase": "K27_3_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_3_in_use * K27_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_3B": {
+            "phase": "K27_3_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_3_in_use * K27_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_3C": {
+            "phase": "K27_3_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_3_in_use * K27_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_3D": {
+            "phase": "K27_3_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_3_in_use * K27_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_4A": {
+            "phase": "K27_4_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_4_in_use * K27_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_4B": {
+            "phase": "K27_4_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_4_in_use * K27_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_4C": {
+            "phase": "K27_4_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_4_in_use * K27_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_4D": {
+            "phase": "K27_4_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_4_in_use * K27_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_5A": {
+            "phase": "K27_5_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_5_in_use * K27_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_5B": {
+            "phase": "K27_5_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_5_in_use * K27_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_5C": {
+            "phase": "K27_5_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_5_in_use * K27_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_5D": {
+            "phase": "K27_5_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_5_in_use * K27_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_6A": {
+            "phase": "K27_6_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_6_in_use * K27_6_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K27_6B": {
+            "phase": "K27_6_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_6_in_use * K27_6_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K27_6C": {
+            "phase": "K27_6_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_6_in_use * K27_6_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K27_7A": {
+            "phase": "K27_7_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_7_in_use * K27_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_7B": {
+            "phase": "K27_7_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_7_in_use * K27_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_7C": {
+            "phase": "K27_7_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_7_in_use * K27_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_7D": {
+            "phase": "K27_7_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_7_in_use * K27_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_8A": {
+            "phase": "K27_8_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_8_in_use * K27_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_8B": {
+            "phase": "K27_8_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_8_in_use * K27_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_8C": {
+            "phase": "K27_8_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_8_in_use * K27_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K27_8D": {
+            "phase": "K27_8_phase_deg + 90 + O_L3_phase_deg + SBST_27_phase_deg",
+            "volt": "K27_8_in_use * K27_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_1A": {
+            "phase": "K28_1_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_1_in_use * K28_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_1B": {
+            "phase": "K28_1_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_1_in_use * K28_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_1C": {
+            "phase": "K28_1_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_1_in_use * K28_1_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K28_2A": {
+            "phase": "K28_2_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_2_in_use * K28_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_2B": {
+            "phase": "K28_2_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_2_in_use * K28_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_2C": {
+            "phase": "K28_2_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_2_in_use * K28_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_2D": {
+            "phase": "K28_2_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_2_in_use * K28_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_3A": {
+            "phase": "K28_3_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_3_in_use * K28_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_3B": {
+            "phase": "K28_3_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_3_in_use * K28_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_3C": {
+            "phase": "K28_3_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_3_in_use * K28_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_3D": {
+            "phase": "K28_3_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_3_in_use * K28_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_4A": {
+            "phase": "K28_4_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_4_in_use * K28_4_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_4B": {
+            "phase": "K28_4_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_4_in_use * K28_4_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_4C": {
+            "phase": "K28_4_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_4_in_use * K28_4_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K28_5A": {
+            "phase": "K28_5_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_5_in_use * K28_5_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_5B": {
+            "phase": "K28_5_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_5_in_use * K28_5_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_5C": {
+            "phase": "K28_5_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_5_in_use * K28_5_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K28_6A": {
+            "phase": "K28_6_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_6_in_use * K28_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_6B": {
+            "phase": "K28_6_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_6_in_use * K28_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_6C": {
+            "phase": "K28_6_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_6_in_use * K28_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_6D": {
+            "phase": "K28_6_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_6_in_use * K28_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_7A": {
+            "phase": "K28_7_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_7_in_use * K28_7_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_7B": {
+            "phase": "K28_7_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_7_in_use * K28_7_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K28_7C": {
+            "phase": "K28_7_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_7_in_use * K28_7_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K28_8A": {
+            "phase": "K28_8_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_8_in_use * K28_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_8B": {
+            "phase": "K28_8_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_8_in_use * K28_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_8C": {
+            "phase": "K28_8_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_8_in_use * K28_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K28_8D": {
+            "phase": "K28_8_phase_deg + 90 + O_L3_phase_deg + SBST_28_phase_deg",
+            "volt": "K28_8_in_use * K28_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_1A": {
+            "phase": "K29_1_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_1_in_use * K29_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_1B": {
+            "phase": "K29_1_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_1_in_use * K29_1_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_1C": {
+            "phase": "K29_1_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_1_in_use * K29_1_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K29_2A": {
+            "phase": "K29_2_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_2_in_use * K29_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_2B": {
+            "phase": "K29_2_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_2_in_use * K29_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_2C": {
+            "phase": "K29_2_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_2_in_use * K29_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_2D": {
+            "phase": "K29_2_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_2_in_use * K29_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_3A": {
+            "phase": "K29_3_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_3_in_use * K29_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_3B": {
+            "phase": "K29_3_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_3_in_use * K29_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_3C": {
+            "phase": "K29_3_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_3_in_use * K29_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_3D": {
+            "phase": "K29_3_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_3_in_use * K29_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_4A": {
+            "phase": "K29_4_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_4_in_use * K29_4_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_4B": {
+            "phase": "K29_4_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_4_in_use * K29_4_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_4C": {
+            "phase": "K29_4_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_4_in_use * K29_4_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K29_5A": {
+            "phase": "K29_5_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_5_in_use * K29_5_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_5B": {
+            "phase": "K29_5_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_5_in_use * K29_5_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K29_5C": {
+            "phase": "K29_5_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_5_in_use * K29_5_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "K29_6A": {
+            "phase": "K29_6_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_6_in_use * K29_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_6B": {
+            "phase": "K29_6_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_6_in_use * K29_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_6C": {
+            "phase": "K29_6_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_6_in_use * K29_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_6D": {
+            "phase": "K29_6_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_6_in_use * K29_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_7A": {
+            "phase": "K29_7_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_7_in_use * K29_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_7B": {
+            "phase": "K29_7_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_7_in_use * K29_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_7C": {
+            "phase": "K29_7_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_7_in_use * K29_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_7D": {
+            "phase": "K29_7_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_7_in_use * K29_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_8A": {
+            "phase": "K29_8_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_8_in_use * K29_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_8B": {
+            "phase": "K29_8_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_8_in_use * K29_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_8C": {
+            "phase": "K29_8_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_8_in_use * K29_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K29_8D": {
+            "phase": "K29_8_phase_deg + 90 + SBST_29_phase_deg",
+            "volt": "K29_8_in_use * K29_8_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_1A": {
+            "phase": "K30_1_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_1_in_use * K30_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_1B": {
+            "phase": "K30_1_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_1_in_use * K30_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_1C": {
+            "phase": "K30_1_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_1_in_use * K30_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_1D": {
+            "phase": "K30_1_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_1_in_use * K30_1_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_2A": {
+            "phase": "K30_2_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_2_in_use * K30_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_2B": {
+            "phase": "K30_2_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_2_in_use * K30_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_2C": {
+            "phase": "K30_2_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_2_in_use * K30_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_2D": {
+            "phase": "K30_2_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_2_in_use * K30_2_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_3A": {
+            "phase": "K30_3_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_3_in_use * K30_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_3B": {
+            "phase": "K30_3_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_3_in_use * K30_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_3C": {
+            "phase": "K30_3_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_3_in_use * K30_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_3D": {
+            "phase": "K30_3_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_3_in_use * K30_3_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_4A": {
+            "phase": "K30_4_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_4_in_use * K30_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_4B": {
+            "phase": "K30_4_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_4_in_use * K30_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_4C": {
+            "phase": "K30_4_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_4_in_use * K30_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_4D": {
+            "phase": "K30_4_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_4_in_use * K30_4_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_5A": {
+            "phase": "K30_5_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_5_in_use * K30_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_5B": {
+            "phase": "K30_5_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_5_in_use * K30_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_5C": {
+            "phase": "K30_5_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_5_in_use * K30_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_5D": {
+            "phase": "K30_5_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_5_in_use * K30_5_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_6A": {
+            "phase": "K30_6_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_6_in_use * K30_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_6B": {
+            "phase": "K30_6_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_6_in_use * K30_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_6C": {
+            "phase": "K30_6_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_6_in_use * K30_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_6D": {
+            "phase": "K30_6_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_6_in_use * K30_6_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_7A": {
+            "phase": "K30_7_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_7_in_use * K30_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_7B": {
+            "phase": "K30_7_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_7_in_use * K30_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_7C": {
+            "phase": "K30_7_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_7_in_use * K30_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_7D": {
+            "phase": "K30_7_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_7_in_use * K30_7_ENLD_MeV * 1e6 * 0.25"
+        },
+        "K30_8A": {
+            "phase": "K30_8_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_8_in_use * K30_8_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K30_8B": {
+            "phase": "K30_8_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_8_in_use * K30_8_ENLD_MeV * 1e6 * 0.2928932188134525"
+        },
+        "K30_8C": {
+            "phase": "K30_8_phase_deg + 90 + SBST_30_phase_deg",
+            "volt": "K30_8_in_use * K30_8_ENLD_MeV * 1e6 * 0.4142135623730951"
+        },
+        "L1X": {
+            "phase": "K21_2_phase_deg + 90",
+            "volt": "K21_2_in_use * K21_2_ENLD_MeV * 1e6 / 2"
+        }
+    },
+    "klystrons": [
+        "K21_1B",
+        "K21_1C",
+        "K21_1D",
+        "L1X",
+        "K21_3B",
+        "K21_3C",
+        "K21_3D",
+        "K21_4A",
+        "K21_4B",
+        "K21_4C",
+        "K21_4D",
+        "K21_5A",
+        "K21_5B",
+        "K21_5C",
+        "K21_5D",
+        "K21_6A",
+        "K21_6B",
+        "K21_6C",
+        "K21_6D",
+        "K21_7A",
+        "K21_7B",
+        "K21_7C",
+        "K21_7D",
+        "K21_8A",
+        "K21_8B",
+        "K21_8C",
+        "K21_8D",
+        "K22_1A",
+        "K22_1B",
+        "K22_1C",
+        "K22_1D",
+        "K22_2A",
+        "K22_2B",
+        "K22_2C",
+        "K22_2D",
+        "K22_3A",
+        "K22_3B",
+        "K22_3C",
+        "K22_3D",
+        "K22_4A",
+        "K22_4B",
+        "K22_4C",
+        "K22_4D",
+        "K22_5A",
+        "K22_5B",
+        "K22_5C",
+        "K22_5D",
+        "K22_6A",
+        "K22_6B",
+        "K22_6C",
+        "K22_6D",
+        "K22_7A",
+        "K22_7B",
+        "K22_7C",
+        "K22_7D",
+        "K22_8A",
+        "K22_8B",
+        "K22_8C",
+        "K22_8D",
+        "K23_1A",
+        "K23_1B",
+        "K23_1C",
+        "K23_1D",
+        "K23_2A",
+        "K23_2B",
+        "K23_2C",
+        "K23_2D",
+        "K23_3A",
+        "K23_3B",
+        "K23_3C",
+        "K23_3D",
+        "K23_4A",
+        "K23_4B",
+        "K23_4C",
+        "K23_4D",
+        "K23_5A",
+        "K23_5B",
+        "K23_5C",
+        "K23_5D",
+        "K23_6A",
+        "K23_6B",
+        "K23_6C",
+        "K23_6D",
+        "K23_7A",
+        "K23_7B",
+        "K23_7C",
+        "K23_7D",
+        "K23_8A",
+        "K23_8B",
+        "K23_8C",
+        "K23_8D",
+        "K24_1A",
+        "K24_1B",
+        "K24_1C",
+        "K24_1D",
+        "K24_2A",
+        "K24_2B",
+        "K24_2C",
+        "K24_2D",
+        "K24_3A",
+        "K24_3B",
+        "K24_3C",
+        "K24_3D",
+        "K24_4A",
+        "K24_4B",
+        "K24_4C",
+        "K24_4D",
+        "K24_5A",
+        "K24_5B",
+        "K24_5C",
+        "K24_5D",
+        "K24_6A",
+        "K24_6B",
+        "K24_6C",
+        "K24_6D",
+        "K25_1A",
+        "K25_1B",
+        "K25_1D",
+        "K25_2A",
+        "K25_2B",
+        "K25_2C",
+        "K25_3A",
+        "K25_3B",
+        "K25_3C",
+        "K25_4A",
+        "K25_4B",
+        "K25_4C",
+        "K25_4D",
+        "K25_5A",
+        "K25_5B",
+        "K25_5C",
+        "K25_5D",
+        "K25_6A",
+        "K25_6B",
+        "K25_6C",
+        "K25_6D",
+        "K25_7A",
+        "K25_7B",
+        "K25_7C",
+        "K25_7D",
+        "K25_8A",
+        "K25_8B",
+        "K25_8C",
+        "K25_8D",
+        "K26_1A",
+        "K26_1B",
+        "K26_1C",
+        "K26_1D",
+        "K26_2A",
+        "K26_2B",
+        "K26_2C",
+        "K26_2D",
+        "K26_3A",
+        "K26_3B",
+        "K26_3C",
+        "K26_3D",
+        "K26_4A",
+        "K26_4B",
+        "K26_4C",
+        "K26_4D",
+        "K26_5A",
+        "K26_5B",
+        "K26_5C",
+        "K26_5D",
+        "K26_6A",
+        "K26_6B",
+        "K26_6C",
+        "K26_6D",
+        "K26_7A",
+        "K26_7B",
+        "K26_7C",
+        "K26_7D",
+        "K26_8A",
+        "K26_8B",
+        "K26_8C",
+        "K26_8D",
+        "K27_1A",
+        "K27_1B",
+        "K27_1C",
+        "K27_1D",
+        "K27_2A",
+        "K27_2B",
+        "K27_2C",
+        "K27_2D",
+        "K27_3A",
+        "K27_3B",
+        "K27_3C",
+        "K27_3D",
+        "K27_4A",
+        "K27_4B",
+        "K27_4C",
+        "K27_4D",
+        "K27_5A",
+        "K27_5B",
+        "K27_5C",
+        "K27_5D",
+        "K27_6A",
+        "K27_6B",
+        "K27_6C",
+        "K27_7A",
+        "K27_7B",
+        "K27_7C",
+        "K27_7D",
+        "K27_8A",
+        "K27_8B",
+        "K27_8C",
+        "K27_8D",
+        "K28_1A",
+        "K28_1B",
+        "K28_1C",
+        "K28_2A",
+        "K28_2B",
+        "K28_2C",
+        "K28_2D",
+        "K28_3A",
+        "K28_3B",
+        "K28_3C",
+        "K28_3D",
+        "K28_4A",
+        "K28_4B",
+        "K28_4C",
+        "K28_5A",
+        "K28_5B",
+        "K28_5C",
+        "K28_6A",
+        "K28_6B",
+        "K28_6C",
+        "K28_6D",
+        "K28_7A",
+        "K28_7B",
+        "K28_7C",
+        "K28_8A",
+        "K28_8B",
+        "K28_8C",
+        "K28_8D",
+        "K29_1A",
+        "K29_1B",
+        "K29_1C",
+        "K29_2A",
+        "K29_2B",
+        "K29_2C",
+        "K29_2D",
+        "K29_3A",
+        "K29_3B",
+        "K29_3C",
+        "K29_3D",
+        "K29_4A",
+        "K29_4B",
+        "K29_4C",
+        "K29_5A",
+        "K29_5B",
+        "K29_5C",
+        "K29_6A",
+        "K29_6B",
+        "K29_6C",
+        "K29_6D",
+        "K29_7A",
+        "K29_7B",
+        "K29_7C",
+        "K29_7D",
+        "K29_8A",
+        "K29_8B",
+        "K29_8C",
+        "K29_8D",
+        "K30_1A",
+        "K30_1B",
+        "K30_1C",
+        "K30_1D",
+        "K30_2A",
+        "K30_2B",
+        "K30_2C",
+        "K30_2D",
+        "K30_3A",
+        "K30_3B",
+        "K30_3C",
+        "K30_3D",
+        "K30_4A",
+        "K30_4B",
+        "K30_4C",
+        "K30_4D",
+        "K30_5A",
+        "K30_5B",
+        "K30_5C",
+        "K30_5D",
+        "K30_6A",
+        "K30_6B",
+        "K30_6C",
+        "K30_6D",
+        "K30_7A",
+        "K30_7B",
+        "K30_7C",
+        "K30_7D",
+        "K30_8A",
+        "K30_8B",
+        "K30_8C"
+    ],
+    "vars": {
+        "K21_1_ENLD_MeV": 111.55620442640158,
+        "K21_1_in_use": 1,
+        "K21_1_phase_deg": 0,
+        "K21_2_ENLD_MeV": 20.0,
+        "K21_2_in_use": 1,
+        "K21_2_phase_deg": -160.0,
+        "K21_3_ENLD_MeV": 175.6593982965148,
+        "K21_3_in_use": 1,
+        "K21_3_phase_deg": 0,
+        "K21_4_ENLD_MeV": 205.79778632760198,
+        "K21_4_in_use": 1,
+        "K21_4_phase_deg": 0,
+        "K21_5_ENLD_MeV": 205.79778632760198,
+        "K21_5_in_use": 1,
+        "K21_5_phase_deg": 0,
+        "K21_6_ENLD_MeV": 205.79778632760198,
+        "K21_6_in_use": 1,
+        "K21_6_phase_deg": 0,
+        "K21_7_ENLD_MeV": 205.79778632760198,
+        "K21_7_in_use": 1,
+        "K21_7_phase_deg": 0,
+        "K21_8_ENLD_MeV": 205.79778632760198,
+        "K21_8_in_use": 1,
+        "K21_8_phase_deg": 0,
+        "K22_1_ENLD_MeV": 205.79778632760198,
+        "K22_1_in_use": 1,
+        "K22_1_phase_deg": 0,
+        "K22_2_ENLD_MeV": 205.79778632760198,
+        "K22_2_in_use": 1,
+        "K22_2_phase_deg": 0,
+        "K22_3_ENLD_MeV": 205.79778632760198,
+        "K22_3_in_use": 1,
+        "K22_3_phase_deg": 0,
+        "K22_4_ENLD_MeV": 205.79778632760198,
+        "K22_4_in_use": 1,
+        "K22_4_phase_deg": 0,
+        "K22_5_ENLD_MeV": 205.79778632760198,
+        "K22_5_in_use": 1,
+        "K22_5_phase_deg": 0,
+        "K22_6_ENLD_MeV": 205.79778632760198,
+        "K22_6_in_use": 1,
+        "K22_6_phase_deg": 0,
+        "K22_7_ENLD_MeV": 205.79778632760198,
+        "K22_7_in_use": 1,
+        "K22_7_phase_deg": 0,
+        "K22_8_ENLD_MeV": 205.79778632760198,
+        "K22_8_in_use": 1,
+        "K22_8_phase_deg": 0,
+        "K23_1_ENLD_MeV": 205.79778632760198,
+        "K23_1_in_use": 1,
+        "K23_1_phase_deg": 0,
+        "K23_2_ENLD_MeV": 205.79778632760198,
+        "K23_2_in_use": 1,
+        "K23_2_phase_deg": 0,
+        "K23_3_ENLD_MeV": 205.79778632760198,
+        "K23_3_in_use": 1,
+        "K23_3_phase_deg": 0,
+        "K23_4_ENLD_MeV": 205.79778632760198,
+        "K23_4_in_use": 1,
+        "K23_4_phase_deg": 0,
+        "K23_5_ENLD_MeV": 205.79778632760198,
+        "K23_5_in_use": 1,
+        "K23_5_phase_deg": 0,
+        "K23_6_ENLD_MeV": 205.79778632760198,
+        "K23_6_in_use": 1,
+        "K23_6_phase_deg": 0,
+        "K23_7_ENLD_MeV": 205.79778632760198,
+        "K23_7_in_use": 1,
+        "K23_7_phase_deg": 0,
+        "K23_8_ENLD_MeV": 205.79778632760198,
+        "K23_8_in_use": 1,
+        "K23_8_phase_deg": 0,
+        "K24_1_ENLD_MeV": 205.79778632760198,
+        "K24_1_in_use": 1,
+        "K24_1_phase_deg": -33.5,
+        "K24_2_ENLD_MeV": 205.79778632760198,
+        "K24_2_in_use": 1,
+        "K24_2_phase_deg": -33.5,
+        "K24_3_ENLD_MeV": 205.79778632760198,
+        "K24_3_in_use": 1,
+        "K24_3_phase_deg": -33.5,
+        "K24_4_ENLD_MeV": 205.79778632760198,
+        "K24_4_in_use": 1,
+        "K24_4_phase_deg": 0,
+        "K24_5_ENLD_MeV": 205.79778632760198,
+        "K24_5_in_use": 1,
+        "K24_5_phase_deg": 0,
+        "K24_6_ENLD_MeV": 205.79778632760198,
+        "K24_6_in_use": 1,
+        "K24_6_phase_deg": 0,
+        "K25_1_ENLD_MeV": 164.5598672236137,
+        "K25_1_in_use": 1,
+        "K25_1_phase_deg": 0,
+        "K25_2_ENLD_MeV": 164.5598672236137,
+        "K25_2_in_use": 1,
+        "K25_2_phase_deg": 0,
+        "K25_3_ENLD_MeV": 164.5598672236137,
+        "K25_3_in_use": 1,
+        "K25_3_phase_deg": 0,
+        "K25_4_ENLD_MeV": 192.7938767945544,
+        "K25_4_in_use": 1,
+        "K25_4_phase_deg": 0,
+        "K25_5_ENLD_MeV": 192.7938767945544,
+        "K25_5_in_use": 1,
+        "K25_5_phase_deg": 0,
+        "K25_6_ENLD_MeV": 192.7938767945544,
+        "K25_6_in_use": 1,
+        "K25_6_phase_deg": 0,
+        "K25_7_ENLD_MeV": 192.7938767945544,
+        "K25_7_in_use": 1,
+        "K25_7_phase_deg": 0,
+        "K25_8_ENLD_MeV": 192.7938767945544,
+        "K25_8_in_use": 1,
+        "K25_8_phase_deg": 0,
+        "K26_1_ENLD_MeV": 192.7938767945544,
+        "K26_1_in_use": 1,
+        "K26_1_phase_deg": 0,
+        "K26_2_ENLD_MeV": 192.7938767945544,
+        "K26_2_in_use": 1,
+        "K26_2_phase_deg": 0,
+        "K26_3_ENLD_MeV": 192.7938767945544,
+        "K26_3_in_use": 1,
+        "K26_3_phase_deg": 0,
+        "K26_4_ENLD_MeV": 192.7938767945544,
+        "K26_4_in_use": 1,
+        "K26_4_phase_deg": 0,
+        "K26_5_ENLD_MeV": 192.7938767945544,
+        "K26_5_in_use": 1,
+        "K26_5_phase_deg": 0,
+        "K26_6_ENLD_MeV": 192.7938767945544,
+        "K26_6_in_use": 1,
+        "K26_6_phase_deg": 0,
+        "K26_7_ENLD_MeV": 192.7938767945544,
+        "K26_7_in_use": 1,
+        "K26_7_phase_deg": 0,
+        "K26_8_ENLD_MeV": 192.7938767945544,
+        "K26_8_in_use": 1,
+        "K26_8_phase_deg": 0,
+        "K27_1_ENLD_MeV": 0.0,
+        "K27_1_in_use": 1,
+        "K27_1_phase_deg": 0,
+        "K27_2_ENLD_MeV": 0.0,
+        "K27_2_in_use": 1,
+        "K27_2_phase_deg": 0,
+        "K27_3_ENLD_MeV": 0.0,
+        "K27_3_in_use": 1,
+        "K27_3_phase_deg": 0,
+        "K27_4_ENLD_MeV": 0.0,
+        "K27_4_in_use": 1,
+        "K27_4_phase_deg": 0,
+        "K27_5_ENLD_MeV": 0.0,
+        "K27_5_in_use": 1,
+        "K27_5_phase_deg": 0,
+        "K27_6_ENLD_MeV": 0.0,
+        "K27_6_in_use": 1,
+        "K27_6_phase_deg": 0,
+        "K27_7_ENLD_MeV": 0.0,
+        "K27_7_in_use": 1,
+        "K27_7_phase_deg": 0,
+        "K27_8_ENLD_MeV": 0.0,
+        "K27_8_in_use": 1,
+        "K27_8_phase_deg": 0,
+        "K28_1_ENLD_MeV": 0.0,
+        "K28_1_in_use": 1,
+        "K28_1_phase_deg": 0,
+        "K28_2_ENLD_MeV": 0.0,
+        "K28_2_in_use": 1,
+        "K28_2_phase_deg": 0,
+        "K28_3_ENLD_MeV": 0.0,
+        "K28_3_in_use": 1,
+        "K28_3_phase_deg": 0,
+        "K28_4_ENLD_MeV": 0.0,
+        "K28_4_in_use": 1,
+        "K28_4_phase_deg": 0,
+        "K28_5_ENLD_MeV": 0.0,
+        "K28_5_in_use": 1,
+        "K28_5_phase_deg": 0,
+        "K28_6_ENLD_MeV": 0.0,
+        "K28_6_in_use": 1,
+        "K28_6_phase_deg": 0,
+        "K28_7_ENLD_MeV": 0.0,
+        "K28_7_in_use": 1,
+        "K28_7_phase_deg": 0,
+        "K28_8_ENLD_MeV": 0.0,
+        "K28_8_in_use": 1,
+        "K28_8_phase_deg": 0,
+        "K29_1_ENLD_MeV": 0.0,
+        "K29_1_in_use": 1,
+        "K29_1_phase_deg": 0.0,
+        "K29_2_ENLD_MeV": 0.0,
+        "K29_2_in_use": 1,
+        "K29_2_phase_deg": 0.0,
+        "K29_3_ENLD_MeV": 0.0,
+        "K29_3_in_use": 1,
+        "K29_3_phase_deg": 0.0,
+        "K29_4_ENLD_MeV": 0.0,
+        "K29_4_in_use": 1,
+        "K29_4_phase_deg": 0.0,
+        "K29_5_ENLD_MeV": 0.0,
+        "K29_5_in_use": 1,
+        "K29_5_phase_deg": 0.0,
+        "K29_6_ENLD_MeV": 0.0,
+        "K29_6_in_use": 1,
+        "K29_6_phase_deg": 0.0,
+        "K29_7_ENLD_MeV": 0.0,
+        "K29_7_in_use": 1,
+        "K29_7_phase_deg": 0.0,
+        "K29_8_ENLD_MeV": 0.0,
+        "K29_8_in_use": 1,
+        "K29_8_phase_deg": 0.0,
+        "K30_1_ENLD_MeV": 0.0,
+        "K30_1_in_use": 1,
+        "K30_1_phase_deg": 0.0,
+        "K30_2_ENLD_MeV": 0.0,
+        "K30_2_in_use": 1,
+        "K30_2_phase_deg": 0.0,
+        "K30_3_ENLD_MeV": 0.0,
+        "K30_3_in_use": 1,
+        "K30_3_phase_deg": 0.0,
+        "K30_4_ENLD_MeV": 0.0,
+        "K30_4_in_use": 1,
+        "K30_4_phase_deg": 0.0,
+        "K30_5_ENLD_MeV": 0.0,
+        "K30_5_in_use": 1,
+        "K30_5_phase_deg": 0.0,
+        "K30_6_ENLD_MeV": 0.0,
+        "K30_6_in_use": 1,
+        "K30_6_phase_deg": 0.0,
+        "K30_7_ENLD_MeV": 0.0,
+        "K30_7_in_use": 1,
+        "K30_7_phase_deg": 0.0,
+        "K30_8_ENLD_MeV": 0.0,
+        "K30_8_in_use": 1,
+        "K30_8_phase_deg": 0.0,
+        "O_L1_phase_deg": -21.5,
+        "O_L2_phase_deg": -33.5,
+        "O_L3_phase_deg": 0.0,
+        "SBST_21_phase_deg": 0,
+        "SBST_22_phase_deg": 0,
+        "SBST_23_phase_deg": 0,
+        "SBST_24_phase_deg": 0,
+        "SBST_25_phase_deg": 0,
+        "SBST_26_phase_deg": 0,
+        "SBST_27_phase_deg": 0,
+        "SBST_28_phase_deg": 0,
+        "SBST_29_phase_deg": 0,
+        "SBST_30_phase_deg": 0
+    }
+}

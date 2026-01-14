@@ -12,7 +12,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy
 import os
-import pandas
 import pmd_beamphysics
 import pykern.pkjson
 import re
@@ -79,7 +78,10 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
         f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
     )
     summary = evaluate_tao(tao, cmds, pvinfo)
+    isotime = slactwin.simrun_util.ca_isotime_from_filename(pv_filename)
     _archive(
+        f"{_TWIN_NAME}-{model_name}-{isotime}.h5",
+        isotime,
         model_name,
         tao,
         summary,
@@ -104,7 +106,7 @@ def _summary(h5, model_name, isotime, tao, stats):
         o.attrs[n] = v
 
 
-def _archive(model_name, tao, summary, watches):
+def _archive(filename, isotime, model_name, tao, summary, watches):
 
     def _add_bunch_params(res, group):
         b = [tao.bunch_params(i) for i in _tao_lat_list(tao, "ele.ix_ele")]
@@ -126,13 +128,7 @@ def _archive(model_name, tao, summary, watches):
             group.create_dataset(c, data=res[c])
 
     stats = PKDict()
-
-    # TODO(pjm): fix hard-coded (parse from input file)
-    isotime = "2024-06-19T00:23:17-07:00"
-    isotime = slactwin.simrun_util.to_ca_isotime(isotime)
-    fn = f"{_TWIN_NAME}-{model_name}-{isotime}.h5"
-
-    with h5py.File(fn, "w") as f:
+    with h5py.File(filename, "w") as f:
         g = f.create_group(_TWIN_NAME)
         gs = g.create_group("stats")
         _add_element_values(stats, gs)
@@ -147,12 +143,7 @@ def _archive(model_name, tao, summary, watches):
             P.write(f, name=f"/{_TWIN_NAME}/particles/{name}")
         g.attrs["lattice"] = pykern.pkjson.dump_pretty(_tao_lattice(tao, watches))
         _summary(f, model_name, isotime, tao, stats)
-    pandas.DataFrame(summary).to_hdf(
-        fn,
-        key="/summary/pv_mapping_dataframe",
-        mode="r+",
-        format="table",
-    )
+    slactwin.simrun_util.summary_to_hdf(summary, filename)
 
 
 # TODO(pjm): temporary for manual verification

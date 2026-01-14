@@ -9,6 +9,7 @@ from pykern.pkdebug import pkdc, pkdlog, pkdp
 import datetime
 import lcls_live.datamaps
 import numpy
+import pandas
 import re
 import zoneinfo
 
@@ -104,6 +105,13 @@ def build_commands(model_name, pvdata):
     ), pvinfo
 
 
+def ca_isotime_from_filename(filename):
+    m = re.search(r"(\d{4}-.*?)\.json", filename)
+    if not m:
+        raise AssertionError(f"failed to extract isotime from filename: {filename}")
+    return to_ca_isotime(m.group(1))
+
+
 def parse_element_name_from_cmd(cmd_str):
     m = re.match(r"^set ele (\w+)\s(.*?)\s=\s(.*?)$", cmd_str)
     return m.group(1) if m else None
@@ -119,6 +127,27 @@ def parse_cmd(cmd_str):
         return None
     m = re.match(r"set ele (\w+?)\s(.*?)\s=\s(.*?)$", cmd_str)
     return [m.group(1), m.group(2), m.group(3)] if m else None
+
+
+def summary_to_hdf(summary, archive_filename):
+    s = []
+    for r in summary:
+        if isinstance(r.pv_value, list):
+            for idx, v in enumerate(r.pv_value):
+                s.append(
+                    r.copy().pkupdate(
+                        device_pv_name=f"{r.device_pv_name}[{idx}]",
+                        pv_value=r.pv_value[idx],
+                    )
+                )
+        else:
+            s.append(r)
+    pandas.DataFrame(s).to_hdf(
+        archive_filename,
+        key="/summary/pv_mapping_dataframe",
+        mode="r+",
+        format="table",
+    )
 
 
 def to_ca_isotime(isotime):

@@ -198,13 +198,12 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
     };
 
     self.loadRun = ($scope) => {
-        const names = [];
         const runSummaryId = self.getRunSummaryId();
         if ($scope.runSummaryId && isModalVisible()) {
             // don't load a new plot if the modal is visible - the modal would automatically dismiss
             return;
         }
-        //TODO(pjm): related to the note below, a modal may be dismissed when
+        //TODO(pjm): a modal may be dismissed when
         // it is in a bad state (partially shown) and it doesn't clean up
         // the modal backdrop in that case.
         $('.modal-backdrop').remove();
@@ -215,30 +214,24 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
         for (const m in appState.models) {
             if (appState.models[m] && 'runSummaryId' in appState.models[m]) {
                 appState.models[m].runSummaryId = runSummaryId;
-                names.push(m);
+                appState.saveQuietly(m);
             }
         }
-        //TODO(pjm): there is a moment here when it waits for saveChanges
-        //  and then for the getFrame. If a modal editor is shown during that
-        //  period, it will get dismissed when the page updates at the end.
-        //  Could possibly show a "loading" icon and put a input blocker up
-        //  until the new data is displayed
-        appState.saveChanges(names, () => {
-            //TODO(pjm): sr-run-loaded only gets broadcast from summaryAnimation
-            if (panelState.isHidden('summaryAnimation')) {
-                panelState.toggleHidden('summaryAnimation');
+        //TODO(pjm): sr-run-loaded only gets broadcast if summaryAnimation is visible
+        if (panelState.isHidden('summaryAnimation')) {
+            panelState.toggleHidden('summaryAnimation');
+        }
+        frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
+            if (data.error) {
+                throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
             }
-            frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
-                if (data.error) {
-                    throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
-                }
-                frameCache.setFrameCount(1);
-                self.summary = data.summary;
-                self.particles = data.particles;
-                appState.models.externalLattice = data.lattice;
-                self.setValueList(appState.models.statAnimation, 'statAnimation', data.stat_columns);
-                $rootScope.$broadcast('sr-run-loaded');
-            });
+            frameCache.setFrameCount(1);
+            self.summary = data.summary;
+            self.particles = data.particles;
+            appState.models.externalLattice = data.lattice;
+            self.setValueList(appState.models.statAnimation, 'statAnimation', data.stat_columns);
+            $rootScope.$broadcast('sr-run-loaded');
+            panelState.waitForUI(() => appState.updateReports());
         });
     };
 

@@ -51,6 +51,7 @@ class _DbQuery:
         return PKDict(
             session.select_one(
                 sqlalchemy.select(run_summary).where(
+                    run_summary.c.run_kind_id == run_kind_id,
                     run_summary.c.snapshot_end
                     == sqlalchemy.select(
                         sqlalchemy.func.max(run_summary.c.snapshot_end)
