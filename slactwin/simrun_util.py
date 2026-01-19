@@ -7,15 +7,66 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import datetime
+import h5py
 import lcls_live.datamaps
 import numpy
 import pandas
+import pykern.pkio
 import re
 import zoneinfo
 
 # TODO(pjm): this is temporary to get quads working
 # remove 2: ("SLED Motor Not At Limit", 65) fault
 del lcls_live.klystron.dsta1_fault_map[2]
+
+
+class Archiver:
+    def __init__(self, pv_filename, twin_name, model_name):
+        year, month, day, isotime = ca_isotime_from_filename(pv_filename)
+        self.twin_name = twin_name
+        self.model_name = model_name
+        self.isotime = isotime
+        self.filename = f"{twin_name}-{model_name}-{isotime}.h5"
+        self.out_path = f"{year}/{month}/{day}/{self.filename}"
+
+    def archive_path(self, sim_dir):
+        self.path = pykern.pkio.py_path(sim_dir).join(self.filename)
+        return str(self.path)
+
+    def add_summary(self, pv_summary, outputs, out_dir=None):
+        # archive_path() must be called first
+        assert getattr(self, "path")
+        with h5py.File(str(self.path), "r+") as f:
+            g = f.create_group("summary")
+            g.attrs["isotime"] = self.isotime
+            g.attrs["twin_name"] = self.twin_name
+            g.attrs["machine_name"] = self.model_name
+            o = g.create_group("outputs")
+            for n, v in outputs.items():
+                o.attrs[n] = v
+        s = []
+        for r in pv_summary:
+            if isinstance(r.pv_value, list):
+                for idx, v in enumerate(r.pv_value):
+                    s.append(
+                        r.copy().pkupdate(
+                            device_pv_name=f"{r.device_pv_name}[{idx}]",
+                            pv_value=r.pv_value[idx],
+                        )
+                    )
+            else:
+                s.append(r)
+        pandas.DataFrame(s).to_hdf(
+            self.path,
+            key="/summary/pv_mapping_dataframe",
+            mode="r+",
+            format="table",
+        )
+        if out_dir:
+            p = pykern.pkio.py_path(f"{out_dir}/{self.out_path}")
+            pykern.pkio.mkdir_parent_only(p)
+            pkdp("moving results to: {}", p)
+            self.path.move(p)
 
 
 def beta_gamma_to_energy_gev(mass, values):
@@ -109,7 +160,8 @@ def ca_isotime_from_filename(filename):
     m = re.search(r"(\d{4}-.*?)\.json", filename)
     if not m:
         raise AssertionError(f"failed to extract isotime from filename: {filename}")
-    return to_ca_isotime(m.group(1))
+    d = to_ca_datetime(m.group(1))
+    return str(d.year), str(d.month).zfill(2), str(d.day).zfill(2), d.isoformat()
 
 
 def parse_element_name_from_cmd(cmd_str):
@@ -129,32 +181,10 @@ def parse_cmd(cmd_str):
     return [m.group(1), m.group(2), m.group(3)] if m else None
 
 
-def summary_to_hdf(summary, archive_filename):
-    s = []
-    for r in summary:
-        if isinstance(r.pv_value, list):
-            for idx, v in enumerate(r.pv_value):
-                s.append(
-                    r.copy().pkupdate(
-                        device_pv_name=f"{r.device_pv_name}[{idx}]",
-                        pv_value=r.pv_value[idx],
-                    )
-                )
-        else:
-            s.append(r)
-    pandas.DataFrame(s).to_hdf(
-        archive_filename,
-        key="/summary/pv_mapping_dataframe",
-        mode="r+",
-        format="table",
-    )
-
-
-def to_ca_isotime(isotime):
+def to_ca_datetime(isotime):
     """Convert a string in iso format to a CA timezone iso format"""
     return (
         datetime.datetime.fromisoformat(isotime)
         .replace(microsecond=0)
         .astimezone(zoneinfo.ZoneInfo("America/Los_Angeles"))
-        .isoformat()
     )

@@ -10,10 +10,10 @@ from pykern.pkdebug import pkdc, pkdlog, pkdp
 from rslume.elegant import Elegant
 from scipy.interpolate import Akima1DInterpolator
 from sirepo.template.code_variable import PurePythonEval
+from slactwin.simrun_util import Archiver
 import copy
 import functools
 import glob
-import h5py
 import json
 import math
 import matplotlib
@@ -35,7 +35,16 @@ _MODEL_NAME_TO_ELEGANT_FILE = PKDict(
 _TWIN_NAME = "elegant"
 
 
-def run(model_name, pv_filename, start_element_name, end_element_name, watches=""):
+def run(
+    model_name,
+    pv_filename,
+    start_element_name,
+    end_element_name,
+    watches="",
+    beam_in=None,
+    work_dir=None,
+    out_dir=None,
+):
     # ex. slactwin simrun-elegant run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
 
     def _add_variables(e, defaults):
@@ -64,7 +73,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                     return True
         return False
 
-    def _prepare_elegant_input_files(path, beam_in=None):
+    def _prepare_elegant_input_files(path):
         # rslume-elegant requires all input files in one directory
         for n in ("wakefields", "beams"):
             for f in glob.glob(str(path.join("../..", n)) + "/*.*"):
@@ -73,20 +82,23 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                 if not t.exists():
                     t.mksymlinkto(s, absolute=False)
 
-        # TODO(pjm): not hardcoded
-        workdir = "/home/vagrant/tmp/elegant"
-        pykern.pkio.unchecked_remove(workdir)
-        pykern.pkio.mkdir_parent(workdir)
+        w = None
+        if work_dir:
+            w = pykern.pkio.py_path(work_dir)
+            if w.isdir() and w.listdir():
+                raise AssertionError(f"work_dir contains files: {w}")
+            pykern.pkio.unchecked_remove(work_dir)
+            pykern.pkio.mkdir_parent(work_dir)
         if beam_in:
             b = path.join(pykern.pkio.py_path(beam_in).basename + ".ssds")
             pmd_beamphysics.interfaces.elegant.write_elegant(
                 ParticleGroup(beam_in),
                 str(b),
             )
-            return workdir, b.basename
-        return workdir, None
+            return w, b.basename
+        return w, None
 
-    def _summary_outputs(e):
+    def _outputs(e):
         return PKDict({f"end_{c}": e.output.stats[c][-1] for c in e.output.stats})
 
     def _update_fields(e, defaults):
@@ -98,13 +110,11 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     elegant_in = pykern.pkio.py_path(
         f"{os.environ['LCLS_LATTICE']}/{_MODEL_NAME_TO_ELEGANT_FILE[model_name]}"
     )
-    workdir, beam_in = _prepare_elegant_input_files(
-        elegant_in.dirpath(), "/home/vagrant/tmp/cu_hxr-particles.h5"
-    )
+    work_dir, beam_in = _prepare_elegant_input_files(elegant_in.dirpath())
     e = Elegant(
         elegant_in,
-        workdir=workdir,
-        use_temp_dir=False,
+        workdir=work_dir,
+        use_temp_dir=not bool(work_dir),
     )
     el_map = _unique_klystrons(e, defaults)
     e.fix_deprecated_elements()
@@ -145,7 +155,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     tao_cmds, pvinfo = slactwin.simrun_util.build_commands(
         model_name, json.load(open(pv_filename))
     )
-    summary = []
+    pv_summary = []
 
     # TODO(pjm): separate into another method
     # first run to get energies so quad gradients can be computed
@@ -168,7 +178,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
             if cmd[0] in pvinfo:
                 for c in pvinfo[cmd[0]]:
                     if c.attribute == cmd[1]:
-                        summary.append(c)
+                        pv_summary.append(c)
                         c.value = str(cmd[2])
             continue
         if cmd[0] in defaults.overlays:
@@ -177,7 +187,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                 assert len(pvinfo[cmd[0]]) == 1
                 p = pvinfo[cmd[0]][0]
                 p.pkupdate(value=str(v), factor=v / p.pv_value if p.pv_value else 0),
-                summary += pvinfo[cmd[0]]
+                pv_summary += pvinfo[cmd[0]]
 
         n = f"{cmd[0]}_{cmd[1]}"
         if n in defaults.vars:
@@ -186,7 +196,7 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
                 for c in pvinfo[cmd[0]]:
                     if c.attribute in n:
                         c.value = str(cmd[2])
-                        summary.append(c)
+                        pv_summary.append(c)
 
     _add_variables(e, defaults)
 
@@ -210,24 +220,17 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
         if cmd[0] in pvinfo and cmd[0] in el_names:
             assert len(pvinfo[cmd[0]]) == 1
             pvinfo[cmd[0]][0].value = str(k1)
-            summary += pvinfo[cmd[0]]
+            pv_summary += pvinfo[cmd[0]]
 
-    pykern.pkio.unchecked_remove(workdir)
-    pykern.pkio.mkdir_parent(workdir)
+    if work_dir:
+        pykern.pkio.unchecked_remove(work_dir)
+        pykern.pkio.mkdir_parent(work_dir)
+    else:
+        e.reset()
     e.run()
-
-    isotime = slactwin.simrun_util.ca_isotime_from_filename(pv_filename)
-    fn = f"{_TWIN_NAME}-{model_name}-{isotime}.h5"
-    e.archive(fn)
-    with h5py.File(fn, "r+") as f:
-        g = f.create_group("summary")
-        g.attrs["isotime"] = isotime
-        g.attrs["twin_name"] = _TWIN_NAME
-        g.attrs["machine_name"] = model_name
-        o = g.create_group("outputs")
-        for n, v in _summary_outputs(e).items():
-            o.attrs[n] = v
-    slactwin.simrun_util.summary_to_hdf(summary, fn)
+    a = Archiver(pv_filename, _TWIN_NAME, model_name)
+    e.archive(a.archive_path(e.path))
+    a.add_summary(pv_summary, _outputs(e), out_dir)
     # _plot_twiss(e)
 
 
@@ -281,7 +284,7 @@ def _build_element_energy_map(e):
 def _elegant_defaults(model_name):
     with open(pykern.pkresource.file_path(f"{model_name}-elegant.json"), "r") as f:
         defaults = pykern.pkjson.load_any(f)
-    # TODO(pjm): generate from ipynb in LCLS_LATTICE
+    # TODO(pjm): generate from ipynb in LCLS_LATTICE, store in elegant.json
     defaults.overlays = PKDict(
         O_BC1_OFFSET=PKDict(
             knot_range=[

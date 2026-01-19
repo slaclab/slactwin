@@ -7,6 +7,7 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 from pytao import Tao
+from slactwin.simrun_util import Archiver
 import h5py
 import json
 import matplotlib.pyplot as plt
@@ -42,7 +43,15 @@ _STAT_FIELDS = [
 _TWIN_NAME = "bmad"
 
 
-def run(model_name, pv_filename, start_element_name, end_element_name, watches=""):
+def run(
+    model_name,
+    pv_filename,
+    start_element_name,
+    end_element_name,
+    watches="",
+    beam_in=None,
+    out_dir=None,
+):
     # ex. slactwin simrun-bmad run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
 
     def evaluate_tao(tao, cmds, pvinfo):
@@ -67,6 +76,8 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
             "set global track_type = single",
         ):
             tao.cmd(cmd)
+        if beam_in:
+            tao.cmd(f"set beam_init position_file = '{beam_in}'")
         return res
 
     # TODO(pjm): could pass in path to private repo
@@ -77,36 +88,25 @@ def run(model_name, pv_filename, start_element_name, end_element_name, watches="
     tao = Tao(
         f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
     )
-    summary = evaluate_tao(tao, cmds, pvinfo)
-    isotime = slactwin.simrun_util.ca_isotime_from_filename(pv_filename)
-    _archive(
-        f"{_TWIN_NAME}-{model_name}-{isotime}.h5",
-        isotime,
+    pv_summary = evaluate_tao(tao, cmds, pvinfo)
+    a = Archiver(
+        pv_filename,
+        _TWIN_NAME,
         model_name,
+    )
+    # TODO(pjm): use tmp dir?
+    outputs = _archive(
+        a.archive_path("."),
         tao,
-        summary,
         [start_element_name, end_element_name]
         + (watches.split(":") if watches else []),
     )
+    a.add_summary(pv_summary, outputs, out_dir)
     # _plot_twiss(stats)
     # plt.show()
 
 
-def _summary(h5, model_name, isotime, tao, stats):
-
-    def _summary_outputs():
-        return PKDict({f"end_{c}": stats[c][-1] for c in stats})
-
-    g = h5.create_group("summary")
-    g.attrs["isotime"] = isotime
-    g.attrs["twin_name"] = _TWIN_NAME
-    g.attrs["machine_name"] = model_name
-    o = g.create_group("outputs")
-    for n, v in _summary_outputs().items():
-        o.attrs[n] = v
-
-
-def _archive(filename, isotime, model_name, tao, summary, watches):
+def _archive(filename, tao, watches):
 
     def _add_bunch_params(res, group):
         b = [tao.bunch_params(i) for i in _tao_lat_list(tao, "ele.ix_ele")]
@@ -142,8 +142,7 @@ def _archive(filename, isotime, model_name, tao, summary, watches):
             )
             P.write(f, name=f"/{_TWIN_NAME}/particles/{name}")
         g.attrs["lattice"] = pykern.pkjson.dump_pretty(_tao_lattice(tao, watches))
-        _summary(f, model_name, isotime, tao, stats)
-    slactwin.simrun_util.summary_to_hdf(summary, filename)
+    return PKDict({f"end_{c}": stats[c][-1] for c in stats})
 
 
 # TODO(pjm): temporary for manual verification
