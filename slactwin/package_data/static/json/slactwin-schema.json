@@ -46,7 +46,12 @@
             "reportIndex"
         ],
         "summaryAnimation": ["runSummaryId"],
-        "statAnimation": ["runSummaryId", "x", "y1", "y2", "y3", "y4", "y5"]
+        "statAnimation": ["runSummaryId", "x", "y1", "y2", "y3", "y4", "y5"],
+        "sigmaAnimation": ["runSummaryId", "comparisonRunSummaryId"],
+        "twissAnimation": ["runSummaryId", "comparisonRunSummaryId"],
+        "bunchAnimation1": ["runSummaryId", "histogramBins", "x", "y"],
+        "bunchAnimation2": ["comparisonRunSummaryId", "histogramBins", "x", "y"],
+        "bunchAnimation3": ["runSummaryId", "comparisonRunSummaryId", "histogramBins", "x", "y"]
     },
     "localRoutes": {
         "search": {
@@ -71,6 +76,14 @@
                 "reloadOnSearch": false
             }
         },
+        "comparison": {
+            "route": "/comparison/:simulationId",
+            "config": {
+                "controller": "ComparisonController as comparison",
+                "templateUrl": "/static/html/slactwin-comparison.html",
+                "reloadOnSearch": false
+            }
+        },
         "lattice": {
             "route": "/lattice/:simulationId",
             "config": {
@@ -91,6 +104,34 @@
     "model": {
         "beamline": {
             "name": ["Name", "ValidatedString"]
+        },
+        "bunchAnimation1": {
+            "runSummaryId": ["", "String", "0"],
+            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
+            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "plotType": ["Plot Type", "PlotType", "3d"],
+            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "notes": ["Notes", "Text", ""]
+        },
+        "bunchAnimation2": {
+            "comparisonRunSummaryId": ["", "String", "0"],
+            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
+            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "plotType": ["Plot Type", "PlotType", "3d"],
+            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "notes": ["Notes", "Text", ""]
+        },
+        "bunchAnimation3": {
+            "runSummaryId": ["", "String", "0"],
+            "comparisonRunSummaryId": ["", "String", "0"],
+            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
+            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "plotType": ["Plot Type", "PlotType", "3d"],
+            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "notes": ["Notes", "Text", ""]
         },
         "elementAnimation": {
             "runSummaryId": ["", "String", "0"],
@@ -139,11 +180,25 @@
             "aspectRatio": ["Aspect Ratio", "AspectRatio", "0.5"],
             "notes": ["Notes", "Text", ""]
         },
+        "sigmaAnimation": {
+            "runSummaryId": ["", "String", "0"],
+            "comparisonRunSummaryId": ["", "String", "0"],
+            "aspectRatio": ["Aspect Ratio", "AspectRatio", "0.5"],
+            "includeLattice": ["Show Lattice Overlay", "Boolean", "1"],
+            "notes": ["Notes", "Text", ""]
+        },
         "summaryAnimation": {
             "runSummaryId": ["", "String", "0"]
         },
         "simulation": {
             "elementPosition": ["Element Positioning", "ElementPosition", "absolute"]
+        },
+        "twissAnimation": {
+            "runSummaryId": ["", "String", "0"],
+            "comparisonRunSummaryId": ["", "String", "0"],
+            "aspectRatio": ["Aspect Ratio", "AspectRatio", "0.5"],
+            "includeLattice": ["Show Lattice Overlay", "Boolean", "1"],
+            "notes": ["Notes", "Text", ""]
         }
     },
     "strings": {
@@ -229,6 +284,15 @@
                         ]]
                     ]
                 ]]
+            ]
+        },
+        "twissAnimation": {
+            "hasDataFile": false,
+            "title": "Twiss",
+            "advanced": [
+                "aspectRatio",
+                "includeLattice",
+                "notes"
             ]
         }
     }

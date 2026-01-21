@@ -53,11 +53,28 @@ SIREPO.app.config(function() {
 
 SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCache, panelState, persistentSimulation, requestSender, uri, $location, $rootScope) {
     const self = {};
-    self.computeModel = analysisModel => 'animation';
+    self.computeModel = (analysisModel) => 'animation';
     self.runKinds = null;
     self.selectSearchFieldText = 'Select Search Field';
 
     const isModalVisible = () => $('.sr-modal-shown').length > 0;
+
+    const loadComparisons = () => {
+        self.callDB(
+            'comparison_summaries',
+            {
+                run_summary_id: self.getRunSummaryId(),
+            },
+            (resp) => {
+                if (resp.comparisonSummaries && resp.comparisonSummaries.length) {
+                    self.comparisonSummaries = resp.comparisonSummaries;
+                }
+                else {
+                    self.comparisonSummaries = null;
+                }
+            },
+        );
+    };
 
     self.callDB = (api_name, api_args, callback) => {
         requestSender.sendStatelessCompute(
@@ -222,6 +239,7 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
             panelState.toggleHidden('summaryAnimation');
         }
         frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
+            //TODO(pjm): ensure runSummary matches expected, otherwise ignore
             if (data.error) {
                 throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
             }
@@ -232,8 +250,16 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
             self.setValueList(appState.models.statAnimation, 'statAnimation', data.stat_columns);
             $rootScope.$broadcast('sr-run-loaded');
             panelState.waitForUI(() => appState.updateReports());
+            loadComparisons();
         });
     };
+
+    $rootScope.$on('modelsUnloaded', () => {
+        self.summary = null;
+        self.particles = null;
+        self.comparisonSummaries = null;
+    });
+
 
     self.openRun = (runSummaryId, route) => {
         uri.localRedirect(route || SIREPO.APP_SCHEMA.appModes.default.localRoute, {
@@ -390,6 +416,23 @@ SIREPO.app.controller('BeamController', function() {
     const self = this;
 });
 
+SIREPO.app.controller('ComparisonController', function(appState, slactwinService, $scope) {
+    const self = this;
+    slactwinService.initDetailController(self, $scope);
+    $scope.slactwinService = slactwinService;
+    $scope.$watch('slactwinService.comparisonSummaries', () => {
+        const c = slactwinService.comparisonSummaries;
+        if (c && c.length) {
+            //TODO(pjm): assume only 1 comparison for now
+            appState.models.twissAnimation.comparisonRunSummaryId = c[0].run_summary_id;
+            self.comparisonTwinName = c[0].twin_name;
+        }
+    });
+    $scope.$on('sr-run-loaded', () => {
+        $scope.loadingMessage = '';
+    });
+});
+
 SIREPO.app.controller('LatticeController', function(liveService, slactwinService, $scope) {
     const self = this;
     slactwinService.initDetailController(self, $scope);
@@ -509,8 +552,8 @@ SIREPO.app.directive('appHeader', function() {
               <app-header-right-sim-loaded data-ng-if="hasQuery()">
                 <div data-sim-sections="">
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
-
                   <li class="sim-section" data-ng-class="{active: nav.isActive('visualization')}"><a href data-ng-click="nav.openSection('visualization')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
+                  <li class="sim-section" data-ng-if="slactwinService.comparisonSummaries" data-ng-class="{active: nav.isActive('comparison')}"><a href data-ng-click="nav.openSection('comparison')">Comparison</a></li>
                 </div>
               </app-header-right-sim-loaded>
               <app-settings>
@@ -523,6 +566,7 @@ SIREPO.app.directive('appHeader', function() {
             $scope.appState = appState;
             $scope.authState = authState;
             $scope.hasQuery = slactwinService.getRunSummaryId;
+            $scope.slactwinService = slactwinService;
 
             $scope.openSearch = () => {
                 if (appState.isLoaded()) {
@@ -1018,12 +1062,12 @@ SIREPO.app.directive('searchTerms', function() {
                 }
             };
 
-            $scope.deleteRow = idx => {
+            $scope.deleteRow = (idx) => {
                 $scope.model.searchTerms.splice(idx, 1);
                 updateTerms();
             };
 
-            $scope.isEmpty = idx => {
+            $scope.isEmpty = (idx) => {
                 const search = $scope.model.searchTerms[idx];
                 return (
                     search.column != slactwinService.selectSearchFieldText
@@ -1031,7 +1075,7 @@ SIREPO.app.directive('searchTerms', function() {
                 ) ? false : true;
             };
 
-            $scope.showRow = idx => (idx == 0) || ! $scope.isEmpty(idx - 1);
+            $scope.showRow = (idx) => (idx == 0) || ! $scope.isEmpty(idx - 1);
 
             $scope.showTerms = () => {
                 if (! slactwinService.runValues) {
@@ -1098,7 +1142,7 @@ SIREPO.app.directive('columnPicker', function() {
                 if (! v) {
                     return;
                 }
-                $scope.availableColumns = v.filter(value => ! $scope.model.selectedColumns.includes(value));
+                $scope.availableColumns = v.filter((value) => ! $scope.model.selectedColumns.includes(value));
                 $scope.availableColumns.unshift(addColumnText);
                 $scope.selected = addColumnText;
             };
@@ -1196,7 +1240,7 @@ SIREPO.app.directive('searchResultsTable', function() {
             };
 
             $scope.openRun = (row) => {
-                $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
+                $scope.model.rowIds = $scope.searchResults.map((r) => r.run_summary_id);
                 appState.saveChanges('searchSettings', () => {
                     slactwinService.openRun(row.run_summary_id);
                 });

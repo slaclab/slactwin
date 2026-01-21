@@ -14,6 +14,7 @@ import asyncio
 import datetime
 import h5py
 import impact
+import numpy
 import pykern.pkio
 import pykern.pkjson
 import pytz
@@ -102,6 +103,46 @@ def sim_frame_summaryAnimation(frame_args):
     """
 
     return _twin_implementation(frame_args.runSummaryId).summary_animation(frame_args)
+
+
+def sim_frame_twissAnimation(frame_args):
+    # s, beta_x, beta_y
+    p1 = (
+        _twin_implementation(frame_args.runSummaryId)
+        .twiss_values()
+        .pkupdate(
+            attrs=PKDict(
+                strokeWidth=7,
+                opacity=0.5,
+            ),
+        )
+    )
+    p2 = (
+        _twin_implementation(frame_args.comparisonRunSummaryId)
+        .twiss_values()
+        .pkupdate(
+            attrs=PKDict(
+                dashes="5 3",
+            ),
+        )
+    )
+    x = numpy.unique(numpy.sort(numpy.concatenate((p1.s.points, p2.s.points))))
+    plots = []
+    for p in (p1, p2):
+        for f in ("beta_x", "beta_y"):
+            p[f].points = numpy.interp(x, p.s.points, p[f].points).tolist()
+            plots.append(p[f].pkupdate(p.attrs))
+    return template_common.parameter_plot(
+        x=x.tolist(),
+        plots=plots,
+        model=frame_args,
+        plot_fields=PKDict(
+            title="",
+            y_label="",
+            x_label="s [m]",
+            dynamicYLabel=True,
+        ),
+    )
 
 
 def stateful_compute_create_sim_for_run_summary(data, **kwargs):
@@ -258,6 +299,8 @@ def _summary_info(run_summary_id):
     s = _db_api("run_summary_by_id", run_summary_id=run_summary_id)
     k = _db_api("run_kind_by_id", run_kind_id=s.run_kind_id)
     return PKDict(
+        machine_name=k.machine_name,
+        twin_name=k.twin_name,
         description=f"{k.machine_name} {k.twin_name}",
         snapshot_end=s.snapshot_end,
     )
@@ -308,17 +351,9 @@ class _Elegant:
         for f in ("x", "y1", "y2", "y3", "y4", "y5"):
             if frame_args[f] == _NONE:
                 continue
-            units = E.output.stats_unit[frame_args[f]]
-            if units and str(units) and str(units) != "1":
-                if re.search(r"[_{}\\]", units):
-                    units = f" [$\\mathsf{{{units}}}$]"
-                else:
-                    units = f" [{units}]"
-            else:
-                units = ""
             p = stats[frame_args[f]]
             plots[f] = PKDict(
-                label=f"${E.output.stats_label[frame_args[f]]}${units}",
+                label=self._label(E, frame_args[f]),
                 dim=f,
                 points=p.tolist(),
             )
@@ -354,6 +389,36 @@ class _Elegant:
             particles=_openpmd_particles(E),
             stat_columns=[_NONE] + list(E.output["stats"].keys()),
         )
+
+    def twiss_values(self):
+        # TODO(pjm): common base class function? share with _Bmad
+        # elegant: s, betaxBeam, betayBeam
+        E = self.load_archive()
+        _twiss_map = PKDict(
+            s="s",
+            beta_x="betaxBeam",
+            beta_y="betayBeam",
+        )
+        return PKDict(
+            {
+                f: PKDict(
+                    points=E.output["stats"][_twiss_map[f]],
+                    label=self._label(E, _twiss_map[f]),
+                )
+                for f in _twiss_map.keys()
+            }
+        )
+
+    def _label(self, E, field):
+        def _units():
+            units = E.output.stats_unit[field]
+            if units and str(units) and str(units) != "1":
+                if re.search(r"[_{}\\]", units):
+                    return f" [$\\mathsf{{{units}}}$]"
+                return f" [{units}]"
+            return ""
+
+        return f"${E.output.stats_label[field]}${_units()}"
 
     def _summary_text(self, summary, E, models):
         return [
@@ -402,19 +467,9 @@ class _Bmad:
         for f in ("x", "y1", "y2", "y3", "y4", "y5"):
             if frame_args[f] == _NONE:
                 continue
-            # units = E.output.stats_unit[frame_args[f]]
-            units = ""
-            if units and str(units) and str(units) != "1":
-                if re.search(r"[_{}\\]", units):
-                    units = f" [$\\mathsf{{{units}}}$]"
-                else:
-                    units = f" [{units}]"
-            else:
-                units = ""
             p = stats[frame_args[f]]
             plots[f] = PKDict(
-                # label=f"${a.output.stats_label[frame_args[f]]}${units}",
-                label=frame_args[f],
+                label=self._label(a, frame_args[f]),
                 dim=f,
                 points=p.tolist(),
             )
@@ -455,6 +510,28 @@ class _Bmad:
             particles=_openpmd_particles(a),
             stat_columns=[_NONE] + list(a.output.stats.keys()),
         )
+
+    def twiss_values(self):
+        # bmad: s, twiss_beta_x, twiss_beta_y
+        a = self.load_archive()
+        _twiss_map = PKDict(
+            s="s",
+            beta_x="twiss_beta_x",
+            beta_y="twiss_beta_y",
+        )
+        return PKDict(
+            {
+                f: PKDict(
+                    points=a.output["stats"][_twiss_map[f]],
+                    label=self._label(a, _twiss_map[f]),
+                )
+                for f in _twiss_map.keys()
+            }
+        )
+
+    def _label(self, archive, field):
+        # TODO(pjm): improve bmad labels
+        return field
 
     def _summary_columns(self):
         return [
