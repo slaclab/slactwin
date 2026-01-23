@@ -71,6 +71,8 @@ def sim_frame(frame_args):
     Returns:
         PKDict: heatmap plot data and report labels
     """
+    if "bunchAnimation" in frame_args.frameReport:
+        return _bunch_comparison(frame_args)
     # this is a generic openPMD plotter, so usable by impact and rslume-elegant
     return sirepo.template.impactt.bunch_plot(
         frame_args,
@@ -239,6 +241,47 @@ def write_parameters(data, run_dir, is_parallel):
     return None
 
 
+def _archive_path(run_summary_id):
+    return _db_api("run_summary_by_id", run_summary_id=run_summary_id).archive_path
+
+
+def _bunch_comparison(frame_args):
+    def _get_range(field, p1, p2):
+        return [
+            min(min(p1[field]), min(p2[field])),
+            max(max(p1[field]), max(p2[field])),
+        ]
+
+    t1 = _twin_implementation(frame_args.runSummaryId)
+    archive = t1.load_archive()
+    n = (
+        ["initial_particles"]
+        + list(archive.output.particles.keys())
+        + ["final_particles"]
+    )[frame_args.frameIndex]
+    p1 = archive.output["particles"][n]
+    t2 = _twin_implementation(frame_args.comparisonRunSummaryId)
+    p2 = t2.load_archive().output["particles"][n]
+    xrange = _get_range(frame_args.x, p1, p2)
+    yrange = _get_range(frame_args.y, p1, p2)
+    frame_args.pkupdate(
+        plotRangeType="fixed",
+        horizontalSize=xrange[1] - xrange[0],
+        horizontalOffset=(xrange[0] + xrange[1]) / 2,
+        verticalSize=yrange[1] - yrange[0],
+        verticalOffset=(yrange[0] + yrange[1]) / 2,
+    )
+    if frame_args.frameReport == "bunchAnimation3":
+        return _difference_heatplot(frame_args, p1, p2)
+    t = t1.name() if frame_args.frameReport == "bunchAnimation1" else t2.name()
+    return sirepo.template.impactt.bunch_plot(
+        frame_args,
+        frame_args.frameIndex,
+        p1 if frame_args.frameReport == "bunchAnimation1" else p2,
+        title=f"{t} {n}",
+    )
+
+
 def _db_api(api_name, **kwargs):
     async def _target():
         c = await slactwin.db_api_client.for_job_cmd().connect()
@@ -250,8 +293,21 @@ def _db_api(api_name, **kwargs):
     return asyncio.run(_target())
 
 
-def _archive_path(run_summary_id):
-    return _db_api("run_summary_by_id", run_summary_id=run_summary_id).archive_path
+def _difference_heatplot(frame_args, p1, p2):
+    b1 = sirepo.template.impactt.bunch_plot(
+        frame_args,
+        frame_args.frameIndex,
+        p1,
+        threshold=[-1e20, 1e20],
+        title="difference",
+    )
+    b2 = sirepo.template.impactt.bunch_plot(
+        frame_args, frame_args.frameIndex, p2, threshold=[-1e20, 1e20]
+    )
+    for i in range(len(b1.z_matrix)):
+        for j in range(len(b1.z_matrix[0])):
+            b1.z_matrix[i][j] -= b2.z_matrix[i][j]
+    return b1
 
 
 def _openpmd_particles(archive):
@@ -341,6 +397,9 @@ class _Elegant:
         from rslume import elegant
 
         return elegant.Elegant.from_archive(_archive_path(self.run_summary_id))
+
+    def name(self):
+        return "elegant"
 
     def stat_animation(self, frame_args):
         E = self.load_archive()
@@ -457,6 +516,9 @@ class _Bmad:
                 res.output.particles[p] = ParticleGroup(h5=f[f"/bmad/particles/{p}"])
         return res
 
+    def name(self):
+        return "bmad"
+
     def stat_animation(self, frame_args):
         # TODO(pjm): consolidate w/_Elegant
         a = self.load_archive()
@@ -551,6 +613,9 @@ class _ImpactT:
 
     def load_archive(self):
         return impact.Impact.from_archive(_archive_path(self.run_summary_id))
+
+    def name(self):
+        return "impact-t"
 
     def stat_animation(self, frame_args):
         return sirepo.template.impactt.stat_animation(self.load_archive(), frame_args)

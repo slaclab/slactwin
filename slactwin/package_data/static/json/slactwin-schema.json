@@ -49,8 +49,8 @@
         "statAnimation": ["runSummaryId", "x", "y1", "y2", "y3", "y4", "y5"],
         "sigmaAnimation": ["runSummaryId", "comparisonRunSummaryId"],
         "twissAnimation": ["runSummaryId", "comparisonRunSummaryId"],
-        "bunchAnimation1": ["runSummaryId", "histogramBins", "x", "y"],
-        "bunchAnimation2": ["comparisonRunSummaryId", "histogramBins", "x", "y"],
+        "bunchAnimation1": ["runSummaryId", "comparisonRunSummaryId", "histogramBins", "x", "y"],
+        "bunchAnimation2": ["runSummaryId", "comparisonRunSummaryId", "histogramBins", "x", "y"],
         "bunchAnimation3": ["runSummaryId", "comparisonRunSummaryId", "histogramBins", "x", "y"]
     },
     "localRoutes": {
@@ -105,31 +105,42 @@
         "beamline": {
             "name": ["Name", "ValidatedString"]
         },
+        "bunchAnimation": {
+            "x": ["Horizontal Value to Plot", "ValueList", "x"],
+            "y": ["Vertical Value to Plot", "ValueList", "px"],
+            "plotType": ["Plot Type", "PlotType", "3d"],
+            "histogramBins": ["Histogram Bins", "Integer", 50],
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "selectedFrame": ["", "FrameSlider", 0],
+            "notes": ["Notes", "Text", ""]
+        },
         "bunchAnimation1": {
             "runSummaryId": ["", "String", "0"],
-            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
-            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "comparisonRunSummaryId": ["", "String", "0"],
+            "x": ["Horizontal Value to Plot", "ValueList", "x"],
+            "y": ["Vertical Value to Plot", "ValueList", "px"],
             "plotType": ["Plot Type", "PlotType", "3d"],
-            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "histogramBins": ["Histogram Bins", "Integer", 50],
             "colorMap": ["Color Map", "ColorMap", "viridis"],
             "notes": ["Notes", "Text", ""]
         },
         "bunchAnimation2": {
+            "runSummaryId": ["", "String", "0"],
             "comparisonRunSummaryId": ["", "String", "0"],
-            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
-            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "x": ["Horizontal Value to Plot", "ValueList", "x"],
+            "y": ["Vertical Value to Plot", "ValueList", "px"],
             "plotType": ["Plot Type", "PlotType", "3d"],
-            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "histogramBins": ["Histogram Bins", "Integer", 50],
             "colorMap": ["Color Map", "ColorMap", "viridis"],
             "notes": ["Notes", "Text", ""]
         },
         "bunchAnimation3": {
             "runSummaryId": ["", "String", "0"],
             "comparisonRunSummaryId": ["", "String", "0"],
-            "x": ["Horizontal Value to Plot", "PhaseSpaceCoordinate", "x"],
-            "y": ["Vertical Value to Plot", "PhaseSpaceCoordinate", "px"],
+            "x": ["Horizontal Value to Plot", "ValueList", "x"],
+            "y": ["Vertical Value to Plot", "ValueList", "px"],
             "plotType": ["Plot Type", "PlotType", "3d"],
-            "histogramBins": ["Histogram Bins", "Integer", 60],
+            "histogramBins": ["Histogram Bins", "Integer", 50],
             "colorMap": ["Color Map", "ColorMap", "viridis"],
             "notes": ["Notes", "Text", ""]
         },
@@ -209,6 +220,36 @@
     "view": {
         "beamline": {
             "title": "Beamline",
+            "advanced": []
+        },
+        "bunchAnimation": {
+            "hasDataFile": false,
+            "title": "Phase Space",
+            "advanced": [
+                "plotType",
+                [
+                    ["Horizontal", [
+                        "x"
+                    ]],
+                    ["Vertical", [
+                        "y"
+                    ]]
+                ],
+                "histogramBins",
+                "colorMap",
+                "notes"
+            ]
+        },
+        "bunchAnimation1": {
+            "title": "Phase Space",
+            "advanced": []
+        },
+        "bunchAnimation2": {
+            "title": "Phase Space",
+            "advanced": []
+        },
+        "bunchAnimation3": {
+            "title": "Phase Space",
             "advanced": []
         },
         "elementAnimation": {
