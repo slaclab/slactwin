@@ -12,6 +12,7 @@ import lcls_live.datamaps
 import numpy
 import pandas
 import pykern.pkio
+import pykern.pkjson
 import re
 import zoneinfo
 
@@ -65,7 +66,6 @@ class Archiver:
         if out_dir:
             p = pykern.pkio.py_path(f"{out_dir}/{self.out_path}")
             pykern.pkio.mkdir_parent_only(p)
-            pkdp("moving results to: {}", p)
             self.path.move(p)
 
 
@@ -83,10 +83,11 @@ def beta_gamma_to_pc(mass, values):
     return values * mass
 
 
-def build_commands(model_name, pvdata):
+def build_commands(model_name, pvfile):
     cmds = []
     pvinfo = PKDict()
-
+    with open(pvfile, "r") as f:
+        pvdata = pykern.pkjson.load_any(f)
     def _add_pvinfo(record):
         if record["element"] not in pvinfo:
             pvinfo[record["element"]] = []
@@ -115,10 +116,12 @@ def build_commands(model_name, pvdata):
 
     def _tabular_summary(datamap):
         for idx, r in datamap.data.iterrows():
+            if r[datamap.pvname] not in pvdata:
+                pkdlog('Missing pvdata for {}', r[datamap.pvname])
             d = PKDict(
                 name=r["name"] if "name" in r else r[datamap.element],
                 bmad_unit=r["bmad_unit"] if "bmad_unit" in r else "",
-                pv_value=pvdata[r[datamap.pvname]],
+                pv_value=pvdata.get(r[datamap.pvname], 0),
             )
             for f in (
                 "element",

@@ -9,7 +9,6 @@ from pykern.pkdebug import pkdc, pkdlog, pkdp
 from pytao import Tao
 from slactwin.simrun_util import Archiver
 import h5py
-import json
 import matplotlib.pyplot as plt
 import numpy
 import os
@@ -68,23 +67,23 @@ def run(
                     if c.attribute == p[1]:
                         res.append(c)
                         c.value = p[2]
+        if beam_in:
+            tao.cmd(f"set beam_init position_file = '{beam_in}'")
         for cmd in (
             f"set beam_init track_start = {start_element_name}",
+            f"set beam_init track_end = {end_element_name}",
+            "set beam_init saved_at = MARKER::* MONITOR::*",
             # TODO(pjm): command line arg for particle count
             "set beam_init n_particle = 10000",
             "set global track_type = beam",
             "set global track_type = single",
         ):
             tao.cmd(cmd)
-        if beam_in:
-            tao.cmd(f"set beam_init position_file = '{beam_in}'")
         return res
 
     # TODO(pjm): could pass in path to private repo
     assert "LCLS_LATTICE" in os.environ
-    cmds, pvinfo = slactwin.simrun_util.build_commands(
-        model_name, json.load(open(pv_filename))
-    )
+    cmds, pvinfo = slactwin.simrun_util.build_commands(model_name, pv_filename)
     tao = Tao(
         f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
     )

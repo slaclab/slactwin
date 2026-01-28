@@ -38,7 +38,7 @@ SIREPO.app.config(function() {
             recirc: ['RECIRC'],
             rf: ['CEPL', 'FRFMODE', 'FTRFMODE', 'MODRF', 'MRFDF', 'RAMPP', 'RAMPRF', 'RFCA', 'RFCW', 'RFDF', 'RFMODE', 'RFTM110', 'RFTMEZ0', 'RMDF', 'SHRFDF', 'TMCF', 'TRFMODE', 'TWLA', 'TWMTA', 'TWPL', 'LCAVITY'],
             solenoid: ['MAPSOLENOID', 'SOLE', 'SOLENOID', 'SOLRF'],
-            undulator: ['CORGPIPE', 'CWIGGLER', 'GFWIGGLER', 'LSRMDLTR', 'MATR', 'UKICKMAP', 'WIGGLER'],
+            undulator: ['CORGPIPE', 'CWIGGLER', 'GFWIGGLER', 'LSRMDLTR', 'MATR', 'UKICKMAP', 'WIGGLER', 'TAYLOR'],
             watch: ['WATCH', 'WRITE_BEAM', 'MONITOR', 'MARKER'],
             zeroLength: ['BRANCH', 'CENTER', 'CHARGE', 'DSCATTER', 'ELSE', 'EMITTANCE', 'ENERGY', 'FLOOR', 'HISTOGRAM', 'IBSCATTER', 'ILMATRIX', 'IONEFFECTS', 'MAGNIFY', 'MHISTOGRAM', 'PFILTER', 'REFLECT','REMCOR', 'RIMULT', 'ROTATE', 'SAMPLE', 'SCATTER', 'SCMULT', 'SCRIPT', 'SLICE', 'SREFFECTS', 'STRAY', 'TFBDRIVER', 'TFBPICKUP', 'TRCOUNT', 'TRWAKE', 'TWISS', 'WAKE', 'ZLONGIT', 'ZTRANSVERSE', 'CHANGE_TIMESTEP', 'OFFSET_BEAM', 'SPACECHARGE', 'STOP'],
         },
@@ -1133,7 +1133,7 @@ SIREPO.app.directive('columnList', function() {
                 }
             };
             updateColumns();
-            appState.watchModelFields($scope, ['slactwinService.runValues'], updateColumns);
+            $scope.$watch('slactwinService.runValues', updateColumns);
         },
     };
 });
@@ -1438,25 +1438,40 @@ SIREPO.app.directive('frameSlider', function(appState, slactwinService, frameCac
 
 SIREPO.viewLogic('searchSettingsView', function(appState, slactwinService, uri, $scope) {
 
-    const simRedirect = (field) => {
+    const redirect = (runKind) => {
+        appState.clearModels();
+        uri.localRedirect('search-results', {
+            ':simulationId': runKind.simulationId,
+        });
+    };
+
+    const simRedirect = (changedField, otherField) => {
         const ss = appState.models.searchSettings;
-        for (const r of slactwinService.runKinds) {
-            if (r[field] === ss[field]) {
-                if (appState.models.simulationId != r.simulationId) {
-                    appState.clearModels();
-                    uri.localRedirect('search-results', {
-                        ':simulationId': r.simulationId,
-                    });
+        let m = null;
+        for (const r of slactwinService.runKinds.reverse()) {
+            if (r[changedField] === ss[changedField] ) {
+                if (r[otherField] == ss[otherField]) {
+                    // exact match, redirect now
+                    redirect(r);
+                    return;
+                }
+                if (! m) {
+                    // save first partial match
+                    m = r;
                 }
             }
+        }
+        if (m) {
+            // use first partial match
+            redirect(m);
         }
     };
 
     // not using $scope.watchFields because that includes a debouncer and the
     // switch to the new machine_name should be immediate
     appState.watchModelFields(
-        $scope, ['searchSettings.machine_name'],  () => simRedirect('machine_name'));
+        $scope, ['searchSettings.machine_name'],  () => simRedirect('machine_name', 'twin_name'));
     appState.watchModelFields(
-        $scope, ['searchSettings.twin_name'],  () => simRedirect('twin_name'));
+        $scope, ['searchSettings.twin_name'],  () => simRedirect('twin_name', 'machine_name'));
 
 });

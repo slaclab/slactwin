@@ -14,7 +14,6 @@ from slactwin.simrun_util import Archiver
 import copy
 import functools
 import glob
-import json
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -152,9 +151,7 @@ def run(
         assert not e, f"invalid expression: {expression}, err: {e}"
         return v
 
-    tao_cmds, pvinfo = slactwin.simrun_util.build_commands(
-        model_name, json.load(open(pv_filename))
-    )
+    tao_cmds, pvinfo = slactwin.simrun_util.build_commands(model_name, pv_filename)
     pv_summary = []
 
     # TODO(pjm): separate into another method
