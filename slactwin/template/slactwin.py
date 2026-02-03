@@ -310,7 +310,7 @@ def _difference_heatplot(frame_args, p1, p2):
     return b1
 
 
-def _openpmd_particles(archive):
+def _openpmd_particles(archive, models):
     def _default_columns(info):
         if info.name == "final_particles":
             info.x = "delta_z"
@@ -320,10 +320,24 @@ def _openpmd_particles(archive):
             info.y = "y"
         return info
 
+    def _watches_in_order():
+        res = []
+        w = set(list(archive.output["particles"].keys()))
+        ids = PKDict()
+        for e in models.elements:
+            if e.name in w and e.name not in ids:
+                ids[e._id] = e.name
+        assert len(w) == len(ids.keys()) + 2
+        for i in models.beamlines[0]["items"]:
+            if i in ids:
+                res.append(ids[i])
+                del ids[i]
+        return res
+
     res = []
     visited = set()
     for idx, n in enumerate(
-        ["initial_particles", "final_particles"] + list(archive.output.particles.keys())
+        ["initial_particles", "final_particles"] + _watches_in_order()
     ):
         if n in visited:
             continue
@@ -381,7 +395,8 @@ def _update_dataframe(data, dataframe):
     el_by_name = PKDict()
     for i in data.models.beamlines[0]["items"]:
         el = util.id_map[i]
-        el_by_name[el.name] = el._id
+        if el.name not in el_by_name:
+            el_by_name[el.name] = el._id
     dataframe.el_id = PKDict()
     for idx, n in dataframe.element.items():
         dataframe.el_id[str(idx)] = el_by_name.get(n)
@@ -445,7 +460,7 @@ class _Elegant:
             lattice=PKDict(
                 models=E._input.models,
             ),
-            particles=_openpmd_particles(E),
+            particles=_openpmd_particles(E, E._input.models),
             stat_columns=[_NONE] + list(E.output["stats"].keys()),
         )
 
@@ -569,7 +584,7 @@ class _Bmad:
             lattice=PKDict(
                 models=a.lattice,
             ),
-            particles=_openpmd_particles(a),
+            particles=_openpmd_particles(a, a.lattice),
             stat_columns=[_NONE] + list(a.output.stats.keys()),
         )
 
@@ -626,6 +641,7 @@ class _ImpactT:
         with h5py.File(_archive_path(self.run_summary_id)) as f:
             l = ImpactTParser().parse_file(f["/impact/input"].attrs["ImpactT.in"])
             l.models.simulation.visualizationBeamlineId = l.models.beamlines[0].id
+        lattice = self._trim_beamline(l, s.pv_mapping_dataframe)
         return PKDict(
             summary=PKDict(
                 pv_mapping_dataframe=s.pv_mapping_dataframe,
@@ -633,8 +649,8 @@ class _ImpactT:
                 summary_text=self._summary_text(s, I, l.models),
                 run_time_minutes=I.output["run_info"]["run_time"] / 60,
             ).pkupdate(_summary_info(self.run_summary_id)),
-            lattice=self._trim_beamline(l, s.pv_mapping_dataframe),
-            particles=sirepo.template.impactt.output_info(l),
+            lattice=lattice,
+            particles=_openpmd_particles(I, lattice.models),
             stat_columns=sirepo.template.impactt.stat_columns(I),
         )
 
@@ -684,6 +700,8 @@ class _ImpactT:
         Trims beamline at STOP element. Removes dataframes for elements after the STOP element.
         """
 
+        if not bool(dataframe):
+            return data
         util = sirepo.template.lattice.LatticeUtil(
             data, sirepo.sim_data.get_class("impactt").schema()
         )

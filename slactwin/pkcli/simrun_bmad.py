@@ -56,11 +56,13 @@ def run(
     def evaluate_tao(tao, cmds, pvinfo):
         res = []
         ele_names = tao.lat_list("*", "ele.name", flags="-no_slaves")
+        run_cmds = []
         for cmd in cmds:
             n = slactwin.simrun_util.parse_element_name_from_cmd(cmd)
             if n and (n != "beginning" and n not in ele_names):
+                pkdc("skip cmd: {}", cmd)
                 continue
-            tao.cmd(cmd)
+            run_cmds.append(cmd)
             p = slactwin.simrun_util.parse_cmd(cmd)
             if p and p[0] in pvinfo:
                 for c in pvinfo[p[0]]:
@@ -68,8 +70,8 @@ def run(
                         res.append(c)
                         c.value = p[2]
         if beam_in:
-            tao.cmd(f"set beam_init position_file = '{beam_in}'")
-        for cmd in (
+            run_cmds.append(f"set beam_init position_file = '{beam_in}'")
+        run_cmds += [
             f"set beam_init track_start = {start_element_name}",
             f"set beam_init track_end = {end_element_name}",
             "set beam_init saved_at = MARKER::* MONITOR::*",
@@ -77,9 +79,12 @@ def run(
             "set beam_init n_particle = 10000",
             "set global track_type = beam",
             "set global track_type = single",
-        ):
+        ]
+        for cmd in run_cmds:
+            pkdc("cmd: {}", cmd)
             tao.cmd(cmd)
-        return res
+        idx = {n: i for i, n in enumerate(ele_names)}
+        return sorted(res, key=lambda x: idx.get(x.name, -1))
 
     # TODO(pjm): could pass in path to private repo
     assert "LCLS_LATTICE" in os.environ

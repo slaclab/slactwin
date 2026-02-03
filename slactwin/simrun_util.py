@@ -88,6 +88,7 @@ def build_commands(model_name, pvfile):
     pvinfo = PKDict()
     with open(pvfile, "r") as f:
         pvdata = pykern.pkjson.load_any(f)
+
     def _add_pvinfo(record):
         if record["element"] not in pvinfo:
             pvinfo[record["element"]] = []
@@ -117,7 +118,7 @@ def build_commands(model_name, pvfile):
     def _tabular_summary(datamap):
         for idx, r in datamap.data.iterrows():
             if r[datamap.pvname] not in pvdata:
-                pkdlog('Missing pvdata for {}', r[datamap.pvname])
+                pkdc("Missing pvdata for {}", r[datamap.pvname])
             d = PKDict(
                 name=r["name"] if "name" in r else r[datamap.element],
                 bmad_unit=r["bmad_unit"] if "bmad_unit" in r else "",
@@ -134,6 +135,7 @@ def build_commands(model_name, pvfile):
             _add_pvinfo(d)
 
     for dn, dm in lcls_live.datamaps.get_datamaps(model_name).items():
+        # TODO(pjm): add method argument for ignore list
         if dn in ("bpms", "correctors"):
             continue
         if isinstance(dm, lcls_live.datamaps.TabularDataMap):
@@ -146,7 +148,6 @@ def build_commands(model_name, pvfile):
 
     return (
         [
-            "place floor energy",
             "set global lattice_calc_on = F",
             "set lattice model=design ! Reset the lattice",
             # tell bmad to evaluate using b1_gradient values

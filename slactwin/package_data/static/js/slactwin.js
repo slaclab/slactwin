@@ -25,14 +25,17 @@ SIREPO.app.config(function() {
             VKICK: 'blue',
             LMIRROR: 'lightblue',
             REFLECT: 'blue',
+            // override yellow (warning) color
+            LCAVITY: 'lightgreen',
+            RFCW: 'lightgreen',
         },
         elementPic: {
             alpha: ['ALPH'],
             aperture: ['APCONTOUR', 'CLEAN', 'ECOL', 'MAXAMP', 'PEPPOT', 'RCOL', 'SCRAPER', 'TAPERAPC', 'TAPERAPE', 'TAPERAPR', 'RCOLLIMATOR'],
             bend: ['BRAT', 'BUMPER', 'CCBEND', 'CSBEND', 'CSRCSBEND', 'FMULT', 'FTABLE', 'KPOLY', 'KSBEND', 'KQUSE', 'MBUMPER', 'MULT', 'NIBEND', 'NISEPT', 'RBEN', 'SBEN', 'TUBEND', 'SBEND'],
-            drift: ['CSRDRIFT', 'DRIF', 'EDRIFT', 'EMATRIX', 'LSCDRIFT', 'DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
+            drift: ['CSRDRIFT', 'DRIF', 'EDRIFT', 'EMATRIX', 'LSCDRIFT', 'DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD', 'PIPE', 'EM_FIELD'],
             lens: ['ROTATIONALLY_SYMMETRIC_TO_3D', 'LTHINLENS'],
-            magnet: ['BMAPXY', 'BOFFAXE', 'HKICK', 'KICKER', 'KOCT', 'KQUAD', 'KSEXT', 'MATTER', 'OCTU', 'POLYSERIES', 'QUAD', 'QUFRINGE', 'SEXT', 'VKICK', 'QUADRUPOLE', 'DIPOLE'],
+            magnet: ['BMAPXY', 'BOFFAXE', 'HKICK', 'KICKER', 'KOCT', 'KQUAD', 'KSEXT', 'MATTER', 'OCTU', 'POLYSERIES', 'QUAD', 'QUFRINGE', 'SEXT', 'VKICK', 'QUADRUPOLE', 'DIPOLE', 'SOL_QUAD'],
             malign: ['MALIGN'],
             mirror: ['LMIRROR'],
             recirc: ['RECIRC'],
@@ -121,6 +124,10 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
 
     self.getRunSummaryId = () => {
         return parseInt($location.search().runSummaryId);
+    };
+
+    self.hasPVDataFrame = () => {
+        return self.summary.pv_mapping_dataframe.el_id;
     };
 
     self.initDetailController = (controller, $scope) => {
@@ -455,6 +462,7 @@ SIREPO.app.controller('ComparisonController', function(appState, frameCache, sla
 SIREPO.app.controller('LatticeController', function(liveService, slactwinService, $scope) {
     const self = this;
     slactwinService.initDetailController(self, $scope);
+    $scope.slactwinService = slactwinService;
 
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
@@ -633,7 +641,8 @@ SIREPO.app.directive('latticeFooter', function(appState) {
                     const values = $(node).text().split(': ');
                     const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0
                           || values[1].indexOf('WATCH') >= 0
-                          || values[1].indexOf('MARKER') >= 0;
+                          || values[1].indexOf('MARKER') >= 0
+                          || values[1].indexOf('MONITOR') >= 0;
                     if (! $scope.names[values[0]] && ! isMonitorOrInstrument || visited[values[0]]) {
                         return;
                     }
@@ -732,6 +741,9 @@ SIREPO.app.directive('latticeFooter', function(appState) {
 
             $scope.$on('sr-renderBeamline', () => {
                 const ids = {};
+                if (! slactwinService.hasPVDataFrame()) {
+                    return;
+                }
                 const df = slactwinService.summary.pv_mapping_dataframe.el_id;
                 for (const el_id of Object.values(df)) {
                     if (el_id) {

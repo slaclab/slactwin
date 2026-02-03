@@ -18,7 +18,11 @@ def summary_from_archive(archive_path):
         o = g["outputs"]
         for n in o.attrs:
             s.outputs[n] = o.attrs[n]
-    s.pv_mapping_dataframe = pandas.read_hdf(
-        archive_path, key="/summary/pv_mapping_dataframe"
-    )
+        has_pv_dataframe = "pv_mapping_dataframe" in g
+    if has_pv_dataframe:
+        s.pv_mapping_dataframe = pandas.read_hdf(
+            archive_path, key="/summary/pv_mapping_dataframe"
+        )
+    else:
+        s.pv_mapping_dataframe = pandas.DataFrame([])
     return s
