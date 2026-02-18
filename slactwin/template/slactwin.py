@@ -63,6 +63,34 @@ def background_percent_complete(report, run_dir, is_running):
     return rv
 
 
+def get_data_file(run_dir, model, frame, options):
+    # for particle plots, the frame is the runSummaryId
+    if model == "summaryAnimation":
+        a = _twin_implementation(frame).load_archive()
+        return template_common.JobCmdFile(
+            reply_content=template_common.render_jinja(
+                SIM_TYPE,
+                PKDict(
+                    taoInit=a.taoInit,
+                    taoCommands=a.taoCommands,
+                    endElement=re.search(r"-slice .*?:(\S+)", a.taoInit).group(1),
+                ),
+                "pytao.py",
+            ),
+            reply_uri="pytao.py",
+        )
+    if frame:
+        t = _twin_implementation(frame)
+        n = (
+            t.summary_animation()
+            .particles[int(re.search(r"(\d+)", model).group(1))]
+            .name
+        )
+        t.load_archive().output["particles"][n].write(str(run_dir.join(f"{n}.h5")))
+        return f"{n}.h5"
+    raise AssertionError(f"unknown model={model}")
+
+
 def sim_frame(frame_args):
     """Plot request, provides bunch plot report data
 
@@ -73,6 +101,8 @@ def sim_frame(frame_args):
     """
     if "bunchAnimation" in frame_args.frameReport:
         return _bunch_comparison(frame_args)
+    if not frame_args.x or not frame_args.y:
+        raise AssertionError("Missing x/y values to plot")
     # this is a generic openPMD plotter, so usable by impact and rslume-elegant
     return sirepo.template.impactt.bunch_plot(
         frame_args,
@@ -104,7 +134,7 @@ def sim_frame_summaryAnimation(frame_args):
         PKDict: PV values, simulation input values and simulation output values extracted from the summary file and Impact-T archive
     """
 
-    return _twin_implementation(frame_args.runSummaryId).summary_animation(frame_args)
+    return _twin_implementation(frame_args.runSummaryId).summary_animation()
 
 
 def sim_frame_twissAnimation(frame_args):
@@ -150,18 +180,21 @@ def sim_frame_twissAnimation(frame_args):
 def stateful_compute_create_sim_for_run_summary(data, **kwargs):
     c = _SIM_DATA.sim_db_client()
 
-    def _put_lib_file(tmp_dir, model_name, model, file_name):
+    def _put_lib_file(tmp_dir, model_name, field_name, file_name, visited):
         n = f"{tmp_dir.join(file_name).computehash()}.txt"
-        c.put(
-            c.LIB_DIR,
-            _SIM_DATA.lib_file_name_with_model_field(
-                model_name,
-                "filename",
-                n,
-            ),
-            tmp_dir.join(file_name),
-            sim_type="impactt",
-        )
+        k = "-".join([model_name, field_name, n])
+        if k not in visited:
+            visited.add(k)
+            c.put(
+                c.LIB_DIR,
+                _SIM_DATA.lib_file_name_with_model_field(
+                    model_name,
+                    field_name,
+                    n,
+                ),
+                tmp_dir.join(file_name),
+                sim_type=data.args.targetSimType,
+            )
         return n
 
     def _sim_name(machine_name, timestamp):
@@ -185,23 +218,75 @@ def stateful_compute_create_sim_for_run_summary(data, **kwargs):
             notes=f"Imported from $\\href{{ {run_summary_url} }}{{ \\text{{SLACTwin}} }}$",
         )
 
-    with sirepo.sim_run.tmp_dir() as t:
-        # TODO(pjm): handle by twin_name
-        I = impact.Impact(
-            workdir=str(t),
+    def _elegant_sim(tmp_dir, archive_path):
+        # TODO(pjm): this entire method needs to be reworked, possibly parts improved in rslume.elegant
+        from rslume import elegant
+
+        E = elegant.Elegant(
+            workdir=str(tmp_dir),
             use_temp_dir=False,
         )
-        I.load_archive(_archive_path(data.args.runSummaryId))
+        E.load_archive(archive_path)
+        # TODO(pjm): clean this up - it shouldn't be set directly
+        E.path = str(tmp_dir)
+        E.write_input()
+        d = PKDict(
+            models=E._input.models,
+            simulationType="elegant",
+        )
+        s = sirepo.sim_data.get_class("elegant")
+        util = sirepo.template.lattice.LatticeUtil(d, s.schema())
+        util.sort_elements_and_beamlines()
+        fields = set()
+        for f in util.iterate_models(
+            sirepo.template.lattice.InputFileIterator(s)
+        ).result:
+            fields.add(re.search(r"^(.*?)\-(.*?)\.(.*)$", f).group(1, 2, 3))
+        visited = set()
+        for f in fields:
+            for e in d.models.elements:
+                for n in fields:
+                    if e.type == n[0] and e[n[1]] == n[2]:
+                        e[n[1]] = _put_lib_file(tmp_dir, n[0], n[1], n[2], visited)
+        c = E.cmd("sdds_beam")
+        n = c.input
+        c.input = _put_lib_file(tmp_dir, "sdds_beam", "input", c.input, visited)
+        d.models.bunchFile.sourceFile = c.input
+        _put_lib_file(tmp_dir, "bunchFile", "sourceFile", n, visited)
+        E.cmd("run_setup").lattice = "Lattice"
+        return d
+
+    def _impact_sim(tmp_dir, archive_path):
+        I = impact.Impact(
+            workdir=str(tmp_dir),
+            use_temp_dir=False,
+        )
+        I.load_archive(archive_path)
         I.numprocs = 1
         I.configure()
         I.write_input()
-        d = ImpactTParser().parse_file(pykern.pkio.read_text(t.join("ImpactT.in")))
+        d = ImpactTParser().parse_file(
+            pykern.pkio.read_text(tmp_dir.join("ImpactT.in"))
+        )
+        visited = set()
         for m in d.models.elements:
             if m.type != "WRITE_BEAM" and m.get("filename"):
-                m.filename = _put_lib_file(t, m.type, m, m.filename)
+                m.filename = _put_lib_file(
+                    tmp_dir, m.type, "filename", m.filename, visited
+                )
         d.models.distribution.filename = _put_lib_file(
-            t, "distribution", d.models.distribution, "partcl.data"
+            tmp_dir, "distribution", "filename", "partcl.data", visited
         )
+        return d
+
+    with sirepo.sim_run.tmp_dir() as t:
+        a = _archive_path(data.args.runSummaryId)
+        if data.args.targetSimType == "impactt":
+            d = _impact_sim(t, a)
+        elif data.args.targetSimType == "elegant":
+            d = _elegant_sim(t, a)
+        else:
+            raise AssertionError(f"unhandled sim type: {data.args.targetSimType}")
         d.models.simulation.pkupdate(
             _update_sim(data.args.runSummaryId, data.args.runSummaryUrl)
         )
@@ -443,7 +528,7 @@ class _Elegant:
             ),
         )
 
-    def summary_animation(self, frame_args):
+    def summary_animation(self):
         s = _summary_data(self.run_summary_id)
         E = self.load_archive()
         return PKDict(
@@ -524,11 +609,17 @@ class _Bmad:
         res = PKDict()
         with h5py.File(_archive_path(self.run_summary_id), "r") as f:
             res.output = PKDict(stats=PKDict(), particles=PKDict())
-            for c in f["/bmad/stats"]:
-                res.output.stats[c] = f[f"/bmad/stats/{c}"][:]
-            res.lattice = pykern.pkjson.load_any(f["/bmad"].attrs["lattice"])
-            for p in f["/bmad/particles"]:
-                res.output.particles[p] = ParticleGroup(h5=f[f"/bmad/particles/{p}"])
+            for c in f["/bmad/output/stats"]:
+                res.output.stats[c] = f[f"/bmad/output/stats/{c}"][:]
+            res.lattice = pykern.pkjson.load_any(f["/bmad/input"].attrs["lattice"])
+            res.taoCommands = pykern.pkjson.load_any(
+                f["/bmad/input"].attrs["taoCommands"]
+            )
+            res.taoInit = f["/bmad/input"].attrs["taoInit"]
+            for p in f["/bmad/output/particles"]:
+                res.output.particles[p] = ParticleGroup(
+                    h5=f[f"/bmad/output/particles/{p}"]
+                )
         return res
 
     def name(self):
@@ -562,7 +653,7 @@ class _Bmad:
             ),
         )
 
-    def summary_animation(self, frame_args):
+    def summary_animation(self):
         s = _summary_data(self.run_summary_id)
         a = self.load_archive()
         return PKDict(
@@ -635,7 +726,7 @@ class _ImpactT:
     def stat_animation(self, frame_args):
         return sirepo.template.impactt.stat_animation(self.load_archive(), frame_args)
 
-    def summary_animation(self, frame_args):
+    def summary_animation(self):
         s = _summary_data(self.run_summary_id)
         I = self.load_archive()
         with h5py.File(_archive_path(self.run_summary_id)) as f:
@@ -658,17 +749,29 @@ class _ImpactT:
         return [
             ["Variable", "Variable"],
             ["PV Name", "device_pv_name"],
-            ["PV Value", "pv_value", "pv_unit"],
+            # TODO(pjm): find PV units somewhere?
+            # ["PV Value", "pv_value", "pv_unit"],
+            ["PV Value", "pv_value"],
             ["IMPACT-T Name", "impact_name"],
             ["IMPACT-T Value", "impact_value", "impact_unit"],
             ["IMPACT-T Offset", "impact_offset"],
             ["IMPACT-T Factor", "impact_factor"],
         ]
 
+    # {'attribute': 'field_autoscale', 'bmad_unit': 'V/m', 'device_pv_name': 'ACCL:L0B:0180:AACTMEAN', 'element': 'CAVL018', 'factor': 1861947.3470981333, 'name': 'CAVL018', 'pv_value': 16.623303742358566, 'value': '1861947.3470981333 * 16.623303742358566'}
+
     def _summary_text(self, summary, I, models):
         """Returns a descriptive name and date for the runSummaryId
         Constructs the description from the summary filename, ex. lume-impact-live-demo-s3df-sc_inj
         """
+
+        def _species(beam):
+            if beam.particle == "other":
+                # close enough to electron mass
+                if round(beam.Bmass * 1e-3) == 511:
+                    return "electron"
+            return beam.particle
+
         change_timesteps = PKDict()
         timestep_pos = None
         timestep_dt = None
@@ -681,8 +784,7 @@ class _ImpactT:
                 timestep_dt = change_timesteps[el_id].dt
         return [
             f"{I.header['Np']:,} macroparticles",
-            # TODO(pjm): actually electrons, not "other"
-            f"{I.header['Nbunch']} bunch{'es' if I.header['Nbunch'] > 1 else ''} of {models.beam.particle}",
+            f"{I.header['Nbunch']} bunch{'es' if I.header['Nbunch'] > 1 else ''} of {_species(models.beam)}",
             f"Total charge: {I.total_charge * 1e12:.1f} pC",
             f"Processor domain: {I.header['Nprow']} x {I.header['Npcol']} = {I.header['Nprow'] * I.header['Npcol']} CPUs",
             f"Space charge grid: {models.simulationSettings.Nx} x {models.simulationSettings.Ny} x {models.simulationSettings.Nz}",
@@ -726,8 +828,9 @@ class _ImpactT:
             if el_id and el_id not in bl:
                 remove_frames.add(k)
             dataframe.el_id[k] = el_id
-        for k in remove_frames:
-            for f in dataframe.values():
-                del f[k]
+        # TODO(pjm): need to sort dataframe items in order first, or this leaves gaps
+        # for k in remove_frames:
+        #     for f in dataframe.values():
+        #         del f[k]
         data.models.beamlines[0]["items"] = bl
         return data

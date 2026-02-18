@@ -18,13 +18,19 @@ def init_apis(**kwargs):
     pass
 
 
+_SIM_TYPE_FOR_TWIN_NAME = PKDict(
+    impact="impactt",
+)
+
+
 class API(sirepo.quest.API):
 
     @sirepo.quest.Spec("require_plan")
     async def api_slactwinSimFromRunSummary(self):
         d = self.parse_post(type=SIM_TYPE).req_data
+        d.targetSimType = _SIM_TYPE_FOR_TWIN_NAME.get(d.twinName, d.twinName)
         # ensure impact-t exists for the user
-        sirepo.simulation_db.simulation_dir("impactt", qcall=self)
+        sirepo.simulation_db.simulation_dir(d.targetSimType, qcall=self)
         r = (
             await self.call_api(
                 "statefulCompute",

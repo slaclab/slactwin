@@ -2,11 +2,9 @@
 SIREPO.srdbg = console.log.bind(console);
 
 SIREPO.app.config(function() {
-    SIREPO.SINGLE_FRAME_ANIMATION = [
-        'bunchAnimation1',
-        'bunchAnimation2',
-        'bunchAnimation3',
-    ];
+    // bunchAnimation and elementAnimation
+    SIREPO.SINGLE_FRAME_ANIMATION = new Array(4).fill('').map((x, i) => `bunchAnimation${i}`).concat(
+        new Array(20).fill('').map((x, i) => `elementAnimation${i}`));
     SIREPO.PLOTTING_SUMMED_LINEOUTS = true;
     SIREPO.lattice = {
         elementColor: {
@@ -14,11 +12,11 @@ SIREPO.app.config(function() {
             QUADRUPOLE: 'orange',
             BMAPXY: 'magenta',
             FTABLE: 'magenta',
-            KOCT: 'lightyellow',
-            KQUAD: 'tomato',
+            KOCT: 'orange',
+            KQUAD: 'orange',
             KSEXT: 'lightgreen',
             MATTER: 'black',
-            OCTU: 'yellow',
+            OCTU: 'orange',
             QUAD: 'orange',
             QUFRINGE: 'salmon',
             SEXT: 'lightgreen',
@@ -62,7 +60,7 @@ SIREPO.app.config(function() {
     `;
 });
 
-SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCache, panelState, persistentSimulation, requestSender, uri, $location, $rootScope) {
+SIREPO.app.factory('slactwinService', function(activeSection, appState, errorService, frameCache, panelState, persistentSimulation, requestSender, uri, $location, $rootScope) {
     const self = {};
     self.computeModel = (analysisModel) => 'animation';
     self.runKinds = null;
@@ -401,7 +399,9 @@ SIREPO.app.controller('VizController', function(appState, frameCache, liveServic
             slactwinService.setValueList(m, 'elementAnimation', info.columns);
             appState.setModelDefaults(m, 'elementAnimation');
             appState.saveQuietly(info.modelKey);
-            frameCache.setFrameCount(1, info.modelKey);
+            //TODO(pjm): hacked the summaryId into the frame count so
+            // the datafile may be downloaded
+            frameCache.setFrameCount(m.runSummaryId + 1, info.modelKey);
         });
     });
 });
@@ -508,28 +508,40 @@ SIREPO.app.directive('appFooter', function() {
             $scope.closeModal = () => $('#sr-open-sim').modal('hide');
 
             $scope.createSim = () => {
-                $scope.processingMessage = `Creating ${$scope.sirepoSimTypeName()} simulation, please wait.`;
+                if (appState.models.simulation.twin_name === 'bmad') {
+                    $scope.newSimName = 'PyTao execution script';
+                    $scope.newSimURL = requestSender.formatUrl('downloadRunFile', {
+                        simulation_id: appState.models.simulation.simulationId,
+                        simulation_type: SIREPO.APP_SCHEMA.simulationType,
+                        model: 'summaryAnimation',
+                        frame: slactwinService.getRunSummaryId(),
+                    });
+                }
+                else {
+                    $scope.processingMessage = `Creating ${$scope.sirepoSimTypeName()} simulation, please wait.`;
 
-                requestSender.sendRequest(
-                    'slactwinSimFromRunSummary',
-                    (resp) => {
-                        if (resp.error) {
-                            $scope.processingMessage = `An error occurred: ${resp.error}`;
-                            return;
-                        }
-                        $scope.processingMessage = "";
-                        $scope.newSimName = resp.simulation.name;
-                        $scope.newSimURL = uri.formatLocal(
-                            'lattice',
-                            { simulationId: resp.simulation.simulationId },
-                            resp.simulationType,
-                        );
-                    },
-                    {
-                        runSummaryId: slactwinService.getRunSummaryId(),
-                        runSummaryUrl: $location.absUrl(),
-                    },
-                );
+                    requestSender.sendRequest(
+                        'slactwinSimFromRunSummary',
+                        (resp) => {
+                            if (resp.error) {
+                                $scope.processingMessage = `An error occurred: ${resp.error}`;
+                                return;
+                            }
+                            $scope.processingMessage = "";
+                            $scope.newSimName = resp.simulation.name;
+                            $scope.newSimURL = uri.formatLocal(
+                                'lattice',
+                                { simulationId: resp.simulation.simulationId },
+                                resp.simulationType,
+                            );
+                        },
+                        {
+                            runSummaryId: slactwinService.getRunSummaryId(),
+                            runSummaryUrl: $location.absUrl(),
+                            twinName: appState.models.simulation.twin_name
+                        },
+                    );
+                }
 
                 $('#sr-open-sim').on('hidden.bs.modal', () => {
                     init();
@@ -793,7 +805,6 @@ SIREPO.app.directive('pvTable', function() {
                 $scope.columns = slactwinService.summary.summary_columns;
                 $scope.dataframe = slactwinService.summary.pv_mapping_dataframe;
                 $scope.rows = [];
-                const ids = slactwinService.latticeModels().beamlines[0].items;
                 Object.keys($scope.dataframe.el_id).forEach((k, idx) => {
                     $scope.rows.push({
                         el_id: $scope.dataframe.el_id[k],
@@ -825,7 +836,10 @@ SIREPO.app.directive('pvTable', function() {
 
             $scope.formatUnits = (row, col) => {
                 if (col[2]) {
-                    return `(${cellValue(col, 2, row.index)})`;
+                    const v = cellValue(col, 2, row.index)
+                    if (v) {
+                        return `(${v})`;
+                    }
                 }
             }
 
@@ -963,7 +977,7 @@ SIREPO.app.directive('searchForm', function() {
               <div data-ng-if="noResultsMessage">{{ noResultsMessage }}</div>
             </div>
         `,
-        controller: function(appState, errorService, liveService, slactwinService, $scope) {
+        controller: function(appState, liveService, slactwinService, $scope) {
             const init = () => {
                 $scope.loadingMessage = 'Loading runs';
                 slactwinService.initMachines(() => {

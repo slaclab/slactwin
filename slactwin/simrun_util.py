@@ -147,17 +147,21 @@ def build_commands(model_name, pvfile):
         cmds += dm.as_tao(pvdata)
 
     return (
-        [
-            "set global lattice_calc_on = F",
-            "set lattice model=design ! Reset the lattice",
-            # tell bmad to evaluate using b1_gradient values
-            "set ele quad::* field_master = T",
-        ]
-        + cmds
-        + [
-            "set global lattice_calc_on = T",
-        ]
-    ), pvinfo
+        (
+            [
+                "set global lattice_calc_on = F",
+                "set lattice model=design ! Reset the lattice",
+                # tell bmad to evaluate using b1_gradient values
+                "set ele quad::* field_master = T",
+            ]
+            + cmds
+            + [
+                "set global lattice_calc_on = T",
+            ]
+        ),
+        pvinfo,
+        pvdata,
+    )
 
 
 def ca_isotime_from_filename(filename):

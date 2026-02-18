@@ -1,6 +1,6 @@
 """Simple elegant runner
 
-:copyright: Copyright (c) 2025 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
+:copyright: Copyright (c) 2026 The Board of Trustees of the Leland Stanford Junior University, through SLAC National Accelerator Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy).  All Rights Reserved.
 :license: http://github.com/slaclab/slactwin/LICENSE
 """
 
@@ -12,11 +12,8 @@ from scipy.interpolate import Akima1DInterpolator
 from sirepo.template.code_variable import PurePythonEval
 from slactwin.simrun_util import Archiver
 import copy
-import functools
 import glob
 import math
-import matplotlib
-import matplotlib.pyplot as plt
 import os
 import pmd_beamphysics
 import pykern.pkio
@@ -44,7 +41,42 @@ def run(
     work_dir=None,
     out_dir=None,
 ):
-    # ex. slactwin simrun-elegant run cu_hxr /home/vagrant/2025-12-04.json WS02 ENDBC1 -w BC1CBEG:BC1CEND
+    """
+    Run an elegant simulation between two lattice elements.
+
+    This function executes a beam dynamics simulation for the specified
+    model using process variable (PV) settings provided in a JSON file.
+
+    Example:
+        slactwin simrun-elegant run cu_hxr cu_hxr-2025-12-04T08:14:13-08:00.json \
+            WS02 ENDBC1 --watches=BC1CBEG:BC1CEND
+
+    Args:
+        model_name (str):
+            Name of the accelerator model to use (e.g., "cu_spec", "cu_hxr").
+
+        pv_filename (str):
+            Path to a JSON file containing process variable (PV) values
+            used to configure the model before running the simulation.
+
+        start_element_name (str):
+            Name of the lattice element where beam tracking begins.
+
+        end_element_name (str):
+            Name of the lattice element where beam tracking stops.
+
+        watches (str, optional):
+            Optional colon-separated list specifying additional points along the
+            lattice to save particle data.
+
+        beam_in (object, optional):
+            Optional input distribution file to use instead of
+            the model’s default initial beam
+
+        out_dir (str, optional):
+            Directory where simulation output files will be written. Files are
+            written to subdirectories based on the timestamp. (YYYY/MM/DD/)
+    """
 
     def _add_variables(e, defaults):
         for n, v in defaults.vars.items():
@@ -148,10 +180,11 @@ def run(
 
     def eval_expression(expression):
         v, e = code_var.eval_var(expression, [], {})
-        assert not e, f"invalid expression: {expression}, err: {e}"
+        if e:
+            raise AssertionError(f"invalid expression: {expression}, err: {e}")
         return v
 
-    tao_cmds, pvinfo = slactwin.simrun_util.build_commands(model_name, pv_filename)
+    tao_cmds, pvinfo, _ = slactwin.simrun_util.build_commands(model_name, pv_filename)
     pv_summary = []
 
     # TODO(pjm): separate into another method
@@ -181,7 +214,10 @@ def run(
         if cmd[0] in defaults.overlays:
             v = _apply_overlay(e, eval_expression(cmd[2]), defaults.overlays[cmd[0]])
             if cmd[0] in pvinfo and defaults.overlays[cmd[0]].bend_names[0] in el_names:
-                assert len(pvinfo[cmd[0]]) == 1
+                if len(pvinfo[cmd[0]]) != 1:
+                    raise AssertionError(
+                        f"Multiple pvinfo records for element {cmd[0]}: {pvinfo[cmd[0]]}"
+                    )
                 p = pvinfo[cmd[0]][0]
                 p.pkupdate(value=str(v), factor=v / p.pv_value if p.pv_value else 0),
                 pv_summary += pvinfo[cmd[0]]
@@ -215,7 +251,10 @@ def run(
         k1 = eval_expression(cmd[2]) / Bp * eCharge
         el.k1 = k1
         if cmd[0] in pvinfo and cmd[0] in el_names:
-            assert len(pvinfo[cmd[0]]) == 1
+            if len(pvinfo[cmd[0]]) != 1:
+                raise AssertionError(
+                    f"Multiple pvinfo records for element {cmd[0]}: {pvinfo[cmd[0]]}"
+                )
             pvinfo[cmd[0]][0].value = str(k1)
             pv_summary += pvinfo[cmd[0]]
 
@@ -224,15 +263,14 @@ def run(
         pykern.pkio.mkdir_parent(work_dir)
     else:
         e.reset()
+        e.configure()
     e.run()
     a = Archiver(pv_filename, _TWIN_NAME, model_name)
     e.archive(a.archive_path(e.path))
     a.add_summary(pv_summary, _outputs(e), out_dir)
-    # _plot_twiss(e)
 
 
 def _apply_overlay(E, value, config):
-    # TODO(pjm): assumes knot overlay
     angle_deg = Akima1DInterpolator(config.knot_range, config.knot_value)(value).item()
     theta = angle_deg * math.pi / 180
     assert len(config.bend_names) == 4
@@ -280,137 +318,7 @@ def _build_element_energy_map(e):
 
 def _elegant_defaults(model_name):
     with open(pykern.pkresource.file_path(f"{model_name}-elegant.json"), "r") as f:
-        defaults = pykern.pkjson.load_any(f)
-    # TODO(pjm): generate from ipynb in LCLS_LATTICE, store in elegant.json
-    defaults.overlays = PKDict(
-        O_BC1_OFFSET=PKDict(
-            knot_range=[
-                -2.00000000e-01,
-                -1.33333333e-01,
-                -6.66666667e-02,
-                2.77555756e-17,
-                6.66666667e-02,
-                1.33333333e-01,
-                2.00000000e-01,
-                2.66666667e-01,
-                3.33333333e-01,
-                4.00000000e-01,
-            ],
-            knot_value=[
-                4.33589907,
-                2.89349031,
-                1.44761486,
-                0.0,
-                -1.44761486,
-                -2.89349031,
-                -4.33589907,
-                -5.77313792,
-                -7.20353921,
-                -8.6254818,
-            ],
-            Lp=0.2032,
-            Lp_drift=2.4349,
-            bc_theta_default=-0.093575352547,
-            bend_names=("BX11", "BX12", "BX13", "BX14"),
-            # D21oA D21oB
-            drift_names=("CS000016", "CS000021"),
-        ),
-        O_BC2_OFFSET=PKDict(
-            knot_range=[
-                -0.2,
-                -0.13333333,
-                -0.06666667,
-                0.0,
-                0.06666667,
-                0.13333333,
-                0.2,
-                0.26666667,
-                0.33333333,
-                0.4,
-                0.46666667,
-                0.53333333,
-                0.6,
-            ],
-            knot_value=[
-                1.10073799,
-                0.7338735,
-                0.3669512,
-                0.0,
-                -0.3669512,
-                -0.7338735,
-                -1.10073799,
-                -1.4675158,
-                -1.8341781,
-                -2.20069612,
-                -2.56704115,
-                -2.93318456,
-                -3.29909781,
-            ],
-            Lp=0.549,
-            Lp_drift=9.8602,
-            bc_theta_default=-0.036971268085,
-            bend_names=("BX21", "BX22", "BX23", "BX24"),
-            # D21oA D21oB
-            drift_names=("CS000032", "CS000039"),
-        ),
-    )
-    return defaults
-
-
-# TODO(pjm): temporary for manual verification
-def _plot_twiss(e):
-
-    def _plot_sdds(e, x_column, y_columns, labels, right_columns=None, conversion=None):
-        def column(name):
-            v = e.output.stats[name]
-            if conversion and name in conversion:
-                return conversion[name](v)
-            return v
-
-        fig, ax = plt.subplots(figsize=(16, 4))
-        for y in y_columns:
-            ax.plot(column(x_column), column(y), label=labels[y])
-        plt.legend()
-        if right_columns:
-            matplotlib.rcParams["axes.prop_cycle"] = matplotlib.cycler(
-                color=["orangered", "limegreen", "royalblue"]
-            )
-            ax2 = ax.twinx()
-            for y in right_columns:
-                ax2.plot(column(x_column), column(y), label=labels[y])
-            ax2.set_ylabel(labels["y2"])
-        ax.set_xlabel(labels["x"])
-        ax.set_ylabel(labels["y"])
-        plt.title(labels["title"])
-
-    def plot_title(e):
-        e = slactwin.simrun_util.beta_gamma_to_energy_gev(
-            meV,
-            e.output.stats.pCentral0,
-        )[-1]
-        return f"Final energy: {e:.5f} GeV"
-
-    _plot_sdds(
-        e,
-        "s",
-        ["betax", "betay"],
-        right_columns=["pCentral0"],
-        labels=dict(
-            betax=r"$\beta_x$",
-            betay=r"$\beta_y$",
-            x="s (m)",
-            y="Twiss Beta (m)",
-            y2="Energy (GeV)",
-            pCentral0="Energy (GeV)",
-            title=plot_title(e),
-        ),
-        conversion=dict(
-            pCentral0=functools.partial(
-                slactwin.simrun_util.beta_gamma_to_energy_gev, meV
-            ),
-        ),
-    )
-    plt.show()
+        return pykern.pkjson.load_any(f)
 
 
 def _unique_klystrons(e, defaults):

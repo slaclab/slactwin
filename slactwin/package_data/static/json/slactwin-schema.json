@@ -224,6 +224,7 @@
         },
         "bunchAnimation": {
             "hasDataFile": false,
+            "canFullScreen": false,
             "title": "Phase Space",
             "advanced": [
                 "plotType",
@@ -254,7 +255,6 @@
         },
         "elementAnimation": {
             "title": "Particle Plot",
-            "hasDataFile": false,
             "advanced": [
                 "plotType",
                 [
