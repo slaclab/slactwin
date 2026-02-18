@@ -146,11 +146,10 @@ def pytest_runtest_protocol(item, *args, **kwargs):
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
-    config._parser.parse_setoption(
+    config._parser.parse(
         # run each test file in a separate process
         # the native trace works better, e.g. for emacs
         ["--tb=native"],
-        config.option,
         namespace=config.option,
     )
     config.addinivalue_line("markers", "sirepo_args: pass parameters to fixtures")
