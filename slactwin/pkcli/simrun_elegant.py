@@ -19,6 +19,7 @@ import pmd_beamphysics
 import pykern.pkio
 import pykern.pkjson
 import pykern.pkresource
+import pykern.pksubprocess
 import slactwin.simrun_util
 
 # TODO(pjm): move calc to util
@@ -121,10 +122,15 @@ def run(
             pykern.pkio.unchecked_remove(work_dir)
             pykern.pkio.mkdir_parent(work_dir)
         if beam_in:
-            b = path.join(pykern.pkio.py_path(beam_in).basename + ".ssds")
+            b1 = path.join(pykern.pkio.py_path(beam_in).basename + "-text.ssds")
             pmd_beamphysics.interfaces.elegant.write_elegant(
                 ParticleGroup(beam_in),
-                str(b),
+                str(b1),
+            )
+            # Pelegant requires binary sdds files
+            b = path.join(pykern.pkio.py_path(beam_in).basename + ".ssds")
+            pykern.pksubprocess.check_call_with_signals(
+                ["sddsconvert", str(b1), str(b), "-binary"]
             )
             return w, b.basename
         return w, None
@@ -258,6 +264,9 @@ def run(
             pvinfo[cmd[0]][0].value = str(k1)
             pv_summary += pvinfo[cmd[0]]
 
+    e.use_mpi = True
+    # TODO(pjm): pass in nproces from command line
+    e.nprocs = 8
     if work_dir:
         pykern.pkio.unchecked_remove(work_dir)
         pykern.pkio.mkdir_parent(work_dir)

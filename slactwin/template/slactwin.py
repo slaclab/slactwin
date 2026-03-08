@@ -483,8 +483,9 @@ def _update_dataframe(data, dataframe):
         if el.name not in el_by_name:
             el_by_name[el.name] = el._id
     dataframe.el_id = PKDict()
-    for idx, n in dataframe.element.items():
-        dataframe.el_id[str(idx)] = el_by_name.get(n)
+    if hasattr(dataframe, "element"):
+        for idx, n in dataframe.element.items():
+            dataframe.el_id[str(idx)] = el_by_name.get(n)
     return dataframe
 
 
@@ -594,7 +595,7 @@ class _Elegant:
             ["Variable", "name"],
             ["PV Name", "device_pv_name"],
             ["PV Value", "pv_value"],
-            ["Field", "attribute"],
+            ["elegant Field", "attribute"],
             ["elegant Value", "value"],  # TODO(pjm): units
             ["elegant Factor", "factor"],
         ]
@@ -706,7 +707,7 @@ class _Bmad:
             ["Variable", "name"],
             ["PV Name", "device_pv_name"],
             ["PV Value", "pv_value"],
-            ["Field", "attribute"],
+            ["Bmad Field", "attribute"],
             ["Bmad Value", "value"],  # TODO(pjm): units
             ["Bmad Factor", "factor"],
         ]

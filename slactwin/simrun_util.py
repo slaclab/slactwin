@@ -138,6 +138,9 @@ def build_commands(model_name, pvfile):
         # TODO(pjm): add method argument for ignore list
         if dn in ("bpms", "correctors"):
             continue
+        # running design lattice with have no pv input
+        if not pvdata:
+            continue
         if isinstance(dm, lcls_live.datamaps.TabularDataMap):
             _tabular_summary(dm)
         elif isinstance(dm, lcls_live.datamaps.KlystronDataMap):

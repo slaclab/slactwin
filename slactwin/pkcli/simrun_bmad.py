@@ -129,6 +129,7 @@ def run(
     assert "LCLS_LATTICE" in os.environ
     cmds, pvinfo, _ = slactwin.simrun_util.build_commands(model_name, pv_filename)
     taoinit = f"-init $LCLS_LATTICE/bmad/models/{model_name}/tao.init -slice {start_element_name}:{end_element_name} -noplot"
+    # SubprocessTao(taoinit) could be used if we kept the runner in memory
     tao = Tao(taoinit)
     pv_summary, run_cmds = evaluate_tao(tao, cmds, pvinfo)
     a = Archiver(

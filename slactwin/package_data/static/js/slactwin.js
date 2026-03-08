@@ -825,9 +825,9 @@ SIREPO.app.directive('pvTable', function() {
                 if (! SIREPO.NUMBER_REGEXP.test(v)) {
                     return v;
                 }
-                if (! v && ! col[2]) {
-                    return '';
-                }
+                //if (! v && ! col[2]) {
+                //    return '';
+                //}
                 if (Math.abs(v) < 1e-3) {
                     return appState.formatExponential(v);
                 }

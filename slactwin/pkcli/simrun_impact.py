@@ -7,15 +7,12 @@
 from impact import Impact
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
-from sirepo.template.code_variable import PurePythonEval
 from slactwin.simrun_util import Archiver
 import h5py
-import matplotlib.pyplot as plt
-import numpy
 import os
 import pmd_beamphysics
 import pykern.pkjson
-import re
+import slactwin.datamaps.impact
 import slactwin.simrun_util
 
 _MODEL_NAME_TO_IMPACT_FILE = PKDict(
@@ -74,30 +71,12 @@ def run(
             Directory where simulation output files will be written. Files are
             written to subdirectories based on the timestamp. (YYYY/MM/DD/)
     """
+
     _DESC = PKDict(
         field_autoscale="Voltage",
         phi0="Phase",
         b1_gradient="Gradient",
     )
-    _FIELD = PKDict(
-        field_autoscale="rf_field_scale",
-        bs_field="solenoid_field_scale",
-        phi0="autophase_deg",
-    )
-    _GROUP = PKDict(
-        phi0="dtheta0_deg",
-        voltage="voltage",
-    )
-
-    def _map_summary_fields(summary):
-        return summary.pkupdate(
-            Variable=f'{summary.element} {_DESC.get(summary.attribute, "")}',
-            impact_value=summary.value,
-            impact_name=f"{summary.element}:{_FIELD.get(summary.attribute, summary.attribute)}",
-            # TODO(pjm): ask Impact instance for field units
-            impact_unit="",
-            impact_factor=summary.factor,
-        )
 
     def _outputs(I):
         return PKDict({f"end_{c}": I.output["stats"][c][-1] for c in I.output["stats"]})
@@ -110,6 +89,7 @@ def run(
     I = Impact.from_yaml(
         f"{os.environ['LCLS_LATTICE']}/{_MODEL_NAME_TO_IMPACT_FILE[model_name]}"
     )
+    # I.verbose = True
     # TODO(pjm): remove workdir/tempdir config
     I._use_temp_dir = False
     I.workdir = "/home/vagrant/tmp/impact-tmp"
@@ -120,125 +100,56 @@ def run(
 
     I.stop = I.ele[end_element_name]["s"] + I.ele[end_element_name].get("L", 0)
 
-    code_var = PurePythonEval()
+    # _old_code(model_name, pv_filename, I, beam_in, out_dir)
 
-    def eval_expression(expression):
-        v, e = code_var.eval_var(expression, [], {})
-        assert not e, f"invalid expression: {expression}, err: {e}"
-        return v
+    with open(pv_filename, "r") as f:
+        pvdata = pykern.pkjson.load_any(f)
 
-    tao_cmds, pvinfo, pvdata = slactwin.simrun_util.build_commands(
-        "cu_spec" if model_name == "cu_inj" else model_name, pv_filename
-    )
+    pv_summary = []
+    for name, dm in slactwin.datamaps.impact.get_impact_datamaps(model_name).items():
+        for idx, r in dm.data.iterrows():
+            if "pvname_rbv" in r:
+                r.pvname = r.pvname_rbv
+            if r.pvname not in pvdata:
+                pkdc("missing {}", r.pvname)
+                continue
+            if r.impact_name and r.impact_name not in I.ele:
+                pkdc("missing ele {}", r.impact_name)
+                continue
+            pv_summary.append(
+                PKDict(
+                    Variable=f'{r.impact_name} {_DESC.get(r.impact_attribute, "")}',
+                    device_pv_name=r.pvname,
+                    pv_value=pvdata[r.pvname],
+                    impact_name=slactwin.datamaps.impact.impact_field_name(
+                        r.impact_name, r.impact_attribute
+                    ),
+                    impact_unit=r.impact_unit,
+                    impact_factor=r.impact_factor,
+                )
+            )
+        for f, v in slactwin.datamaps.impact.as_impact(dm, pvdata).items():
+            # I[f] = v
+            for r in pv_summary:
+                if f == r.impact_name:
+                    pkdc("set {} = {}", f, v)
+                    I[f] = v
+                    r.impact_value = v
+        pv_summary = [r for r in pv_summary if "impact_value" in r]
 
-    # TODO(pjm): charge from beam_in or from PV?
     if model_name == "sc_inj":
-        I.total_charge = pvdata["BPMS:GUNB:314:TMIT"] * 1.6e-7 * 1e-12
-    elif model_name == "cu_inj":
-        I.total_charge = pvdata["BPMS:IN20:221:TMIT"] * 1.6e-7 * 1e-12
+        # TODO(pjm): allow setting overrides from input arguments
+        I["RFGUNB:rf_field_scale"] = 16486924.441375
+        I["RFGUNB:autophase_deg"] = 0
+        I["BUN1B:rf_field_scale"] = 1786301.125
+        I["BUN1B:autophase_deg"] = -57
 
-    # TODO(pjm): for testing only
+    # TODO(pjm): for testing only, runs faster
     # I.total_charge = 0
 
     if beam_in and I.total_charge:
         # TODO(pjm): should respect the initial charge from particles?
         I.initial_particles.charge = I.total_charge
-
-    # TODO(pjm): constant values from inputs
-    if model_name == "sc_inj":
-        tao_cmds += [
-            "set ele RFGUNB field_autoscale = 16486924.441375",
-            "set ele RFGUNB phi0 = 0",
-            "set ele BUN1B field_autoscale = 1786301.125",
-            # TODO(pjm): don't assume conversion value
-            "set ele BUN1B phi0 = 0.0027777778 * -57",
-        ]
-    pv_summary = []
-    groups = PKDict()
-    for n in I.group:
-        g, f = re.search(r"^(.*?)\_(.*)$", n).groups()
-        if g in groups:
-            groups[g][f] = n
-        else:
-            groups[g] = PKDict({f: n})
-
-    def pvinfo_for_command(cmd):
-        if cmd[0] in groups:
-            p = [v for v in pvinfo[cmd[0]] if v.attribute == cmd[1]]
-        else:
-            p = pvinfo[cmd[0]]
-        assert len(p) == 1
-        return p[0]
-
-    for cmd_str in tao_cmds:
-        cmd = slactwin.simrun_util.parse_cmd(cmd_str)
-        if not cmd:
-            continue
-
-        if cmd[0] in groups:
-            p = pvinfo_for_command(cmd)
-            if cmd[1] == "phi0":
-                n = groups[cmd[0]].phase
-                I[n]["dtheta0_deg"] = eval_expression(cmd[2]) / 0.0027777778
-                p.element = n
-                p.attribute = "dtheta0_deg"
-                cmd[1] = p.attribute
-                p.value = str(p.pv_value)
-                p.factor = 1
-            elif cmd[1] == "voltage":
-                n = groups[cmd[0]].scale
-                I[n]["voltage"] = eval_expression(cmd[2])
-                p.element = n
-                p.value = str(I[n]["voltage"])
-            else:
-                assert False
-        elif cmd[0] not in I.ele:
-            continue
-        # TODO(pjm): use bmad-->impact-t field mapping
-        elif cmd[1] == "phi0":
-            # TODO(pjm): remove bmad scaling from expression instead of dividing
-            # v = eval_expression(cmd[2]) / 0.0027777778
-            p = pvinfo_for_command(cmd)
-            v = p.pv_value
-            I[f"{cmd[0]}:autophase_deg"] = v
-            p.value = str(v)
-            p.factor = 1
-        elif cmd[1] == "field_autoscale":
-            v = eval_expression(cmd[2])
-            I.ele[cmd[0]]["rf_field_scale"] = v
-            pvinfo_for_command(cmd).value = str(v)
-        elif cmd[1] == "b1_gradient":
-            v = eval_expression(cmd[2])
-            I.ele[cmd[0]]["b1_gradient"] = v
-            pvinfo_for_command(cmd).value = str(v)
-        elif cmd[1] == "bs_field":
-            p = pvinfo_for_command(cmd)
-            if cmd[0] == "SOL1":
-                # TODO(pjm): lcls-live factor for SOL1.bs_field is incorrect?
-                p.factor = 0.51427242
-                v = p.pv_value * p.factor
-            else:
-                v = eval_expression(cmd[2])
-            I.ele[cmd[0]]["solenoid_field_scale"] = v
-            p.value = str(v)
-        elif cmd[1] == "k1l":
-            p = pvinfo_for_command(cmd)
-            p.factor = -0.1 / I.ele[cmd[0]]["L_effective"]
-            v = p.factor * p.pv_value
-            I.ele[cmd[0]]["b1_gradient"] = v
-            p.attribute = "b1_gradient"
-            cmd[1] = p.attribute
-            p.value = str(v)
-        else:
-            assert False
-        if cmd[0] not in pvinfo:
-            continue
-        for v in pvinfo[cmd[0]]:
-            if v.attribute == cmd[1]:
-                # v.value = cmd[2]
-                # if 'value' not in v:
-                #     v.value = cmd[2]
-                pv_summary.append(_map_summary_fields(v))
 
     I.run()
 
