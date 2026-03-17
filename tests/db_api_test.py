@@ -94,7 +94,7 @@ def _server():
         finally:
             os._exit(0)
     try:
-        time.sleep(1)
+        time.sleep(5)
         yield None
 
     finally:
