@@ -1,6 +1,16 @@
 {
     "models": {
         "beamline": {},
+        "beamlines": null,
+        "elementAnimation": {
+            "aspectRatio": "1",
+            "colorMap": "viridis",
+            "histogramBins": 50,
+            "notes": "",
+            "plotType": "3d",
+            "x": "",
+            "y": ""
+        },
         "elementAnimation0": {
             "aspectRatio": "1",
             "colorMap": "viridis",
@@ -13,11 +23,11 @@
         "elementAnimation1": {
             "aspectRatio": "1",
             "colorMap": "viridis",
-            "histogramBins": 30,
+            "histogramBins": 50,
             "notes": "",
             "plotType": "3d",
-            "x": "delta_z",
-            "y": "energy"
+            "x": "delta_t",
+            "y": "delta_energy"
         },
         "elementAnimation2": {
             "aspectRatio": "1",
@@ -37,24 +47,22 @@
             "x": "x",
             "y": "y"
         },
-        "elementAnimation4": {
-            "aspectRatio": "1",
-            "colorMap": "viridis",
-            "histogramBins": 30,
-            "notes": "",
-            "plotType": "3d",
-            "x": "x",
-            "y": "y"
-        },
         "searchSettings": {
-            "machine_name": "sc_inj",
+            "columns": [],
+            "isLive": "0",
+            "machine_name": "cu_hxr",
+            "pageSize": 15,
+            "presetTimePicker": "",
+            "rowIds": [
+                1002
+            ],
             "searchStartTime": 60,
             "searchStopTime": 1893524400,
             "searchTerms": [
                 {
-                    "column": "outputs^end_norm_emit_x",
+                    "column": "Select Search Field",
                     "maxValue": "",
-                    "minValue": 1e-06
+                    "minValue": ""
                 },
                 {
                     "column": "Select Search Field",
@@ -104,39 +112,46 @@
             ],
             "selectedColumns": [
                 "snapshot_end",
-                "outputs^end_sigma_x",
-                "outputs^end_sigma_y",
-                "outputs^end_norm_emit_x",
-                "outputs^end_norm_emit_y",
-                "pv^ACCL:L0B:0110:AACTMEAN",
-                "pv^ACCL:L0B:0110:PACTMEAN"
+                "outputs^end_e_tot",
+                "outputs^end_a.eta",
+                "outputs^end_b.eta",
+                "pv^ACCL:LI21:180:L1X_AACT_DS0",
+                "pv^ACCL:LI21:1:L1S_PACT_DS0"
             ],
-            "twin_name": "impact"
+            "twin_name": "bmad"
+        },
+        "searchTerm": {
+            "column": "",
+            "maxValue": "",
+            "minValue": ""
         },
         "simFolder": {},
         "simulation": {
+            "elementPosition": "relative",
             "folder": "/",
-            "machine_name": "sc_inj",
-            "name": "sc_inj impact",
-            "twin_name": "impact"
+            "machine_name": "cu_hxr",
+            "name": "cu_hxr bmad",
+            "twin_name": "bmad"
         },
         "statAnimation": {
-            "aspectRatio": "0.5",
+            "aspectRatio": "0.333333",
             "includeLattice": "1",
-            "leftLimit": 3e-06,
+            "leftLimit": 0,
             "notes": "",
             "rightLimit": 0,
-            "x": "mean_z",
-            "y1": "norm_emit_x",
+            "x": "s",
+            "y1": "twiss_norm_emit_a",
             "y1Position": "left",
-            "y2": "norm_emit_y",
+            "y2": "twiss_norm_emit_b",
             "y2Position": "left",
-            "y3": "sigma_x",
+            "y3": "e_tot",
             "y3Position": "right",
-            "y4": "sigma_y",
+            "y4": "None",
             "y4Position": "right",
-            "y5": "sigma_z",
+            "y5": "None",
             "y5Position": "right"
+        },
+        "summaryAnimation": {
         }
     },
     "simulationType": "slactwin"

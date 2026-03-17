@@ -33,6 +33,9 @@ class DbAPI(slactwin.quest.API):
         with _raise_on_error():
             return await slactwin.run_importer.next_summary(qcall=self, **api_args)
 
+    async def api_comparison_summaries(self, api_args):
+        return await self.__query("comparison_summaries", api_args)
+
     async def api_run_kinds(self, api_args):
         return await self.__query("run_kinds", api_args)
 

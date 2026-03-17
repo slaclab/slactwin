@@ -1,0 +1,17 @@
+
+from pmd_beamphysics import ParticleGroup
+from pytao import Tao
+import matplotlib.pyplot as plt
+
+tao = Tao("{{ taoInit }}")
+for cmd in [
+{% for cmd in taoCommands %}
+    "{{ cmd }}",
+{% endfor %}
+]:
+    tao.cmd(cmd)
+
+P = ParticleGroup(data=tao.bunch_data("{{ endElement }}"))
+P.plot("delta_t", "energy")
+plt.title("{{ endElement }}")
+plt.show()

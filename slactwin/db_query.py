@@ -5,7 +5,6 @@ api
    search start_dt and stop_dt
    search run value names with min and max
    list of return value names
-   summary_path
    achirve_path
    return cols with order by date time
 
@@ -48,10 +47,45 @@ class _DbQuery:
             if (t := meta.tables.get(a)) is not None:
                 yield a, t
 
+    def _query_comparison_summaries(
+        self, session, run_summary, run_kind, run_summary_id
+    ):
+        s = self._single_table_query(
+            session, run_summary, PKDict(run_summary_id=run_summary_id)
+        )
+        k = self._single_table_query(
+            session, run_kind, PKDict(run_kind_id=s.run_kind_id)
+        )
+        c = []
+        for r in session.select(
+            sqlalchemy.select(
+                [
+                    run_summary.c.run_summary_id,
+                    run_kind.c.twin_name,
+                ]
+            )
+            .join(run_kind, run_kind.c.run_kind_id == run_summary.c.run_kind_id)
+            .where(
+                run_summary.c.snapshot_end == s.snapshot_end,
+                run_kind.c.machine_name == k.machine_name,
+                run_kind.c.twin_name != k.twin_name,
+            )
+        ):
+            c.append(
+                PKDict(
+                    run_summary_id=r[0],
+                    twin_name=r[1],
+                )
+            )
+        return PKDict(
+            comparisonSummaries=c,
+        )
+
     def _query_max_run_summary(self, session, run_summary, run_kind, run_kind_id):
         return PKDict(
             session.select_one(
                 sqlalchemy.select(run_summary).where(
+                    run_summary.c.run_kind_id == run_kind_id,
                     run_summary.c.snapshot_end
                     == sqlalchemy.select(
                         sqlalchemy.func.max(run_summary.c.snapshot_end)
@@ -117,11 +151,11 @@ class _DbQuery:
             session, run_summary, PKDict(run_summary_id=run_summary_id)
         )
 
-    def _query_run_summary_path_exists(self, session, run_summary, summary_path):
+    def _query_archive_path_exists(self, session, run_summary, archive_path):
         return (
             session.select_one_or_none(
                 sqlalchemy.select(run_summary).where(
-                    run_summary.c.summary_path == summary_path,
+                    run_summary.c.archive_path == archive_path,
                 )
             )
             is not None
@@ -237,7 +271,6 @@ class _DbQuery:
                 base_cols=PKDict(
                     run_summary_id=run_summary.c.run_summary_id,
                     archive_path=run_summary.c.archive_path,
-                    summary_path=run_summary.c.summary_path,
                 ),
                 value_cols=PKDict(),
                 select_from=run_summary.join(
@@ -245,6 +278,7 @@ class _DbQuery:
                     run_summary.c.run_kind_id == run_kind.c.run_kind_id,
                 ),
                 where=[
+                    run_kind.c.twin_name == twin_name,
                     run_kind.c.machine_name == machine_name,
                 ],
                 order_by=[],

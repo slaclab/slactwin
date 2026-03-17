@@ -7,8 +7,8 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import pykern.pkio
-import time
 import slactwin.pkcli
+import time
 
 
 # Needs a "." so purebasename works
@@ -19,35 +19,25 @@ class Commands(slactwin.pkcli.CommandsBase):
 
     def live(self, period=30):
         """Mock the lume-live directory
-
-        Example:
-            cd ~/src/slaclab/slactwin/run
-            tar xzf ~/tmp/iana.tgz
-            mv iana/{archive,plot,snapshot,summary} .
-            rm -rf iana
-            rm slactwin.sqlite
-            slactwin mock live
         Args:
             period (float): how often to move summary files into position
         """
 
         from slactwin import run_importer
 
-        def _queued(summary_dir):
-            for i, p in enumerate(
-                pykern.pkio.walk_tree(summary_dir, file_re=r"\.json$")
-            ):
+        def _queued(archive_dir):
+            for i, p in enumerate(pykern.pkio.walk_tree(archive_dir, file_re=r"\.h5$")):
                 if i == 0:
                     # first file needs to be there to populate the db
                     continue
                 n = p.new(basename=p.basename + _LIVE_QUEUED)
                 p.rename(n)
-            for p in pykern.pkio.walk_tree(summary_dir, file_re=f"{_LIVE_QUEUED}$"):
+            for p in pykern.pkio.walk_tree(archive_dir, file_re=f"{_LIVE_QUEUED}$"):
                 yield p
 
-        for p in _queued(run_importer.cfg().summary_dir):
+        for p in _queued(run_importer.cfg().archive_dir):
             time.sleep(period)
             t = p.new(basename=p.purebasename)
-            p.copy(p.new(basename=p.purebasename))
-            p.remove()
+            # move file because copy could trigger event before file is fully written
+            p.move(t)
             pkdlog("{}", t)

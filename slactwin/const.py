@@ -7,7 +7,7 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 
-RUN_VALUE_TAGS = frozenset(("impact", "pv"))
+RUN_VALUE_TAGS = frozenset(("outputs", "pv"))
 RUN_VALUE_SEP = "^"
 
 DB_API_URI = "/slactwin-db"

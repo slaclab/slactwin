@@ -2,24 +2,46 @@
 SIREPO.srdbg = console.log.bind(console);
 
 SIREPO.app.config(function() {
+    // bunchAnimation and elementAnimation
+    SIREPO.SINGLE_FRAME_ANIMATION = new Array(4).fill('').map((x, i) => `bunchAnimation${i}`).concat(
+        new Array(20).fill('').map((x, i) => `elementAnimation${i}`));
     SIREPO.PLOTTING_SUMMED_LINEOUTS = true;
     SIREPO.lattice = {
         elementColor: {
             // override red (alarm) color
             QUADRUPOLE: 'orange',
+            BMAPXY: 'magenta',
+            FTABLE: 'magenta',
+            KOCT: 'orange',
+            KQUAD: 'orange',
+            KSEXT: 'lightgreen',
+            MATTER: 'black',
+            OCTU: 'orange',
+            QUAD: 'orange',
+            QUFRINGE: 'salmon',
+            SEXT: 'lightgreen',
+            VKICK: 'blue',
+            LMIRROR: 'lightblue',
+            REFLECT: 'blue',
+            // override yellow (warning) color
+            LCAVITY: 'lightgreen',
+            RFCW: 'lightgreen',
         },
         elementPic: {
-            drift: ['DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD'],
-            lens: ['ROTATIONALLY_SYMMETRIC_TO_3D'],
-            magnet: ['QUADRUPOLE', 'DIPOLE'],
-            solenoid: ['SOLENOID', 'SOLRF'],
-            watch: ['WRITE_BEAM', 'WRITE_SLICE_INFO'],
-            zeroLength: [
-                'CHANGE_TIMESTEP',
-                'OFFSET_BEAM',
-                'SPACECHARGE',
-                'STOP',
-            ],
+            alpha: ['ALPH'],
+            aperture: ['APCONTOUR', 'CLEAN', 'ECOL', 'MAXAMP', 'PEPPOT', 'RCOL', 'SCRAPER', 'TAPERAPC', 'TAPERAPE', 'TAPERAPR', 'RCOLLIMATOR'],
+            bend: ['BRAT', 'BUMPER', 'CCBEND', 'CSBEND', 'CSRCSBEND', 'FMULT', 'FTABLE', 'KPOLY', 'KSBEND', 'KQUSE', 'MBUMPER', 'MULT', 'NIBEND', 'NISEPT', 'RBEN', 'SBEN', 'TUBEND', 'SBEND'],
+            drift: ['CSRDRIFT', 'DRIF', 'EDRIFT', 'EMATRIX', 'LSCDRIFT', 'DRIFT', 'EMFIELD_CARTESIAN', 'EMFIELD_CYLINDRICAL', 'WAKEFIELD', 'PIPE', 'EM_FIELD'],
+            lens: ['ROTATIONALLY_SYMMETRIC_TO_3D', 'LTHINLENS'],
+            magnet: ['BMAPXY', 'BOFFAXE', 'HKICK', 'KICKER', 'KOCT', 'KQUAD', 'KSEXT', 'MATTER', 'OCTU', 'POLYSERIES', 'QUAD', 'QUFRINGE', 'SEXT', 'VKICK', 'QUADRUPOLE', 'DIPOLE', 'SOL_QUAD'],
+            malign: ['MALIGN'],
+            mirror: ['LMIRROR'],
+            recirc: ['RECIRC'],
+            rf: ['CEPL', 'FRFMODE', 'FTRFMODE', 'MODRF', 'MRFDF', 'RAMPP', 'RAMPRF', 'RFCA', 'RFCW', 'RFDF', 'RFMODE', 'RFTM110', 'RFTMEZ0', 'RMDF', 'SHRFDF', 'TMCF', 'TRFMODE', 'TWLA', 'TWMTA', 'TWPL', 'LCAVITY'],
+            solenoid: ['MAPSOLENOID', 'SOLE', 'SOLENOID', 'SOLRF'],
+            undulator: ['CORGPIPE', 'CWIGGLER', 'GFWIGGLER', 'LSRMDLTR', 'MATR', 'UKICKMAP', 'WIGGLER', 'TAYLOR'],
+            watch: ['WATCH', 'WRITE_BEAM', 'MONITOR', 'MARKER'],
+            zeroLength: ['BRANCH', 'CENTER', 'CHARGE', 'DSCATTER', 'ELSE', 'EMITTANCE', 'ENERGY', 'FLOOR', 'HISTOGRAM', 'IBSCATTER', 'ILMATRIX', 'IONEFFECTS', 'MAGNIFY', 'MHISTOGRAM', 'PFILTER', 'REFLECT','REMCOR', 'RIMULT', 'ROTATE', 'SAMPLE', 'SCATTER', 'SCMULT', 'SCRIPT', 'SLICE', 'SREFFECTS', 'STRAY', 'TFBDRIVER', 'TFBPICKUP', 'TRCOUNT', 'TRWAKE', 'TWISS', 'WAKE', 'ZLONGIT', 'ZTRANSVERSE', 'CHANGE_TIMESTEP', 'OFFSET_BEAM', 'SPACECHARGE', 'STOP'],
         },
     };
     SIREPO.appFieldEditors += `
@@ -29,19 +51,40 @@ SIREPO.app.config(function() {
         <div data-ng-switch-when="ColumnList" data-ng-class="fieldClass">
           <div data-column-list="" data-model="model" data-field="field"></div>
         </div>
+        <div data-ng-switch-when="FrameSlider" class="col-sm-12">
+          <div data-frame-slider="" data-model="model" data-field="field"></div>
+        </div>
     `;
     SIREPO.appReportTypes = `
         <div data-ng-switch-when="parameterWithExternalLattice" data-parameter-with-lattice="" class="sr-plot sr-screenshot" data-model-name="{{ modelKey }}" data-path-to-models="externalLattice"></div>
     `;
 });
 
-SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCache, panelState, persistentSimulation, requestSender, uri, $location, $rootScope) {
+SIREPO.app.factory('slactwinService', function(activeSection, appState, errorService, frameCache, panelState, persistentSimulation, requestSender, uri, $location, $rootScope) {
     const self = {};
-    self.computeModel = analysisModel => 'animation';
+    self.computeModel = (analysisModel) => 'animation';
     self.runKinds = null;
     self.selectSearchFieldText = 'Select Search Field';
+    self.BUNCH_ANIMATIONS = ['bunchAnimation1', 'bunchAnimation2', 'bunchAnimation3'];
 
     const isModalVisible = () => $('.sr-modal-shown').length > 0;
+
+    const loadComparisons = () => {
+        self.callDB(
+            'comparison_summaries',
+            {
+                run_summary_id: self.getRunSummaryId(),
+            },
+            (resp) => {
+                if (resp.comparisonSummaries && resp.comparisonSummaries.length) {
+                    self.comparisonSummaries = resp.comparisonSummaries;
+                }
+                else {
+                    self.comparisonSummaries = null;
+                }
+            },
+        );
+    };
 
     self.callDB = (api_name, api_args, callback) => {
         requestSender.sendStatelessCompute(
@@ -79,6 +122,10 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
 
     self.getRunSummaryId = () => {
         return parseInt($location.search().runSummaryId);
+    };
+
+    self.hasPVDataFrame = () => {
+        return self.summary.pv_mapping_dataframe.el_id;
     };
 
     self.initDetailController = (controller, $scope) => {
@@ -182,13 +229,12 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
     };
 
     self.loadRun = ($scope) => {
-        const names = [];
         const runSummaryId = self.getRunSummaryId();
         if ($scope.runSummaryId && isModalVisible()) {
             // don't load a new plot if the modal is visible - the modal would automatically dismiss
             return;
         }
-        //TODO(pjm): related to the note below, a modal may be dismissed when
+        //TODO(pjm): a modal may be dismissed when
         // it is in a bad state (partially shown) and it doesn't clean up
         // the modal backdrop in that case.
         $('.modal-backdrop').remove();
@@ -199,32 +245,35 @@ SIREPO.app.factory('slactwinService', function(activeSection, appState, frameCac
         for (const m in appState.models) {
             if (appState.models[m] && 'runSummaryId' in appState.models[m]) {
                 appState.models[m].runSummaryId = runSummaryId;
-                names.push(m);
+                appState.saveQuietly(m);
             }
         }
-        //TODO(pjm): there is a moment here when it waits for saveChanges
-        //  and then for the getFrame. If a modal editor is shown during that
-        //  period, it will get dismissed when the page updates at the end.
-        //  Could possibly show a "loading" icon and put a input blocker up
-        //  until the new data is displayed
-        appState.saveChanges(names, () => {
-            //TODO(pjm): sr-run-loaded only gets broadcast from summaryAnimation
-            if (panelState.isHidden('summaryAnimation')) {
-                panelState.toggleHidden('summaryAnimation');
+        //TODO(pjm): sr-run-loaded only gets broadcast if summaryAnimation is visible
+        if (panelState.isHidden('summaryAnimation')) {
+            panelState.toggleHidden('summaryAnimation');
+        }
+        frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
+            //TODO(pjm): ensure runSummary matches expected, otherwise ignore
+            if (data.error) {
+                throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
             }
-            frameCache.getFrame('summaryAnimation', 0, false, (index, data) => {
-                if (data.error) {
-                    throw new Error(`Failed to load runSummaryId: ${runSummaryId}`);
-                }
-                frameCache.setFrameCount(1);
-                self.summary = data.summary;
-                self.particles = data.particles;
-                appState.models.externalLattice = data.lattice;
-                self.setValueList(appState.models.statAnimation, 'statAnimation', data.stat_columns);
-                $rootScope.$broadcast('sr-run-loaded');
-            });
+            frameCache.setFrameCount(1);
+            self.summary = data.summary;
+            self.particles = data.particles;
+            appState.models.externalLattice = data.lattice;
+            self.setValueList(appState.models.statAnimation, 'statAnimation', data.stat_columns);
+            $rootScope.$broadcast('sr-run-loaded');
+            panelState.waitForUI(() => appState.updateReports());
+            loadComparisons();
         });
     };
+
+    $rootScope.$on('modelsUnloaded', () => {
+        self.summary = null;
+        self.particles = null;
+        self.comparisonSummaries = null;
+    });
+
 
     self.openRun = (runSummaryId, route) => {
         uri.localRedirect(route || SIREPO.APP_SCHEMA.appModes.default.localRoute, {
@@ -350,7 +399,9 @@ SIREPO.app.controller('VizController', function(appState, frameCache, liveServic
             slactwinService.setValueList(m, 'elementAnimation', info.columns);
             appState.setModelDefaults(m, 'elementAnimation');
             appState.saveQuietly(info.modelKey);
-            frameCache.setFrameCount(1, info.modelKey);
+            //TODO(pjm): hacked the summaryId into the frame count so
+            // the datafile may be downloaded
+            frameCache.setFrameCount(m.runSummaryId + 1, info.modelKey);
         });
     });
 });
@@ -381,9 +432,37 @@ SIREPO.app.controller('BeamController', function() {
     const self = this;
 });
 
+SIREPO.app.controller('ComparisonController', function(appState, frameCache, slactwinService, $scope) {
+    const self = this;
+    slactwinService.initDetailController(self, $scope);
+    $scope.slactwinService = slactwinService;
+    $scope.$watch('slactwinService.comparisonSummaries', () => {
+        const c = slactwinService.comparisonSummaries;
+        if (c && c.length) {
+            //TODO(pjm): assume only 1 comparison for now
+            const s = c[0].run_summary_id;
+            for (const m of ['twissAnimation', ...slactwinService.BUNCH_ANIMATIONS]) {
+                appState.models[m].comparisonRunSummaryId = s;
+            }
+            self.comparisonTwinName = c[0].twin_name;
+            for (const m of slactwinService.BUNCH_ANIMATIONS) {
+                frameCache.setFrameCount(slactwinService.particles.length, m);
+            }
+        }
+    });
+    $scope.$on('sr-run-loaded', () => {
+        $scope.loadingMessage = '';
+        const m = appState.models.bunchAnimation;
+        slactwinService.setValueList(m, 'bunchAnimation', slactwinService.particles[0].columns);
+        appState.setModelDefaults(m, 'bunchAnimation');
+        appState.saveQuietly('bunchAnimation');
+    });
+});
+
 SIREPO.app.controller('LatticeController', function(liveService, slactwinService, $scope) {
     const self = this;
     slactwinService.initDetailController(self, $scope);
+    $scope.slactwinService = slactwinService;
 
     $scope.$on('sr-run-loaded', () => {
         $scope.loadingMessage = '';
@@ -429,28 +508,40 @@ SIREPO.app.directive('appFooter', function() {
             $scope.closeModal = () => $('#sr-open-sim').modal('hide');
 
             $scope.createSim = () => {
-                $scope.processingMessage = `Creating ${$scope.sirepoSimTypeName()} simulation, please wait.`;
+                if (appState.models.simulation.twin_name === 'bmad') {
+                    $scope.newSimName = 'PyTao execution script';
+                    $scope.newSimURL = requestSender.formatUrl('downloadRunFile', {
+                        simulation_id: appState.models.simulation.simulationId,
+                        simulation_type: SIREPO.APP_SCHEMA.simulationType,
+                        model: 'summaryAnimation',
+                        frame: slactwinService.getRunSummaryId(),
+                    });
+                }
+                else {
+                    $scope.processingMessage = `Creating ${$scope.sirepoSimTypeName()} simulation, please wait.`;
 
-                requestSender.sendRequest(
-                    'slactwinSimFromRunSummary',
-                    (resp) => {
-                        if (resp.error) {
-                            $scope.processingMessage = `An error occurred: ${resp.error}`;
-                            return;
-                        }
-                        $scope.processingMessage = "";
-                        $scope.newSimName = resp.simulation.name;
-                        $scope.newSimURL = uri.formatLocal(
-                            'lattice',
-                            { simulationId: resp.simulation.simulationId },
-                            resp.simulationType,
-                        );
-                    },
-                    {
-                        runSummaryId: slactwinService.getRunSummaryId(),
-                        runSummaryUrl: $location.absUrl(),
-                    },
-                );
+                    requestSender.sendRequest(
+                        'slactwinSimFromRunSummary',
+                        (resp) => {
+                            if (resp.error) {
+                                $scope.processingMessage = `An error occurred: ${resp.error}`;
+                                return;
+                            }
+                            $scope.processingMessage = "";
+                            $scope.newSimName = resp.simulation.name;
+                            $scope.newSimURL = uri.formatLocal(
+                                'lattice',
+                                { simulationId: resp.simulation.simulationId },
+                                resp.simulationType,
+                            );
+                        },
+                        {
+                            runSummaryId: slactwinService.getRunSummaryId(),
+                            runSummaryUrl: $location.absUrl(),
+                            twinName: appState.models.simulation.twin_name
+                        },
+                    );
+                }
 
                 $('#sr-open-sim').on('hidden.bs.modal', () => {
                     init();
@@ -467,6 +558,12 @@ SIREPO.app.directive('appFooter', function() {
                     const t = appState.models.simulation.twin_name;
                     if (t === 'impact') {
                         return 'Impact-T';
+                    }
+                    if (t === 'elegant') {
+                        return t;
+                    }
+                    if (t === 'bmad') {
+                        return 'Bmad';
                     }
                     throw new Error(`Unhandled twin_name: ${t}`);
                 }
@@ -488,14 +585,14 @@ SIREPO.app.directive('appHeader', function() {
             <div data-app-header-brand="nav"></div>
             <ul class="nav navbar-nav" data-ng-if=":: authState.isLoggedIn">
               <li class="sim-section" data-ng-class="{active: nav.isActive('search') || nav.isActive('search-results') }"><a href data-ng-click="openSearch()"><span class="glyphicon glyphicon-search"></span> Search</a></li>
+              <li data-ng-if="appState.isLoaded() && ! nav.isActive('search-results')" style="padding: 15px">{{ appState.models.simulation.name }}</li>
             </ul>
             <div data-app-header-right="nav">
               <app-header-right-sim-loaded data-ng-if="hasQuery()">
                 <div data-sim-sections="">
-                  <!--<li class="sim-section" data-ng-class="{active: nav.isActive('beam')}"><a href data-ng-click="nav.openSection('beam')"><span class="glyphicon glyphicon-flash"></span> Beam</a></li>-->
                   <li class="sim-section" data-ng-class="{active: nav.isActive('lattice')}"><a href data-ng-click="nav.openSection('lattice')"><span class="glyphicon glyphicon-option-horizontal"></span> Lattice</a></li>
-
                   <li class="sim-section" data-ng-class="{active: nav.isActive('visualization')}"><a href data-ng-click="nav.openSection('visualization')"><span class="glyphicon glyphicon-picture"></span> Visualization</a></li>
+                  <li class="sim-section" data-ng-if="slactwinService.comparisonSummaries" data-ng-class="{active: nav.isActive('comparison')}"><a href data-ng-click="nav.openSection('comparison')">Comparison</a></li>
                 </div>
               </app-header-right-sim-loaded>
               <app-settings>
@@ -505,8 +602,10 @@ SIREPO.app.directive('appHeader', function() {
             </div>
         `,
         controller: function(appState, authState, panelState, uri, slactwinService, $element, $location, $scope) {
+            $scope.appState = appState;
             $scope.authState = authState;
             $scope.hasQuery = slactwinService.getRunSummaryId;
+            $scope.slactwinService = slactwinService;
 
             $scope.openSearch = () => {
                 if (appState.isLoaded()) {
@@ -524,7 +623,7 @@ SIREPO.app.directive('appHeader', function() {
     };
 });
 
-SIREPO.app.directive('latticeFooter', function() {
+SIREPO.app.directive('latticeFooter', function(appState) {
     return {
         restrict: 'A',
         scope: {
@@ -546,16 +645,20 @@ SIREPO.app.directive('latticeFooter', function() {
                 $('.sr-lattice-label').remove();
                 const parentRect = $('#sr-lattice')[0].getBoundingClientRect();
                 const positions = [];
-                const labeled = [];
+                const visited = {};
                 $("[class^='sr-beamline']").each( (_ , element) => {
                     positions.push(element.getBoundingClientRect());
                 });
                 $('#sr-lattice').find('title').each((v, node) => {
                     const values = $(node).text().split(': ');
-                    if (values[1].indexOf('CHANGE_TIMESTEP') >= 0) {
+                    const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0
+                          || values[1].indexOf('WATCH') >= 0
+                          || values[1].indexOf('MARKER') >= 0
+                          || values[1].indexOf('MONITOR') >= 0;
+                    if (! $scope.names[values[0]] && ! isMonitorOrInstrument || visited[values[0]]) {
                         return;
                     }
-                    const isMonitorOrInstrument = values[1].indexOf('WRITE_BEAM') >= 0;
+                    visited[values[0]] = true;
                     const rect = node.parentElement.getBoundingClientRect();
                     let pos = [
                         rect.left - parentRect.left,
@@ -578,10 +681,6 @@ SIREPO.app.directive('latticeFooter', function() {
                         })
                         .on('click', () => {
                             $scope.elementClicked(values[0]);
-                            $scope.$applyAsync();
-                        })
-                        .on('dblclick', () => {
-                            $scope.elementClicked(values[0], true);
                             $scope.$applyAsync();
                         })
                         .appendTo($('.sr-lattice-holder'));
@@ -639,7 +738,7 @@ SIREPO.app.directive('latticeFooter', function() {
                 }
             };
 
-            $scope.elementClicked = (name, showEditor) => {
+            $scope.elementClicked = (name) => {
                 const el = slactwinService.elementForName(name);
                 if (el) {
                     slactwinService.selectElementId(el._id);
@@ -653,6 +752,22 @@ SIREPO.app.directive('latticeFooter', function() {
             });
 
             $scope.$on('sr-renderBeamline', () => {
+                const ids = {};
+                if (! slactwinService.hasPVDataFrame()) {
+                    return;
+                }
+                const df = slactwinService.summary.pv_mapping_dataframe.el_id;
+                for (const el_id of Object.values(df)) {
+                    if (el_id) {
+                        ids[el_id] = true;
+                    }
+                }
+                $scope.names = {};
+                for (const el of slactwinService.latticeModels().elements) {
+                    if (ids[el._id]) {
+                        $scope.names[el.name] = true;
+                    }
+                }
                 panelState.waitForUI(labelElements);
             });
         },
@@ -690,7 +805,6 @@ SIREPO.app.directive('pvTable', function() {
                 $scope.columns = slactwinService.summary.summary_columns;
                 $scope.dataframe = slactwinService.summary.pv_mapping_dataframe;
                 $scope.rows = [];
-                const ids = slactwinService.latticeModels().beamlines[0].items;
                 Object.keys($scope.dataframe.el_id).forEach((k, idx) => {
                     $scope.rows.push({
                         el_id: $scope.dataframe.el_id[k],
@@ -699,18 +813,21 @@ SIREPO.app.directive('pvTable', function() {
                 });
             };
 
-            const isNumber = (row, col) => typeof cellValue(col, 1, row.index) === "number";
+            const isNumber = (row, col) => {
+                const v = cellValue(col, 1, row.index);
+                return typeof v === "number" || /^(\-|\d)/.test(v);
+            };
 
             $scope.colClass = (row, col) => isNumber(row, col) ? 'text-right' : 'text-left';
 
             $scope.formatCol = (row, col) => {
                 const v = cellValue(col, 1, row.index);
-                if (! isNumber(row, col)) {
+                if (! SIREPO.NUMBER_REGEXP.test(v)) {
                     return v;
                 }
-                if (! v && ! col[2]) {
-                    return '';
-                }
+                //if (! v && ! col[2]) {
+                //    return '';
+                //}
                 if (Math.abs(v) < 1e-3) {
                     return appState.formatExponential(v);
                 }
@@ -719,7 +836,10 @@ SIREPO.app.directive('pvTable', function() {
 
             $scope.formatUnits = (row, col) => {
                 if (col[2]) {
-                    return `(${cellValue(col, 2, row.index)})`;
+                    const v = cellValue(col, 2, row.index)
+                    if (v) {
+                        return `(${v})`;
+                    }
                 }
             }
 
@@ -804,17 +924,10 @@ SIREPO.app.directive('runSummary', function() {
         template: `
             <div>{{ summary.description }}</div>
             <div style="margin-bottom: 1em">{{ dateValue(summary.snapshot_end) }}</div>
-
-            <div>{{ summary.inputs['distgen:n_particle'] | number }} macroparticles</div>
-            <div>{{ summary.Nbunch }} bunch{{ summary.Nbunch > 1 ? 'es' : '' }} of {{ models.beam.particle }}s</div>
-            <div>Total charge: {{ summary.inputs['distgen:total_charge:value'] | number:1 }} pC</div>
-            <div>Processor domain: {{ summary.Nprow }} x {{ summary.Npcol }} = {{ summary.Nprow * summary.Npcol }} CPUs</div>
-            <div>Space charge grid: {{ models.simulationSettings.Nx }} x {{ models.simulationSettings.Ny }} x {{ models.simulationSettings.Nz }}</div>
-            <div data-ng-if="timestep">Timestep: {{ models.simulationSettings.Dt * 1e12 | number:1 }} ps to {{ timestep.pos }} m, then {{ timestep.dt * 1e12 | number:1 }} ps until the end
-            <div>Final emittance(x, y): {{ summary.outputs.end_norm_emit_x * 1e6 | number:3 }}, {{ summary.outputs.end_norm_emit_y * 1e6 | number:3 }} µm</div>
-            <div>Final bunch length: {{ summary.outputs.end_sigma_z * 1e3 | number:2 }} mm</div>
-
-            <div style="margin-top: 1em">Run time: {{ summary.run_time / 60 | number:1 }} minutes</div>
+            <div data-ng-repeat="r in summary.summary_text track by $index">
+                {{ r }}
+            </div>
+            <div style="margin-top: 1em">Run time: {{ summary.run_time_minutes | number:1 }} minutes</div>
         `,
         controller: function(appState, slactwinService, timeService, $scope) {
             const init = () => {
@@ -864,7 +977,7 @@ SIREPO.app.directive('searchForm', function() {
               <div data-ng-if="noResultsMessage">{{ noResultsMessage }}</div>
             </div>
         `,
-        controller: function(appState, errorService, liveService, slactwinService, $scope) {
+        controller: function(appState, liveService, slactwinService, $scope) {
             const init = () => {
                 $scope.loadingMessage = 'Loading runs';
                 slactwinService.initMachines(() => {
@@ -994,12 +1107,12 @@ SIREPO.app.directive('searchTerms', function() {
                 }
             };
 
-            $scope.deleteRow = idx => {
+            $scope.deleteRow = (idx) => {
                 $scope.model.searchTerms.splice(idx, 1);
                 updateTerms();
             };
 
-            $scope.isEmpty = idx => {
+            $scope.isEmpty = (idx) => {
                 const search = $scope.model.searchTerms[idx];
                 return (
                     search.column != slactwinService.selectSearchFieldText
@@ -1007,7 +1120,7 @@ SIREPO.app.directive('searchTerms', function() {
                 ) ? false : true;
             };
 
-            $scope.showRow = idx => (idx == 0) || ! $scope.isEmpty(idx - 1);
+            $scope.showRow = (idx) => (idx == 0) || ! $scope.isEmpty(idx - 1);
 
             $scope.showTerms = () => {
                 if (! slactwinService.runValues) {
@@ -1046,7 +1159,7 @@ SIREPO.app.directive('columnList', function() {
                 }
             };
             updateColumns();
-            appState.watchModelFields($scope, ['slactwinService.runValues'], updateColumns);
+            $scope.$watch('slactwinService.runValues', updateColumns);
         },
     };
 });
@@ -1074,7 +1187,7 @@ SIREPO.app.directive('columnPicker', function() {
                 if (! v) {
                     return;
                 }
-                $scope.availableColumns = v.filter(value => ! $scope.model.selectedColumns.includes(value));
+                $scope.availableColumns = v.filter((value) => ! $scope.model.selectedColumns.includes(value));
                 $scope.availableColumns.unshift(addColumnText);
                 $scope.selected = addColumnText;
             };
@@ -1172,7 +1285,7 @@ SIREPO.app.directive('searchResultsTable', function() {
             };
 
             $scope.openRun = (row) => {
-                $scope.model.rowIds = $scope.searchResults.map(r => r.run_summary_id);
+                $scope.model.rowIds = $scope.searchResults.map((r) => r.run_summary_id);
                 appState.saveChanges('searchSettings', () => {
                     slactwinService.openRun(row.run_summary_id);
                 });
@@ -1229,23 +1342,162 @@ SIREPO.app.directive('viewLiveButton', function() {
     };
 });
 
-SIREPO.viewLogic('searchSettingsView', function(appState, slactwinService, uri, $scope) {
-    const runValuesChanged = () => {
-        const ss = appState.models.searchSettings;
-        for (const r of slactwinService.runKinds) {
-            if (r.machine_name === ss.machine_name && r.twin_name == ss.twin_name) {
-                if (appState.models.simulationId != r.simulationId) {
-                    appState.clearModels();
-                    uri.localRedirect('search-results', {
-                        ':simulationId': r.simulationId,
-                    });
+//TODO(pjm): derived from the Sirepo canvas app phaseSpacePlots
+SIREPO.app.directive('phaseSpacePlots', function() {
+    return {
+        restrict: 'A',
+        scope: {},
+        template: `
+            <div class="col-sm-12">
+              <div data-simple-panel="bunchAnimation" data-is-report="1">
+                <div class="col-sm-6">
+                  <div data-field-editor="'selectedFrame'" data-model-name="'bunchAnimation'"
+                    data-model="appState.models.bunchAnimation"></div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="pull-right">
+                    <div data-ng-repeat="(b, v) in views track by $index"
+                      style="display: inline-block; margin-right: 1ex">
+                      <button type="button" class="btn btn-default" data-ng-class="{ 'btn-primary': isSelected(v) }"
+                        data-ng-click="selectView(v)">{{ b }}</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="clearfix"></div>
+                <div class="row sr-screenshot">
+                  <div class="col-md-4" data-ng-repeat="r in reports track by $index">
+                    <div data-ng-if="isHeatmap(r)" data-heatmap="" data-model-name="{{ r }}"></div>
+                    <div data-ng-if="! isHeatmap(r)" data-plot3d="" data-model-name="{{ r }}"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        `,
+        controller: function(appState, slactwinService, $scope) {
+            $scope.appState = appState;
+            $scope.views = {
+                Horizontal: 'x-px',
+                Vertical: 'y-py',
+                'Cross-section': 'x-y',
+                Energy: 'delta_t-energy',
+            };
+            $scope.reports = slactwinService.BUNCH_ANIMATIONS;
+
+            $scope.isHeatmap = (report) => {
+                return appState.models[report].plotType == 'heatmap';
+            };
+
+            $scope.isSelected = (xy) => {
+                const b = appState.models.bunchAnimation;
+                return [b.x, b.y].join('-') === xy;
+            };
+
+            $scope.selectView = (xy) => {
+                const [x, y] = xy.split('-');
+                const b = appState.models.bunchAnimation;
+                b.x = x;
+                b.y = y;
+                appState.saveChanges('bunchAnimation');
+            };
+
+            $scope.$on('bunchAnimation.changed', (e) => {
+                const b = appState.models.bunchAnimation;
+                const updated = {};
+                for (const r of $scope.reports) {
+                    const m = appState.models[r];
+                    for (const f of ['x', 'y', 'histogramBins', 'colorMap', 'plotType']) {
+                        if (b[f] !== m[f]) {
+                            m[f] = b[f];
+                            updated[r] = true;
+                        }
+                    }
                 }
-                return;
+                appState.saveChanges(Object.keys(updated));
+            });
+        },
+    };
+});
+
+//TODO(pjm): derived from the Sirepo canvas app frameSlider
+SIREPO.app.directive('frameSlider', function(appState, slactwinService, frameCache, utilities) {
+    return {
+        restrict: 'A',
+        scope: {
+            field: '<',
+            model: '=',
+        },
+        template: `
+          <div data-ng-if="steps">
+            <div data-slider="" data-model="model" data-field="field" data-min="min" data-max="max" data-steps="steps"></div>
+          </div>
+        `,
+        controller: function($scope) {
+            function setFrame() {
+                const v = $scope.model[$scope.field];
+                for (const m of slactwinService.BUNCH_ANIMATIONS) {
+                    frameCache.setCurrentFrame(m, v);
+                    appState.models[m].frameIndex = v;
+                }
+                appState.saveChanges(slactwinService.BUNCH_ANIMATIONS);
+            }
+
+            function updateRange() {
+                if (frameCache.getFrameCount(slactwinService.BUNCH_ANIMATIONS[0])) {
+                    const c = frameCache.getFrameCount(slactwinService.BUNCH_ANIMATIONS[0]);
+                    $scope.model[$scope.field] = c - 1;
+                    $scope.min = 0;
+                    $scope.max = c - 1;
+                    $scope.steps = c;
+                }
+                else {
+                    $scope.steps = 0;
+                }
+            }
+
+            $scope.$watch('model[field]', utilities.debounce(setFrame));
+            $scope.$on('framesLoaded', updateRange);
+
+            updateRange();
+        },
+    };
+});
+
+SIREPO.viewLogic('searchSettingsView', function(appState, slactwinService, uri, $scope) {
+
+    const redirect = (runKind) => {
+        appState.clearModels();
+        uri.localRedirect('search-results', {
+            ':simulationId': runKind.simulationId,
+        });
+    };
+
+    const simRedirect = (changedField, otherField) => {
+        const ss = appState.models.searchSettings;
+        let m = null;
+        for (const r of slactwinService.runKinds.reverse()) {
+            if (r[changedField] === ss[changedField] ) {
+                if (r[otherField] == ss[otherField]) {
+                    // exact match, redirect now
+                    redirect(r);
+                    return;
+                }
+                if (! m) {
+                    // save first partial match
+                    m = r;
+                }
             }
         }
+        if (m) {
+            // use first partial match
+            redirect(m);
+        }
     };
+
     // not using $scope.watchFields because that includes a debouncer and the
     // switch to the new machine_name should be immediate
     appState.watchModelFields(
-        $scope, ['searchSettings.machine_name', 'searchSettings.twin_name'],  runValuesChanged);
+        $scope, ['searchSettings.machine_name'],  () => simRedirect('machine_name', 'twin_name'));
+    appState.watchModelFields(
+        $scope, ['searchSettings.twin_name'],  () => simRedirect('twin_name', 'machine_name'));
+
 });
