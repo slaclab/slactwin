@@ -90,17 +90,15 @@ def run(
         f"{os.environ['LCLS_LATTICE']}/{_MODEL_NAME_TO_IMPACT_FILE[model_name]}"
     )
     # I.verbose = True
-    # TODO(pjm): remove workdir/tempdir config
-    I._use_temp_dir = False
-    I.workdir = "/home/vagrant/tmp/impact-tmp"
+    if work_dir:
+        I._use_temp_dir = False
+        I.workdir = work_dir
     if beam_in:
         I.initial_particles = pmd_beamphysics.ParticleGroup(beam_in)
     # TODO(pjm): configurable
     I.numprocs = 16
 
     I.stop = I.ele[end_element_name]["s"] + I.ele[end_element_name].get("L", 0)
-
-    # _old_code(model_name, pv_filename, I, beam_in, out_dir)
 
     with open(pv_filename, "r") as f:
         pvdata = pykern.pkjson.load_any(f)
@@ -109,12 +107,10 @@ def run(
     for name, dm in slactwin.datamaps.impact.get_impact_datamaps(model_name).items():
         for idx, r in dm.data.iterrows():
             if "pvname_rbv" in r:
+                # use the RBV pv if present
                 r.pvname = r.pvname_rbv
             if r.pvname not in pvdata:
-                pkdc("missing {}", r.pvname)
-                continue
-            if r.impact_name and r.impact_name not in I.ele:
-                pkdc("missing ele {}", r.impact_name)
+                pkdc("missing pv {}", r.pvname)
                 continue
             pv_summary.append(
                 PKDict(
@@ -129,7 +125,6 @@ def run(
                 )
             )
         for f, v in slactwin.datamaps.impact.as_impact(dm, pvdata).items():
-            # I[f] = v
             for r in pv_summary:
                 if f == r.impact_name:
                     pkdc("set {} = {}", f, v)
@@ -148,13 +143,12 @@ def run(
     # I.total_charge = 0
 
     if beam_in and I.total_charge:
-        # TODO(pjm): should respect the initial charge from particles?
+        # TODO(pjm): should respect the initial charge from input particles?
         I.initial_particles.charge = I.total_charge
 
     I.run()
 
     a = Archiver(pv_filename, _TWIN_NAME, model_name)
     with h5py.File(a.archive_path(I.path), "w") as f:
-        g = f.create_group(_TWIN_NAME)
-        I.archive(g)
+        I.archive(f.create_group(_TWIN_NAME))
     a.add_summary(pv_summary, _outputs(I), out_dir)
