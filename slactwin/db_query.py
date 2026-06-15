@@ -73,8 +73,8 @@ class _DbQuery:
         ):
             c.append(
                 PKDict(
-                    run_summary_id=r[0],
-                    twin_name=r[1],
+                    run_summary_id=r.run_summary_id,
+                    twin_name=r.twin_name,
                 )
             )
         return PKDict(
@@ -104,8 +104,8 @@ class _DbQuery:
             sqlalchemy.select([run_kind.c.machine_name, run_kind.c.twin_name]).order_by(
                 run_kind.c.machine_name, run_kind.c.twin_name
             )
-        ):
-            rv.append(PKDict(machine_name=r[0], twin_name=r[1]))
+        ).all():
+            rv.append(PKDict(machine_name=r.machine_name, twin_name=r.twin_name))
         return PKDict(
             run_kinds=rv,
         )
@@ -141,7 +141,7 @@ class _DbQuery:
             )
             .order_by(run_value_name.c.name)
         ):
-            rv.append(r[0])
+            rv.append(r.name)
         return PKDict(
             run_values=rv,
         )
@@ -244,7 +244,7 @@ class _DbQuery:
         def _rows(state, select):
 
             def _row(row):
-                r = list(row)
+                r = list(row.values())
                 for c in state.base_cols.keys():
                     yield c, r.pop(0)
                 yield "run_values", PKDict(_run_values(r))
