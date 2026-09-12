@@ -15,6 +15,7 @@ import datetime
 import h5py
 import impact
 import numpy
+import pykern.api.util
 import pykern.pkio
 import pykern.pkjson
 import pytz
@@ -367,15 +368,44 @@ def _bunch_comparison(frame_args):
     )
 
 
-def _db_api(api_name, **kwargs):
-    async def _target():
-        c = await slactwin.db_api_client.for_job_cmd().connect()
-        return await c.call_api(
-            api_name,
-            kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs),
-        )
+#: Reused across calls so we don't open a new websocket connection every time
+_db_api_client = None
 
-    return asyncio.run(_target())
+#: Event loop bound to `_db_api_client`; must be reused so the connection stays alive
+_db_api_loop = None
+
+
+def _db_api(api_name, **kwargs):
+    """Call db_api_client, reusing a persistent connection across calls
+
+    A new connection is only opened the first time this is called, and again
+    if the existing connection is found to be disconnected.
+
+    Args:
+        api_name (str): name of the API to call
+        kwargs: api_args, or values to be wrapped as api_args
+    Returns:
+        PKDict: api_result
+    """
+    global _db_api_client, _db_api_loop
+
+    a = kwargs["api_args"] if "api_args" in kwargs else PKDict(kwargs)
+
+    async def _call(reconnect):
+        global _db_api_client
+
+        if reconnect or _db_api_client is None:
+            if _db_api_client is not None:
+                _db_api_client.destroy()
+            _db_api_client = await slactwin.db_api_client.for_job_cmd().connect()
+        return await _db_api_client.call_api(api_name, a)
+
+    if _db_api_loop is None:
+        _db_api_loop = asyncio.new_event_loop()
+    try:
+        return _db_api_loop.run_until_complete(_call(reconnect=False))
+    except pykern.api.util.APIDisconnected:
+        return _db_api_loop.run_until_complete(_call(reconnect=True))
 
 
 def _difference_heatplot(frame_args, p1, p2):

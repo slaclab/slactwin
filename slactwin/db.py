@@ -40,6 +40,9 @@ class _Db(slactwin.quest.Attr):
     def query(self, name, **kwargs):
         return _queries[name](self.session(), **kwargs)
 
+    def quest_end(self, qcall, in_error):
+        self.commit_or_rollback(commit=not in_error)
+
     def session(self):
         if self.__session is None:
             self.__session = _meta.session()

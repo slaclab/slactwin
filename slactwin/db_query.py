@@ -59,10 +59,8 @@ class _DbQuery:
         c = []
         for r in session.select(
             sqlalchemy.select(
-                [
-                    run_summary.c.run_summary_id,
-                    run_kind.c.twin_name,
-                ]
+                run_summary.c.run_summary_id,
+                run_kind.c.twin_name,
             )
             .join(run_kind, run_kind.c.run_kind_id == run_summary.c.run_kind_id)
             .where(
@@ -101,7 +99,7 @@ class _DbQuery:
     def _query_run_kinds(self, session, run_kind):
         rv = []
         for r in session.select(
-            sqlalchemy.select([run_kind.c.machine_name, run_kind.c.twin_name]).order_by(
+            sqlalchemy.select(run_kind.c.machine_name, run_kind.c.twin_name).order_by(
                 run_kind.c.machine_name, run_kind.c.twin_name
             )
         ).all():
@@ -130,7 +128,7 @@ class _DbQuery:
     ):
         rv = []
         for r in session.select(
-            sqlalchemy.select([run_value_name.c.name])
+            sqlalchemy.select(run_value_name.c.name)
             .join(
                 run_value_name,
                 run_kind.c.run_kind_id == run_value_name.c.run_kind_id,
@@ -258,8 +256,7 @@ class _DbQuery:
         def _select(state):
             return session.select(
                 sqlalchemy.select(
-                    tuple(state.base_cols.values()) + tuple(state.value_cols.values())
-                )
+                    *(tuple(state.base_cols.values()) + tuple(state.value_cols.values())))
                 .select_from(state.select_from)
                 .where(*state.where)
                 .order_by(*state.order_by),
